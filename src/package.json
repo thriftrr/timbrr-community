@@ -1,0 +1,12 @@
+{
+ "name": "timbrr-community-workspace",
+ "private": true,
+ "type": "module",
+ "workspaces": ["layer", "starter"],
+ "scripts": {
+  "dev": "npm run dev -w starter",
+  "build": "npm run build -w starter",
+  "generate": "npm run generate -w starter",
+  "preview": "npm run preview -w starter"
+ }
+}

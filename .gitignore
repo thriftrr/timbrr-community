@@ -1,0 +1,17 @@
+# Dependencies
+node_modules
+
+# Nuxt
+.nuxt
+.output
+.data
+dist
+
+# Env — examples are committed, real values are not
+.env
+.env.*
+!.env.example
+
+# Misc
+.DS_Store
+*.log

@@ -1,0 +1,16 @@
+{
+ "name": "@timbrr/community",
+ "version": "0.1.0",
+ "description": "Timbrr's shared blocks: one definition and one component per block, a manifest any Timbrr studio can read, and the canvas the studio edits through.",
+ "license": "Apache-2.0",
+ "type": "module",
+ "main": "./nuxt.config.js",
+ "repository": { "type": "git", "url": "git+https://github.com/thriftrr/timbrr-community.git", "directory": "src/layer" },
+ "timbrr": { "tier": "community" },
+ "dependencies": {
+  "zod": "^4.1.0"
+ },
+ "peerDependencies": {
+  "nuxt": "^4.0.0"
+ }
+}
