@@ -1,15 +1,15 @@
 import { z } from 'zod';
 import { defineBlock } from '../schema/define.js';
 
+// Empty room between two blocks. A line between them is the divider's job.
 export default defineBlock({
  type: 'spacer',
  label: 'Spacer',
- description: 'Room between blocks, or a line',
+ description: 'Vertical whitespace by size',
  category: 'layout',
- icon: 'separator-horizontal',
+ icon: 'spacer',
  schema: z.object({
-  size: z.enum(['small', 'medium', 'large']).default('medium'),
-  line: z.enum(['none', 'line']).default('none'),
+  size: z.enum(['sm', 'md', 'lg', 'xl']).default('md'),
  }),
  fields: [
   {
@@ -17,21 +17,13 @@ export default defineBlock({
    label: 'Size',
    widget: 'buttons',
    options: [
-    { label: 'Small', value: 'small' },
-    { label: 'Medium', value: 'medium' },
-    { label: 'Large', value: 'large' },
-   ],
-  },
-  {
-   key: 'line',
-   label: 'Line',
-   widget: 'buttons',
-   options: [
-    { label: 'None', value: 'none' },
-    { label: 'Line', value: 'line' },
+    { label: 'S', value: 'sm' },
+    { label: 'M', value: 'md' },
+    { label: 'L', value: 'lg' },
+    { label: 'XL', value: 'xl' },
    ],
   },
  ],
- defaults: {},
+ defaults: { size: 'md' },
  wys: {},
 });

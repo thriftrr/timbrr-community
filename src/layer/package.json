@@ -8,6 +8,9 @@
  "repository": { "type": "git", "url": "git+https://github.com/thriftrr/timbrr-community.git", "directory": "src/layer" },
  "timbrr": { "tier": "community" },
  "dependencies": {
+  "@tiptap/core": "^3.32.0",
+  "@tiptap/pm": "^3.32.0",
+  "@tiptap/starter-kit": "^3.32.0",
   "zod": "^4.1.0"
  },
  "peerDependencies": {

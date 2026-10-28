@@ -15,4 +15,13 @@ export default defineNuxtConfig({
    studioOrigin: '',
   },
  },
+ // In development Vite only finds these once a page asks for them (zod
+ // through the block definitions, TipTap on the canvas's first rich-text
+ // click) and then reloads the page, losing that click. Bundled up front
+ // instead. Builds aren't affected.
+ vite: {
+  optimizeDeps: {
+   include: ['zod', '@tiptap/core', '@tiptap/starter-kit', '@tiptap/pm/model', '@tiptap/pm/state'],
+  },
+ },
 });

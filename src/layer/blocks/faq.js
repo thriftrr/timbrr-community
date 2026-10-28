@@ -1,17 +1,22 @@
 import { z } from 'zod';
-import { defineBlock, headlineField, taglineField } from '../schema/define.js';
+import { defineBlock, headlineField, richText, richTextSchema, taglineField } from '../schema/define.js';
 
 export default defineBlock({
  type: 'faq',
  label: 'FAQ',
- description: 'Question / answer list',
+ description: 'Parking, deposits, warranties',
  category: 'common',
- icon: 'circle-help',
+ icon: 'faq',
  schema: z.object({
   tagline: z.string().max(80).default(''),
   headline: z.string().max(160).default(''),
   items: z
-   .array(z.object({ question: z.string().max(200).default(''), answer: z.string().max(1200).default('') }))
+   .array(
+    z.object({
+     question: z.string().max(200).default('New question'),
+     answer: richTextSchema.default(richText('')),
+    }),
+   )
    .max(30)
    .default([]),
  }),
@@ -23,9 +28,10 @@ export default defineBlock({
    label: 'Questions',
    widget: 'items',
    itemLabel: 'question',
+   max: 30,
    subfields: [
     { key: 'question', label: 'Question', widget: 'text', inline: true },
-    { key: 'answer', label: 'Answer', widget: 'textarea', inline: true, ai: 'write' },
+    { key: 'answer', label: 'Answer', widget: 'html', inline: true },
    ],
   },
  ],
@@ -33,9 +39,9 @@ export default defineBlock({
   tagline: 'Questions',
   headline: 'Good to know',
   items: [
-   { question: 'Do I need an appointment?', answer: 'No. Walk in any time we are open.' },
-   { question: 'Do you deliver?', answer: 'Yes, within ten miles, for orders over $30.' },
+   { question: 'Is there parking?', answer: richText('Yes. Free parking out front, and more on the street nearby.') },
+   { question: 'How can I pay?', answer: richText('Card, cash or tap to pay. Whatever’s easiest for you.') },
   ],
  },
- wys: { tagline: [], headline: ['italic'] },
+ wys: { tagline: [], headline: [], 'items.*.question': [], 'items.*.answer': ['bold', 'italic', 'link', 'ul'] },
 });

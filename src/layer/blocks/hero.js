@@ -6,7 +6,7 @@ export default defineBlock({
  label: 'Hero',
  description: 'Headline + image opener',
  category: 'common',
- icon: 'panel-top',
+ icon: 'hero',
  schema: z.object({
   tagline: z.string().max(80).default(''),
   headline: z.string().max(160).default(''),
@@ -19,7 +19,7 @@ export default defineBlock({
  fields: [
   taglineField,
   headlineField,
-  { key: 'description', label: 'Description', widget: 'html', ai: 'improve' },
+  { key: 'description', label: 'Description', widget: 'html', inline: true, ai: 'improve' },
   {
    key: 'layout',
    label: 'Layout',
@@ -31,17 +31,19 @@ export default defineBlock({
    ],
   },
   { key: 'image', label: 'Image', widget: 'image' },
-  buttonsField,
+  { ...buttonsField, max: 3 },
   { key: 'note', label: 'Note', widget: 'text', inline: true, help: 'Small print under the buttons.' },
  ],
  defaults: {
-  tagline: 'Small-batch · Since 2014',
-  headline: 'A headline that says what you do.',
-  description: richText('One or two sentences on who it is for and why it matters. Say it plainly.'),
+  tagline: 'Locally owned · Main Street',
+  headline: 'Your neighborhood shop, open six days a week.',
+  description: richText('Fair prices, friendly faces and the same good work every time. Call ahead, or just stop by and say hello.'),
+  layout: 'image_right',
   buttons: [
-   { label: 'Get started', to: '/contact', style: 'solid' },
-   { label: 'Learn more', to: '/about', style: 'outline' },
+   { label: 'Get in touch', to: '/contact', style: 'solid' },
+   { label: 'Read our story', to: '/about', style: 'outline' },
   ],
+  note: 'Walk-ins welcome · Free parking',
  },
- wys: { tagline: [], headline: ['italic'], description: ['bold', 'italic', 'link'], note: [] },
+ wys: { tagline: [], headline: [], description: ['bold', 'italic', 'link'], note: [], 'buttons.*.label': [] },
 });

@@ -6,26 +6,25 @@ export default defineBlock({
  label: 'Media',
  description: 'Single image',
  category: 'content',
- icon: 'image',
+ icon: 'media',
  schema: z.object({
   image: imageSchema.default({ src: '', alt: '' }),
   caption: z.string().max(200).default(''),
-  width: z.enum(['contained', 'wide', 'full']).default('contained'),
+  width: z.enum(['normal', 'wide']).default('normal'),
  }),
  fields: [
   { key: 'image', label: 'Image', widget: 'image' },
-  { key: 'caption', label: 'Caption', widget: 'text', inline: true },
+  { key: 'caption', label: 'Caption', widget: 'text', inline: true, ai: 'generate' },
   {
    key: 'width',
    label: 'Width',
    widget: 'buttons',
    options: [
-    { label: 'Contained', value: 'contained' },
+    { label: 'Normal', value: 'normal' },
     { label: 'Wide', value: 'wide' },
-    { label: 'Full', value: 'full' },
    ],
   },
  ],
- defaults: { caption: '' },
+ defaults: { caption: 'Morning light, before we open.', width: 'normal' },
  wys: { caption: [] },
 });

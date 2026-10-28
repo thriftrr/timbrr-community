@@ -55,8 +55,10 @@ body {
  max-width: 720px;
 }
 
+/* Wider than the page's own measure (--site-max), so it sets the width
+   rather than capping it. */
 .tb-wrap--wide {
- max-width: 1280px;
+ width: min(100% - 2 * var(--site-gutter), 1280px);
 }
 
 .tb-section {
@@ -158,6 +160,16 @@ body {
  font-style: italic;
 }
 
+/* Rich text keeps a paragraph inside each list item; without this every
+   item would carry a paragraph's gap. */
+.tb-rich li > p:last-child {
+ margin-bottom: 0;
+}
+
+.tb-rich li + li {
+ margin-top: 0.4em;
+}
+
 /* ── Buttons ── */
 
 .tb-buttons {
@@ -255,15 +267,28 @@ body {
 }
 
 /* ── The studio's canvas only ─────────────────────────────────────── */
+/* Everything here is drawn over the blocks (outlines, and tabs placed
+   absolutely), never around them, so a page in the canvas lays out exactly
+   as it does on the site. The colors are the studio's, whatever the site's
+   theme. The studio shows the page scaled down to fit; --tb-ui is how much
+   larger to draw this chrome so it still reads at its real size. A preview
+   (?preview=1) draws none of it. */
 
 html[data-timbrr-canvas],
 html[data-timbrr-canvas] body {
  overflow: hidden;
 }
 
+/* The page as the studio measures it: a box of its own, so nothing's
+   margins slip out of the count. */
 .tb-canvas {
  position: relative;
+ display: flow-root;
  min-height: 100px;
+}
+
+.tb-canvas.is-preview {
+ min-height: 0;
 }
 
 .tb-canvas__page {
@@ -280,10 +305,83 @@ html[data-timbrr-canvas] body {
  text-align: center;
 }
 
+/* Render view: the site's header and footer around the page, drawn by the
+   site and locked here (they come from its pages, not from blocks). Under
+   the pointer they shade a little and a note says so, in the design's ink
+   pill over the header and its paper pill over the footer. */
+
+.tb-canvas__chrome {
+ position: relative;
+}
+
+.tb-canvas__chrome::after {
+ content: '';
+ position: absolute;
+ inset: 0;
+ z-index: 1;
+ background: rgb(59 42 27 / 0.04);
+ opacity: 0;
+ pointer-events: none;
+ transition: opacity 150ms ease;
+}
+
+.tb-canvas__note {
+ position: absolute;
+ top: calc(8px * var(--tb-ui, 1));
+ right: 0;
+ left: 0;
+ z-index: 2;
+ display: flex;
+ justify-content: center;
+ opacity: 0;
+ pointer-events: none;
+ transition: opacity 150ms ease;
+}
+
+.tb-canvas__chrome:hover::after,
+.tb-canvas__chrome:hover > .tb-canvas__note {
+ opacity: 1;
+}
+
+.tb-canvas__pill {
+ display: inline-flex;
+ align-items: center;
+ gap: 6px;
+ border-radius: 20px;
+ padding: 5px 10px 5px 8px;
+ background: #3b2a1b;
+ box-shadow: 0 6px 16px rgb(59 42 27 / 0.3);
+ font: 700 11px/1.3 'Public Sans', system-ui, sans-serif;
+ white-space: nowrap;
+ color: #f7f5ec;
+ zoom: var(--tb-ui, 1);
+}
+
+.tb-canvas__pill-mark {
+ color: #e6c88a;
+}
+
+.tb-canvas__chrome--footer > .tb-canvas__note {
+ top: calc(10px * var(--tb-ui, 1));
+}
+
+.tb-canvas__chrome--footer .tb-canvas__pill {
+ background: #f7f5ec;
+ box-shadow: 0 6px 16px rgb(0 0 0 / 0.25);
+ color: #3b2a1b;
+}
+
+.tb-canvas__chrome--footer .tb-canvas__pill-mark {
+ color: #8a6d2f;
+}
+
+/* A block's frame: a quiet outline under the pointer, pine when it's
+   selected, and a tab in the corner naming it (what you drag it by). */
+
 .tb-frame {
  position: relative;
- outline: 2px solid transparent;
- outline-offset: -2px;
+ outline: calc(1.5px * var(--tb-ui, 1)) solid transparent;
+ outline-offset: calc(-2px * var(--tb-ui, 1));
  transition: outline-color 120ms ease;
 }
 
@@ -292,11 +390,23 @@ html[data-timbrr-canvas] body {
 }
 
 .tb-frame.is-selected {
- outline-color: #2f6b4f;
+ outline: calc(2px * var(--tb-ui, 1)) solid #2f6b4f;
+}
+
+/* A paper line just inside the pine one, so the selection still shows on
+   a block whose own background is the same pine (a band in the site's
+   brand color). On light blocks it's all but invisible. */
+.tb-frame.is-selected::after {
+ content: '';
+ position: absolute;
+ inset: calc(2px * var(--tb-ui, 1));
+ z-index: 4;
+ border: calc(1px * var(--tb-ui, 1)) solid rgb(247 245 236 / 0.85);
+ pointer-events: none;
 }
 
 .tb-frame.is-hidden > :not(.tb-frame__tab) {
- opacity: 0.35;
+ opacity: 0.45;
 }
 
 .tb-frame.is-dragging {
@@ -305,31 +415,48 @@ html[data-timbrr-canvas] body {
 
 .tb-frame__tab {
  position: absolute;
- top: 0;
- left: 0;
+ top: -1px;
+ left: -1px;
  z-index: 5;
  display: none;
+ align-items: center;
  gap: 6px;
- border-radius: 0 0 8px;
- padding: 3px 9px;
+ border-radius: 2px 0 8px;
+ padding: 3px 9px 3px 7px;
  background: #2f6b4f;
- font-family: 'IBM Plex Mono', ui-monospace, monospace;
- font-size: 10px;
- letter-spacing: 0.1em;
+ font: 400 10px/1.3 'IBM Plex Mono', ui-monospace, monospace;
+ letter-spacing: 0.08em;
  text-transform: uppercase;
+ white-space: nowrap;
  color: #f7f5ec;
  cursor: grab;
  user-select: none;
+ zoom: var(--tb-ui, 1);
 }
 
-.tb-frame:hover > .tb-frame__tab {
+.tb-frame__tab[draggable='false'] {
+ cursor: default;
+}
+
+.tb-frame__grip {
+ font-size: 12px;
+ opacity: 0.85;
+}
+
+/* Under the pointer, and on a hidden block all the time (so the fade
+   explains itself): the softer tab. Selected: pine. */
+.tb-frame:hover > .tb-frame__tab,
+.tb-frame.is-hidden > .tb-frame__tab {
  display: inline-flex;
- background: #8fa98a;
+ background: #b9c9b3;
+ color: #254832;
 }
 
 .tb-frame.is-selected > .tb-frame__tab {
  display: inline-flex;
  background: #2f6b4f;
+ box-shadow: 0 0 0 1px rgb(247 245 236 / 0.85);
+ color: #f7f5ec;
 }
 
 .tb-frame__missing {
@@ -339,33 +466,88 @@ html[data-timbrr-canvas] body {
  padding: 18px;
  font: 13px/1.5 system-ui, sans-serif;
  color: #8a6d2f;
+ zoom: var(--tb-ui, 1);
 }
 
-.tb-text {
- outline: none;
+/* Text you can type into: a dashed outline under the pointer, pine while
+   the caret is in it. Outlines only, so nothing moves. */
+
+.tb-frame .tb-text,
+.tb-frame .tb-rich[data-field] {
+ outline: calc(1.5px * var(--tb-ui, 1)) dashed transparent;
+ outline-offset: calc(5px * var(--tb-ui, 1));
  cursor: text;
+ transition: outline-color 120ms ease;
 }
 
-.tb-text:focus {
- border-radius: 2px;
- box-shadow: 0 0 0 4px rgb(157 183 154 / 0.35);
+.tb-frame .tb-text:hover,
+.tb-frame .tb-rich[data-field]:hover {
+ outline-color: #b9c9b3;
 }
 
-.tb-text:empty::before {
+/* The faint paper wash outside the text keeps the pine outline visible on
+   a dark or brand-colored band; on a light block it can't be seen. */
+.tb-frame .tb-text:focus,
+.tb-frame .tb-rich[data-field]:focus {
+ outline-color: #2f6b4f;
+ box-shadow: 0 0 0 calc(6.5px * var(--tb-ui, 1)) rgb(247 245 236 / 0.3);
+}
+
+/* An empty field still has a line to click. */
+.tb-text:empty::before,
+.tb-rich[data-empty]:not([contenteditable])::before {
  content: 'Type here';
  opacity: 0.4;
 }
 
+/* The rich-text editor (TipTap) takes over the same element and draws the
+   same tags. It keeps spaces as typed; the rest is its own housekeeping,
+   kept out of the layout. */
+
+.tb-rich[contenteditable] {
+ white-space: pre-wrap;
+}
+
+.tb-rich[contenteditable] > p:only-child:has(> br.ProseMirror-trailingBreak:only-child)::before {
+ content: 'Type here';
+ float: left;
+ height: 0;
+ opacity: 0.4;
+ pointer-events: none;
+}
+
+.tb-rich[contenteditable] img.ProseMirror-separator {
+ display: inline !important;
+ width: 0 !important;
+ height: 0 !important;
+ margin: 0 !important;
+ border: 0 !important;
+}
+
+/* The end of the page, where a dragged block lands to go last. It lights
+   up while a drag is over the canvas; on an empty page it's the page. */
+
 .tb-canvas__end {
  display: flex;
+ flex-direction: column;
  align-items: center;
  justify-content: center;
+ gap: 4px;
  height: 46px;
- margin: 16px var(--site-gutter) 40px;
- border: 1.5px dashed #cfd6c6;
+ margin: 16px var(--site-gutter) 24px;
+ border: 1.5px dashed #e2e7d8;
  border-radius: 10px;
  font: 600 13px/1.4 'Public Sans', system-ui, sans-serif;
  color: #8a968c;
+ transition:
+  border-color 120ms ease,
+  background-color 120ms ease;
+ zoom: var(--tb-ui, 1);
+}
+
+.tb-canvas__end.is-over {
+ border-color: #2f6b4f;
+ background: #edf1e7;
 }
 
 .tb-canvas__end.is-empty {
@@ -373,20 +555,41 @@ html[data-timbrr-canvas] body {
  margin-top: 40px;
 }
 
-.tb-canvas__drop {
- position: absolute;
- right: 8px;
- left: 8px;
- z-index: 6;
- height: 3px;
- margin-top: -1.5px;
- border-radius: 2px;
- background: #2f6b4f;
- pointer-events: none;
+.tb-canvas__end-label {
+ display: inline-flex;
+ align-items: center;
+ gap: 8px;
 }
 
-.tb-frame .tb-text:hover:not(:focus) {
- border-radius: 2px;
- outline: 1.5px dashed #9db79a;
- outline-offset: 3px;
+.tb-canvas__end-label svg {
+ flex: none;
+ color: #2f6b4f;
+}
+
+.tb-canvas__end-hint {
+ font-size: 12px;
+ font-weight: 400;
+}
+
+.tb-canvas__nothing {
+ margin: 0;
+ padding: 64px 24px;
+ font: 13px/1.5 'Public Sans', system-ui, sans-serif;
+ color: #8a968c;
+ text-align: center;
+ zoom: var(--tb-ui, 1);
+}
+
+/* Where a dragged block will land: a pine line on the edge between two
+   blocks, or under the last one. */
+.tb-canvas__drop {
+ position: absolute;
+ right: calc(8px * var(--tb-ui, 1));
+ left: calc(8px * var(--tb-ui, 1));
+ z-index: 6;
+ height: calc(3px * var(--tb-ui, 1));
+ margin-top: calc(-1.5px * var(--tb-ui, 1));
+ border-radius: 999px;
+ background: #2f6b4f;
+ pointer-events: none;
 }

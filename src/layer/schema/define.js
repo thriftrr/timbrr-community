@@ -14,8 +14,11 @@ export const WYS_TOOLS = ['bold', 'italic', 'underline', 'link', 'h2', 'h3', 'ul
 //
 //  type        unique; community and private blocks carry a prefix (buroak_hours)
 //  category    content | common | layout | dynamic | cta
-//  icon        a Lucide icon name; the studio draws it
-//  fields      [{ key, label, widget, inline?, ai?, options?, subfields?, help? }]
+//  icon        a name in the studio's icon set; Timbrr's own blocks use
+//              their type (unknown names draw as a square)
+//  fields      [{ key, label, widget, inline?, link?, ai?, options?, subfields?,
+//              itemLabel?, max?, help?, placeholder? }]; `link` marks a text
+//              field holding an address (the studio offers a page picker)
 //  wys         per-field formatting tools on the canvas; unlisted → bold, italic
 //  owner       the brand that commissioned it (community and private tiers)
 export function defineBlock(definition) {
@@ -60,7 +63,7 @@ export const buttonsField = {
  itemLabel: 'label',
  subfields: [
   { key: 'label', label: 'Label', widget: 'text', inline: true },
-  { key: 'to', label: 'Links to', widget: 'text', placeholder: '/contact or https://…' },
+  { key: 'to', label: 'Links to', widget: 'text', link: true, placeholder: '/contact or https://…' },
   {
    key: 'style',
    label: 'Style',

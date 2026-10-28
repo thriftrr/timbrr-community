@@ -1,17 +1,23 @@
 import { z } from 'zod';
-import { defineBlock, headlineField, taglineField } from '../schema/define.js';
+import { defineBlock, headlineField, richText, richTextSchema, taglineField } from '../schema/define.js';
 
 export default defineBlock({
  type: 'testimonials',
  label: 'Testimonials',
  description: 'Hand-picked quotes',
  category: 'common',
- icon: 'quote',
+ icon: 'testimonials',
  schema: z.object({
   tagline: z.string().max(80).default(''),
   headline: z.string().max(160).default(''),
   items: z
-   .array(z.object({ quote: z.string().max(600).default(''), name: z.string().max(80).default(''), role: z.string().max(80).default('') }))
+   .array(
+    z.object({
+     quote: richTextSchema.default(richText('')),
+     name: z.string().max(80).default(''),
+     role: z.string().max(80).default(''),
+    }),
+   )
    .max(12)
    .default([]),
  }),
@@ -22,21 +28,22 @@ export default defineBlock({
    key: 'items',
    label: 'Quotes',
    widget: 'items',
-   itemLabel: 'name',
+   itemLabel: 'quote',
+   max: 12,
    subfields: [
-    { key: 'quote', label: 'Quote', widget: 'textarea', inline: true },
+    { key: 'quote', label: 'Quote', widget: 'html', inline: true },
     { key: 'name', label: 'Name', widget: 'text', inline: true },
-    { key: 'role', label: 'Who they are', widget: 'text', inline: true },
+    { key: 'role', label: 'Role', widget: 'text', inline: true, placeholder: 'Customer, neighbor, regular…' },
    ],
   },
  ],
  defaults: {
-  tagline: 'Regulars',
+  tagline: 'Kind words',
   headline: 'People keep coming back',
   items: [
-   { quote: 'The best thing on the block. I come every week.', name: 'Dana R.', role: 'Neighbor' },
-   { quote: 'They did exactly what they said, for the price they said.', name: 'Marcus T.', role: 'Customer' },
+   { quote: richText('The best on this side of town, full stop.'), name: 'Jordan K.', role: 'Neighbor' },
+   { quote: richText('Fair prices, honest advice, and always on time. Never once a letdown.'), name: 'Rosa M.', role: 'Customer' },
   ],
  },
- wys: { tagline: [], headline: ['italic'], 'items.*.quote': ['italic'] },
+ wys: { tagline: [], headline: [], 'items.*.quote': ['italic'], 'items.*.name': [], 'items.*.role': [] },
 });

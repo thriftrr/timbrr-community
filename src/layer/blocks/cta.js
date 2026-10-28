@@ -1,37 +1,35 @@
 import { z } from 'zod';
-import { buttonSchema, buttonsField, defineBlock, headlineField } from '../schema/define.js';
+import { buttonSchema, buttonsField, defineBlock, headlineField, richText, richTextSchema, taglineField } from '../schema/define.js';
 
 export default defineBlock({
  type: 'cta',
- label: 'Call to action',
- description: 'Banner + buttons',
+ label: 'CTA banner',
+ description: 'Headline + one or two buttons',
  category: 'cta',
- icon: 'megaphone',
+ icon: 'cta',
  schema: z.object({
+  tagline: z.string().max(80).default(''),
   headline: z.string().max(160).default(''),
-  description: z.string().max(400).default(''),
-  tone: z.enum(['accent', 'dark', 'soft']).default('accent'),
+  body: richTextSchema.default(richText('')),
   buttons: z.array(buttonSchema).max(2).default([]),
+  note: z.string().max(120).default(''),
  }),
  fields: [
+  taglineField,
   headlineField,
-  { key: 'description', label: 'Description', widget: 'textarea', inline: true, ai: 'improve' },
+  { key: 'body', label: 'Body', widget: 'html', inline: true, ai: 'generate' },
   {
-   key: 'tone',
-   label: 'Color',
-   widget: 'buttons',
-   options: [
-    { label: 'Brand', value: 'accent' },
-    { label: 'Dark', value: 'dark' },
-    { label: 'Soft', value: 'soft' },
-   ],
+   ...buttonsField,
+   max: 2,
   },
-  buttonsField,
+  { key: 'note', label: 'Note', widget: 'text', inline: true, help: 'Small print under the buttons.' },
  ],
  defaults: {
-  headline: 'Ready when you are.',
-  description: 'Tell people the one thing to do next.',
-  buttons: [{ label: 'Get in touch', to: '/contact', style: 'solid' }],
+  tagline: 'Work with us',
+  headline: "Let's talk about what you need.",
+  body: richText("Big job or small, tell us a little about it and we'll get back to you with a plan and a fair price."),
+  buttons: [{ label: 'Start a conversation', to: '/contact', style: 'solid' }],
+  note: 'Replies within one business day',
  },
- wys: { headline: ['italic'], description: [] },
+ wys: { tagline: [], headline: [], body: ['bold', 'italic', 'link'], note: [], 'buttons.*.label': [] },
 });
