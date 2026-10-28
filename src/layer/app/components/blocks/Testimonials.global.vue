@@ -21,3 +21,40 @@
   </div>
  </section>
 </template>
+
+<style>
+ .tb-testimonials__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 18px;
+ }
+
+ .tb-quote {
+  margin: 0;
+  border: 1px solid var(--site-border);
+  border-radius: var(--site-radius);
+  padding: 22px;
+  background: var(--site-bg);
+ }
+
+ .tb-quote__text {
+  margin: 0;
+  font-family: var(--site-font-display);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--site-heading);
+  white-space: pre-line;
+ }
+
+ .tb-quote__by {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+  font-size: 13px;
+ }
+
+ .tb-quote__by span {
+  color: var(--site-muted);
+ }
+</style>

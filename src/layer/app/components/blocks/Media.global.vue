@@ -10,3 +10,16 @@
   </div>
  </figure>
 </template>
+
+<style>
+ .tb-media--full .tb-image {
+  border-radius: 0;
+ }
+
+ .tb-media__caption {
+  margin-top: 10px;
+  font-size: 13.5px;
+  color: var(--site-muted);
+  text-align: center;
+ }
+</style>

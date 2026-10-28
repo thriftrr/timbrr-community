@@ -20,3 +20,17 @@
   </div>
  </section>
 </template>
+
+<style>
+ .tb-columns__grid {
+  display: grid;
+  grid-template-columns: repeat(var(--tb-cols, 3), minmax(0, 1fr));
+  gap: 18px;
+ }
+
+ @media (max-width: 720px) {
+  .tb-columns__grid {
+   grid-template-columns: 1fr;
+  }
+ }
+</style>

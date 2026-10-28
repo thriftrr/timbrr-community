@@ -29,6 +29,14 @@ function checkFields(fields, shape, where) {
  }
 }
 
+// Where a block comes from, for the studio's tray: a site's own blocks are
+// private; shared ones are Timbrr's base library unless a brand owns them
+// (commissioned by one site, shared with every site: the community shelf).
+export function tierOf(def, layer) {
+ if (layer.tier === 'private') return 'private';
+ return def.owner ? 'community' : 'base';
+}
+
 // Checks every definition and turns it into its manifest entry. A broken
 // definition is a build error that names the block, never a quiet skip.
 export function buildManifest(site, layers, definitions) {
@@ -48,7 +56,7 @@ export function buildManifest(site, layers, definitions) {
   const defaults = def.schema.parse(def.defaults ?? {});
   return {
    type: def.type,
-   tier: layer.tier,
+   tier: tierOf(def, layer),
    owner: def.owner ?? null,
    layer: layer.name,
    component: componentName(def.type),

@@ -23,11 +23,14 @@ export function defineBlock(definition) {
 }
 
 // Rich text is stored as a small document tree, never HTML, so nothing a
-// page holds can run as markup on the site (TbRich renders it).
-export const richTextSchema = z.object({
+// page holds can run as markup on the site (TbRich renders it). A plain
+// string is accepted too — older pages, imports — and drawn as paragraphs;
+// the first edit in the studio turns it into a document.
+export const richDocSchema = z.object({
  type: z.literal('doc'),
  content: z.array(z.record(z.string(), z.unknown())).default([]),
 });
+export const richTextSchema = z.union([richDocSchema, z.string().max(20000)]);
 
 export function richText(...paragraphs) {
  return {

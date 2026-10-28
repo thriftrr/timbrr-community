@@ -1,7 +1,9 @@
 <script>
- // Rich text, from the document tree the studio stores (never HTML). Only
- // the nodes and marks below are drawn; links go through safeHref. Nothing
- // a page holds can become markup on the site.
+ // Rich text, from the document tree the studio stores (never HTML): pass
+ // the block's `data` and the field's path (`field="items.0.body"`), or a
+ // `doc` directly. Only the nodes and marks below are drawn; links go
+ // through safeHref. Nothing a page holds can become markup on the site. A
+ // plain string (older pages) is drawn as paragraphs.
  import { h } from 'vue';
 
  const BLOCK_TAGS = { paragraph: 'p', bulletList: 'ul', orderedList: 'ol', listItem: 'li', blockquote: 'blockquote' };
@@ -30,12 +32,29 @@
   return children();
  }
 
+ // A string as paragraphs: blank lines split them, single newlines break.
+ function fromString(text) {
+  return String(text)
+   .split(/\n{2,}/)
+   .filter((part) => part.trim())
+   .map((part, index) => {
+    const lines = part.split('\n');
+    return h('p', { key: index }, lines.flatMap((line, i) => (i ? [h('br'), line] : [line])));
+   });
+ }
+
  export default {
   props: {
-   doc: { type: Object, default: null },
+   data: { type: Object, default: null },
+   field: { type: String, default: '' },
+   doc: { type: [Object, String], default: null },
   },
   setup(props) {
-   return () => h('div', { class: 'tb-rich' }, Array.isArray(props.doc?.content) ? props.doc.content.map(draw) : []);
+   return () => {
+    const value = props.field ? valueAt(props.data, props.field) : props.doc;
+    const content = typeof value === 'string' ? fromString(value) : Array.isArray(value?.content) ? value.content.map(draw) : [];
+    return h('div', { class: 'tb-rich' }, content);
+   };
   },
  };
 </script>
