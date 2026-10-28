@@ -107,7 +107,8 @@ breaking the page.
 
 `/__timbrr/canvas` is client-rendered, `noindex`, and framable only by
 `NUXT_PUBLIC_STUDIO_ORIGIN` (any localhost in development, when it's
-unset). It draws nothing until the studio speaks. It never fetches content
+unset). The frame rule is read per request, so the variable is a runtime
+one: no rebuild when it changes. It draws nothing until the studio speaks. It never fetches content
 and never holds a token: the studio sends the page.
 
 Every message is `{ v: 1, type, … }`. The canvas only takes messages from

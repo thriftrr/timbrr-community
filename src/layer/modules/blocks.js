@@ -109,16 +109,11 @@ export default defineNuxtModule({
   });
 
   // The studio fills the canvas over postMessage, so it's a client-only
-  // shell. NUXT_PUBLIC_STUDIO_ORIGIN names the one studio allowed to frame
-  // it; without one (development) only localhost can.
-  const studio = String(process.env.NUXT_PUBLIC_STUDIO_ORIGIN ?? '').replace(/\/$/, '');
-  extendRouteRules('/__timbrr/canvas', {
-   ssr: false,
-   headers: {
-    'Content-Security-Policy': `frame-ancestors 'self' ${studio || 'http://localhost:* http://127.0.0.1:*'}`,
-    'X-Robots-Tag': 'noindex, nofollow',
-   },
-  });
+  // shell. Who may frame it is decided per request (runtime/canvas-headers.js)
+  // from NUXT_PUBLIC_STUDIO_ORIGIN, so a deploy only needs the runtime
+  // variable, not a rebuild.
+  extendRouteRules('/__timbrr/canvas', { ssr: false });
+  addServerHandler({ middleware: true, handler: resolver.resolve('./runtime/canvas-headers.js') });
 
   const total = layers.reduce((sum, layer) => sum + layer.files.length, 0);
   const from = layers.filter((layer) => layer.files.length).map((layer) => `${layer.name} (${layer.tier}, ${layer.files.length})`);

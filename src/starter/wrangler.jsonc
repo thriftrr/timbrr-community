@@ -1,0 +1,14 @@
+// Cloudflare config for the starter as the studio's canvas. `nuxt build`
+// merges this into .output/server/wrangler.json, which `make deploy` ships.
+// A client site copied from the starter gives it its own name and domain.
+{
+ "$schema": "../node_modules/wrangler/config-schema.json",
+ "name": "timbrr-canvas",
+ "account_id": "7a16cc804ef680614283102ffad99469",
+ "compatibility_date": "2025-08-01",
+ "observability": { "enabled": true },
+ "routes": [{ "pattern": "canvas.timbrr.app", "custom_domain": true }],
+ // The only studio whose messages the canvas takes and that may frame it
+ // (read per request, so changing it here needs a deploy, not a rebuild).
+ "vars": { "NUXT_PUBLIC_STUDIO_ORIGIN": "https://timbrr.app" }
+}
