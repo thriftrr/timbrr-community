@@ -6,42 +6,51 @@
  // are NavItems, `{ label, kind, to, children?, layout?, desc? }`, and an
  // item with children opens a list under it (or, laid out 'mega', a panel
  // of cards) when the pointer or the keyboard gets there. Links go through
- // safeHref. The studio's canvas draws it over the page in Render view; a
- // site's own layout can put it on every page.
+ // safeHref. The studio's canvas draws it over the page in Render view,
+ // and a published page (pages/[...slug].vue) draws it the same way.
+ import { NuxtLink } from '#components';
+
  const props = defineProps({
   site: { type: Object, required: true }, // { name, domain, nav: NavItem[], cta?: NavItem }
  });
 
  const name = computed(() => String(props.site.name || props.site.domain || ''));
- const items = computed(() => named(props.site.nav).map((item) => ({ ...item, children: named(item.children) })));
- const cta = computed(() => named([props.site.cta])[0] ?? null);
+ const items = computed(() =>
+  named(props.site.nav).map((item) => ({ ...item, link: linkTo(item), children: named(item.children).map((child) => ({ ...child, link: linkTo(child) })) })),
+ );
+ const cta = computed(() => named([props.site.cta]).map((item) => ({ ...item, link: linkTo(item) }))[0] ?? null);
 
  // Items with a label to show; anything else is left out.
  function named(list) {
   return Array.isArray(list) ? list.filter((item) => typeof item?.label === 'string' && item.label.trim()) : [];
  }
 
- // Where an item goes: nowhere for a heading-only item, else its address
- // when it's one a visitor can safely follow.
- function href(item) {
-  return item.kind === 'none' ? undefined : safeHref(item.to);
+ // How an item links. A page on this site goes through the router, so
+ // moving between pages doesn't load the site again; anything else a
+ // visitor can safely follow (another site, mail, a phone, a spot on this
+ // page) is a plain link; a heading-only item, or an address safeHref
+ // turns down, is just its label. On the canvas none of them go anywhere.
+ function linkTo(item) {
+  const to = item.kind === 'none' ? undefined : safeHref(item.to);
+  if (!to) return { is: 'span' };
+  return to.startsWith('/') ? { is: NuxtLink, to } : { is: 'a', href: to };
  }
 </script>
 
 <template>
  <header class="tb-site-header">
   <div class="tb-wrap tb-site-header__bar">
-   <a href="/" class="tb-site-header__name">{{ name }}</a>
+   <NuxtLink to="/" class="tb-site-header__name">{{ name }}</NuxtLink>
 
    <nav v-if="items.length" class="tb-site-header__nav" aria-label="Main">
     <ul class="tb-site-header__links">
      <li v-for="(item, index) in items" :key="index" class="tb-site-header__item">
-      <component :is="href(item) ? 'a' : 'span'" :href="href(item)" class="tb-site-header__link">
+      <component :is="item.link.is" :to="item.link.to" :href="item.link.href" class="tb-site-header__link">
        {{ item.label }}<span v-if="item.children.length" class="tb-site-header__caret" aria-hidden="true">▾</span>
       </component>
       <ul v-if="item.children.length" class="tb-site-header__panel" :class="{ 'tb-site-header__panel--mega': item.layout === 'mega' }">
        <li v-for="(child, at) in item.children" :key="at">
-        <component :is="href(child) ? 'a' : 'span'" :href="href(child)" class="tb-site-header__sublink">
+        <component :is="child.link.is" :to="child.link.to" :href="child.link.href" class="tb-site-header__sublink">
          <span class="tb-site-header__sublabel">{{ child.label }}</span>
          <span v-if="item.layout === 'mega' && child.desc" class="tb-site-header__desc">{{ child.desc }}</span>
         </component>
@@ -51,7 +60,7 @@
     </ul>
    </nav>
 
-   <a v-if="cta" :href="href(cta)" class="tb-site-header__cta">{{ cta.label }}</a>
+   <component :is="cta.link.is" v-if="cta" :to="cta.link.to" :href="cta.link.href" class="tb-site-header__cta">{{ cta.label }}</component>
 
    <details v-if="items.length || cta" class="tb-site-header__menu">
     <summary class="tb-site-header__toggle">
@@ -66,16 +75,16 @@
      <nav v-if="items.length" aria-label="Main">
       <ul class="tb-site-header__stack">
        <li v-for="(item, index) in items" :key="index">
-        <component :is="href(item) ? 'a' : 'span'" :href="href(item)" class="tb-site-header__row">{{ item.label }}</component>
+        <component :is="item.link.is" :to="item.link.to" :href="item.link.href" class="tb-site-header__row">{{ item.label }}</component>
         <ul v-if="item.children.length" class="tb-site-header__substack">
          <li v-for="(child, at) in item.children" :key="at">
-          <component :is="href(child) ? 'a' : 'span'" :href="href(child)" class="tb-site-header__subrow">{{ child.label }}</component>
+          <component :is="child.link.is" :to="child.link.to" :href="child.link.href" class="tb-site-header__subrow">{{ child.label }}</component>
          </li>
         </ul>
        </li>
       </ul>
      </nav>
-     <a v-if="cta" :href="href(cta)" class="tb-site-header__cta tb-site-header__cta--wide">{{ cta.label }}</a>
+     <component :is="cta.link.is" v-if="cta" :to="cta.link.to" :href="cta.link.href" class="tb-site-header__cta tb-site-header__cta--wide">{{ cta.label }}</component>
     </div>
    </details>
   </div>

@@ -266,6 +266,35 @@ body {
  white-space: pre-line;
 }
 
+/* ── The pages a site serves ── */
+
+/* A published page (pages/[...slug].vue): the site's header, the page's
+   blocks and the site's footer, which keeps to the bottom of the window
+   when the page is short. Nothing here touches a block's own layout. */
+.tb-page {
+ display: flex;
+ flex-direction: column;
+ min-height: 100vh;
+}
+
+.tb-page__main {
+ flex: 1 0 auto;
+}
+
+/* The error page (error.vue): what went wrong and the way home, centered
+   in the window. */
+.tb-error {
+ display: flex;
+ align-items: center;
+ min-height: 100vh;
+ padding-block: var(--site-space);
+ text-align: center;
+}
+
+.tb-error .tb-buttons {
+ justify-content: center;
+}
+
 /* ── The studio's canvas only ─────────────────────────────────────── */
 /* Everything here is drawn over the blocks (outlines, and tabs placed
    absolutely), never around them, so a page in the canvas lays out exactly

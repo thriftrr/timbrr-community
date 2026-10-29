@@ -29,9 +29,26 @@ export function defineBlock(definition) {
 // page holds can run as markup on the site (TbRich renders it). A plain
 // string is accepted too — older pages, imports — and drawn as paragraphs;
 // the first edit in the studio turns it into a document.
+//
+// Every node is checked all the way down: a type name, text only ever as a
+// string, marks as a list of named marks, children as more nodes. Anything
+// else (text that's an object, say) doesn't fit, so the studio refuses to
+// save it and the site draws the field's default instead. Attributes stay
+// loose: TbRich only reads the few it draws (a heading's level, a list's
+// start, a link's address) and checks those itself.
+const richAttrsSchema = z.record(z.string(), z.unknown());
+const richNodeSchema = z.object({
+ type: z.string(),
+ text: z.string().optional(),
+ marks: z.array(z.object({ type: z.string(), attrs: richAttrsSchema.optional() })).optional(),
+ attrs: richAttrsSchema.optional(),
+ get content() {
+  return z.array(richNodeSchema).optional();
+ },
+});
 export const richDocSchema = z.object({
  type: z.literal('doc'),
- content: z.array(z.record(z.string(), z.unknown())).default([]),
+ content: z.array(richNodeSchema).default([]),
 });
 export const richTextSchema = z.union([richDocSchema, z.string().max(20000)]);
 

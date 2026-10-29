@@ -73,11 +73,64 @@ export function buildManifest(site, layers, definitions) {
  return { version: MANIFEST_VERSION, generatedAt: new Date().toISOString(), site, layers, widgets: WIDGETS, blocks };
 }
 
-// A block's data with its defaults filled in, for rendering. Data that
-// doesn't fit (an older shape, a hand edit) falls back to the defaults
+// What wraps a field's real shape (a default, a missing value allowed);
+// what's inside says what the field holds.
+const WRAPPERS = new Set(['default', 'prefault', 'optional', 'nullable', 'nonoptional', 'readonly', 'catch', 'lazy']);
+
+function bare(schema) {
+ let inner = schema;
+ while (WRAPPERS.has(inner?.type) && typeof inner.unwrap === 'function') inner = inner.unwrap();
+ return inner;
+}
+
+// The most a text field holds, by its path in a block's data
+// ('items.0.title'): its schema's max length, or null when it has none.
+// The canvas stops typing there, as the studio's inspector does.
+export function textLimit(schema, path) {
+ let node = bare(schema);
+ for (const key of String(path).split('.')) {
+  if (node?.type === 'object' && Object.hasOwn(node.shape, key)) node = bare(node.shape[key]);
+  else if (node?.type === 'array' && /^\d+$/.test(key)) node = bare(node.element);
+  else return null;
+ }
+ return node?.type === 'string' ? node.maxLength : null;
+}
+
+// A parse that never throws: a value nested deeper than the parser can
+// follow (a rich-text document thousands of levels down) just doesn't fit.
+function tryParse(schema, value) {
+ try {
+  return schema.safeParse(value);
+ } catch {
+  return { success: false };
+ }
+}
+
+// `value` with every part that doesn't fit `schema` taken out, field by
+// field and row by row, so the default shows in its place; undefined when
+// none of it can be kept. Rows stay where they are (one that isn't a row at
+// all comes back blank), since the canvas edits a row's fields by position.
+function mend(schema, value) {
+ if (tryParse(schema, value).success) return value;
+ const inner = bare(schema);
+ let kept;
+ if (inner?.type === 'object' && value && typeof value === 'object' && !Array.isArray(value)) {
+  kept = Object.fromEntries(Object.entries(inner.shape).map(([key, field]) => [key, mend(field, value[key])]));
+ } else if (inner?.type === 'array' && Array.isArray(value)) {
+  const blank = bare(inner.element)?.type === 'object' ? {} : undefined;
+  kept = value.map((row) => mend(inner.element, row) ?? blank);
+ }
+ return kept !== undefined && tryParse(schema, kept).success ? kept : undefined;
+}
+
+// A block's data with its defaults filled in, for rendering. A value that
+// doesn't fit (an older shape, a hand edit, a field past its limit) shows
+// its default, and only that value: the rest of the block stays as it is.
+// Data that isn't a block's at all falls back to the block's defaults
 // rather than breaking the page.
 export function blockData(def, data) {
- const parsed = def.schema.safeParse(data ?? {});
+ const parsed = tryParse(def.schema, data ?? {});
  if (parsed.success) return parsed.data;
- return def.schema.parse(def.defaults ?? {});
+ const kept = tryParse(def.schema, mend(def.schema, data));
+ return kept.success ? kept.data : def.schema.parse(def.defaults ?? {});
 }

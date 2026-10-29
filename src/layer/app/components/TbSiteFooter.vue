@@ -3,8 +3,11 @@
  // column of links, and the small print. A menu item with links under it
  // gets a column of its own, headed by its label. The same `site` details
  // as TbSiteHeader (docs/README.md § Header and footer); links go through
- // safeHref. The studio's canvas draws it under the page in Render view; a
- // site's own layout can put it on every page.
+ // safeHref, and a page on this site through the router, as in the header.
+ // The studio's canvas draws it under the page in Render view, and a
+ // published page (pages/[...slug].vue) draws it the same way.
+ import { NuxtLink } from '#components';
+
  const props = defineProps({
   site: { type: Object, required: true }, // { name, domain, nav: NavItem[] }
  });
@@ -15,7 +18,7 @@
  // The items without links under them share one column, unheaded; each
  // item with some is a column of those links.
  const columns = computed(() => {
-  const items = named(props.site.nav).map((item) => ({ ...item, children: named(item.children) }));
+  const items = named(props.site.nav).map((item) => ({ ...item, link: linkTo(item), children: named(item.children).map((child) => ({ ...child, link: linkTo(child) })) }));
   const loose = items.filter((item) => !item.children.length);
   return [
    ...(loose.length ? [{ heading: '', links: loose }] : []),
@@ -28,8 +31,12 @@
   return Array.isArray(list) ? list.filter((item) => typeof item?.label === 'string' && item.label.trim()) : [];
  }
 
- function href(item) {
-  return item.kind === 'none' ? undefined : safeHref(item.to);
+ // A page on this site through the router, anything else safe as a plain
+ // link, and nowhere to go as just the label (TbSiteHeader's linkTo).
+ function linkTo(item) {
+  const to = item.kind === 'none' ? undefined : safeHref(item.to);
+  if (!to) return { is: 'span' };
+  return to.startsWith('/') ? { is: NuxtLink, to } : { is: 'a', href: to };
  }
 </script>
 
@@ -37,14 +44,14 @@
  <footer class="tb-site-footer">
   <div class="tb-wrap tb-site-footer__main" :style="{ '--tb-site-footer-columns': Math.max(1, columns.length) }">
    <div class="tb-site-footer__brand">
-    <a href="/" class="tb-site-footer__name">{{ name }}</a>
+    <NuxtLink to="/" class="tb-site-footer__name">{{ name }}</NuxtLink>
    </div>
    <nav v-if="columns.length" class="tb-site-footer__nav" aria-label="Footer">
     <div v-for="(column, index) in columns" :key="index" class="tb-site-footer__column">
      <p v-if="column.heading" class="tb-site-footer__heading">{{ column.heading }}</p>
      <ul class="tb-site-footer__links">
-      <li v-for="(link, at) in column.links" :key="at">
-       <component :is="href(link) ? 'a' : 'span'" :href="href(link)" class="tb-site-footer__link">{{ link.label }}</component>
+      <li v-for="(entry, at) in column.links" :key="at">
+       <component :is="entry.link.is" :to="entry.link.to" :href="entry.link.href" class="tb-site-footer__link">{{ entry.label }}</component>
       </li>
      </ul>
     </div>

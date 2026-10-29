@@ -1,12 +1,19 @@
 import { fileURLToPath } from 'node:url';
 
-// @timbrr/community: the blocks every Timbrr site can use, the renderer and
-// the studio's canvas. A site extends this layer and adds its own theme
-// (and, if it has them, its own blocks).
+// @timbrr/community: the blocks every Timbrr site can use, the renderer,
+// the studio's canvas, and the pages a site serves from what's published in
+// the studio. A site extends this layer and adds its own theme (and, if it
+// has them, its own blocks).
 export default defineNuxtConfig({
  modules: [fileURLToPath(new URL('./modules/blocks.js', import.meta.url))],
  css: [fileURLToPath(new URL('./app/assets/site.css', import.meta.url))],
  runtimeConfig: {
+  // NUXT_TIMBRR_API: the studio this site's published pages come from.
+  // Server-only: the site's own server asks it (server/utils/studio.js);
+  // the browser only ever talks to the site.
+  timbrr: {
+   api: 'https://timbrr.app',
+  },
   public: {
    // NUXT_PUBLIC_SITE: this site's slug in the studio.
    site: '',
