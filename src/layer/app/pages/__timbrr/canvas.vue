@@ -207,6 +207,24 @@
   }
   // A preview only ever draws the page it's sent.
   if (preview) return;
+  // A block from the studio's tray, carried over the page by the studio
+  // (its frame can't take the drop itself; see Drops below).
+  if (message.type === 'timbrr:dragover') {
+   if (editable.value && Number.isFinite(message.y)) placeDrop(message.y);
+   return;
+  }
+  if (message.type === 'timbrr:dragleave') {
+   dropIndex.value = null;
+   return;
+  }
+  if (message.type === 'timbrr:drop') {
+   if (editable.value && Number.isFinite(message.y)) {
+    placeDrop(message.y);
+    post({ type: 'timbrr:drop', kind: 'add', index: dropIndex.value });
+   }
+   dropIndex.value = null;
+   return;
+  }
   if (message.type === 'timbrr:select') {
    selected.value = message.id ?? null;
   } else if (message.type === 'timbrr:view' && Number.isFinite(message.scale) && message.scale > 0) {
@@ -257,6 +275,13 @@
  }
 
  // ── Drops: a block from the studio's tray, or one moved by its tab ──
+ // A move is a drag inside this page, and comes as drag events. A block
+ // from the tray starts in the studio's page, and the browser lets a drag
+ // drop only into documents of the origin it started in, so this frame
+ // can't take it: the studio takes it over the frame and sends where it
+ // is as timbrr:dragover / timbrr:drop (in this page's pixels), answered
+ // with timbrr:drop as a native drop would be. The native path stays for
+ // a canvas on the studio's own origin.
 
  function accepts(event) {
   if (!editable.value) return false;
@@ -269,20 +294,26 @@
  }
 
  // The line goes on the edge between two blocks, or under the last one.
- // Over the header it's the top of the page, over the footer the end.
- function onDragOver(event) {
-  if (!accepts(event)) return;
-  event.preventDefault();
+ // Over the header it's the top of the page, over the footer the end. `y`
+ // is in this page's pixels; the page never scrolls, so that's clientY.
+ function placeDrop(y) {
   const list = frames();
   let index = list.findIndex((el) => {
    const rect = el.getBoundingClientRect();
-   return event.clientY < rect.top + rect.height / 2;
+   return y < rect.top + rect.height / 2;
   });
   if (index < 0) index = list.length;
   dropIndex.value = index;
-  const page = document.querySelector('.tb-canvas__page').getBoundingClientRect();
+  const page = document.querySelector('.tb-canvas__page')?.getBoundingClientRect();
+  if (!page) return;
   const edge = list[index]?.getBoundingClientRect().top ?? list.at(-1)?.getBoundingClientRect().bottom ?? page.top;
   dropTop.value = edge - page.top;
+ }
+
+ function onDragOver(event) {
+  if (!accepts(event)) return;
+  event.preventDefault();
+  placeDrop(event.clientY);
  }
 
  function onDragLeave(event) {
@@ -338,6 +369,17 @@
   helloTimer = setTimeout(hello, 250);
  }
 
+ // ── Block code ──
+ // Each block's component loads the first time it's drawn (they're global
+ // components, loaded on demand). Loaded ahead in the idle time after the
+ // page is up, so a block hovered in the tray or added from it draws at
+ // once. A site's own blocks live in its layer, out of reach from here,
+ // and load on their first draw.
+ const blockCode = import.meta.glob('../../components/blocks/*.global.vue');
+ function warmBlocks() {
+  for (const load of Object.values(blockCode)) load().catch(() => {});
+ }
+
  onMounted(() => {
   window.addEventListener('message', onMessage);
   document.addEventListener('click', onClick, true);
@@ -349,6 +391,8 @@
   observer = new ResizeObserver(() => reportSize());
   observer.observe(root.value);
   hello();
+  if ('requestIdleCallback' in window) requestIdleCallback(warmBlocks, { timeout: 2000 });
+  else setTimeout(warmBlocks, 1000);
  });
 
  onBeforeUnmount(() => {

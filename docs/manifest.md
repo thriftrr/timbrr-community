@@ -125,6 +125,9 @@ Studio → canvas
 | `timbrr:view` | `scale` — how far the studio scales the frame down to fit; the canvas draws its outlines, tabs and drop zone up by as much, so they read at their real size |
 | `timbrr:format` | `tool` (`bold` `italic` `underline` `link` `h2` `h3` `ul` `ol` `clear`), with `href` for `link` (empty takes the link off) — applied to the open rich-text field if it allows that tool, ignored otherwise |
 | `timbrr:release` | nothing — the studio's keyboard went somewhere other than the format bar (the inspector, the tray): an open rich-text field goes back to text |
+| `timbrr:dragover` | `y` — a block from the studio's tray is over the page, `y` px from its top in the page's own pixels (before any scaling): the canvas puts its drop line where the block would go. A browser lets a drag drop only into documents of the origin it started in, so the studio takes the drop over the frame and says where it is |
+| `timbrr:dragleave` | nothing — it left the page; the line goes |
+| `timbrr:drop` | `y` — it was let go there; the canvas answers with its own `timbrr:drop` (`kind: add`, `index`), as for a native drop |
 
 Canvas → studio
 
@@ -136,7 +139,7 @@ Canvas → studio
 | `timbrr:edit` | `id`, `field` (a path: `items.0.title`), `value` — a string for a text field, a rich-text document (`{ type: 'doc', content: […] }`) for an `html` one. The studio takes nothing else |
 | `timbrr:focus` | `id`, `field`, `kind` (`text` or `rich`), `label` (the field's name from its definition: `Description`, or `Cards 2 · Title` in a list), `tools` (what the field allows: its `wys` for rich text, none for plain), `active` (the tools on at the caret), `href` (the link at the caret, or null) — when the caret arrives, and again whenever any of it changes |
 | `timbrr:blur` | nothing — the caret left the field |
-| `timbrr:drop` | `index`, `kind`: `add` (with `blockType`, dragged from the studio's tray as `application/x-timbrr-block`) or `move` (with `id`, dragged by the block's tab as `application/x-timbrr-move`) |
+| `timbrr:drop` | `index`, `kind`: `add` (a block from the studio's tray: answering the studio's `timbrr:drop`, or, on a canvas at the studio's own origin, dropped natively as `application/x-timbrr-block`, then with `blockType`) or `move` (with `id`, dragged by the block's tab as `application/x-timbrr-move`) |
 
 In the canvas each block sits in a frame (`.tb-frame`): a quiet outline
 under the pointer, and when it's selected a pine outline and a tab in the
