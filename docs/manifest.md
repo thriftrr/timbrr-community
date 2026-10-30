@@ -38,7 +38,25 @@ export default defineBlock({
 **Widgets** (fixed; a manifest can't invent one): `text` · `textarea` ·
 `html` (rich text) · `select` · `buttons` (segmented choice) · `items` (a
 list of rows with `subfields`; `itemLabel` names the subfield that labels a
-row, `max` caps it) · `image` (`{ src, alt }`).
+row, `max` caps it) · `image` (`{ src, alt }`, plus what the studio's media
+library knows when the picture came from there, below).
+
+**An image** is `{ src, alt }` at least: `src` is an https address or a
+path on the site, `alt` what it shows. One picked from the studio's media
+library also carries, all optional (`imageSchema` in `schema/define.js`):
+`id` (the library's 16-character file id), `width` and `height` (the
+pixels of the file `src` points at, 1 to 12,000), `placeholder` (its
+ThumbHash, base64, at most 64 characters) and `focal` (`{ x, y }`, each
+0 to 1, where the subject is). `<TbImage>` draws more with each key it
+finds: `width` and `height` go on the element so the page doesn't shift
+while it loads; a `srcset` is built from the address (the library keeps
+WebPs at 480, 960 and 1600 wide beside the master, each only when it's
+narrower than the master, so the rule is `mediaSrcset` in
+`app/utils/timbrr.js`); the placeholder is decoded in the browser and
+drawn behind the photo until it's in; and `focal` becomes
+`object-position`, so the crop keeps the subject. A pasted address has
+none of them and draws as before, and a site on a layer older than these
+keys parses them away and ignores them.
 
 **Field flags:** `inline` (drawn through `<TbText>` or `<TbRich>`, so it's
 typed into on the canvas), `link` (a text field that holds an address, like
@@ -77,7 +95,7 @@ same-site paths). Nothing a page holds becomes markup.
  "widgets": ["text", "textarea", "html", "select", "buttons", "items", "image"],
  "blocks": [
   {
-   "type": "hours", "tier": "community", "owner": null, "layer": "@timbrr/community",
+   "type": "hours", "tier": "base", "owner": null, "layer": "@timbrr/community",
    "component": "BlocksHours", "label": "Hours", "description": "From settings, open-now indicator",
    "category": "dynamic", "icon": "hours",
    "fields": [ /* as defined */ ],
@@ -89,19 +107,33 @@ same-site paths). Nothing a page holds becomes markup.
 }
 ```
 
-Tier comes from the owning layer's `package.json` → `timbrr.tier`; anything
-undeclared is `private`. A type defined twice, an unknown category or
-widget, a field the schema doesn't have, or defaults that don't parse fail
-the build.
+A layer's tier is its `package.json` → `timbrr.tier`; anything undeclared
+is `private`. A block's tier, which picks its shelf in the studio's tray,
+follows from that and the definition's `owner` (the brand that
+commissioned it):
+
+- `private`: the block comes from a private layer (the site's own code).
+- `community`: a shared layer's block with an `owner`, commissioned by one
+  site and shared with every site.
+- `base`: a shared layer's block with no owner, Timbrr's own library. All
+  38 blocks in `@timbrr/community` are `base` today.
+
+A type defined twice, an unknown category or widget, a field the schema
+doesn't have (a list's row fields included), an `items` field whose schema
+isn't a list of objects, or defaults that don't parse fail the build.
 
 ## 3. What the studio does with it
 
 The studio fetches the manifest from the site's canvas origin, caches it,
 and builds the block tray and the inspector from it. Every save is checked
 against it: a block type the site doesn't have, or data that doesn't fit
-the block's `schema`, is refused (422). The site re-checks on render —
-data that doesn't parse falls back to the block's defaults rather than
-breaking the page.
+the block's `schema`, is refused (422). The site re-checks on render: a
+value that doesn't fit (an older shape, a hand edit) shows its field's
+default, and only that value, field by field and row by row, so the rest
+of the block stays as it is. Data that isn't the block's at all falls back
+to the block's defaults rather than breaking the page. The canvas stops
+typing at a text field's `max`, as the inspector does, so a field can't
+be typed past what the studio will save.
 
 ## 4. The canvas
 

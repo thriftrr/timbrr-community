@@ -13,8 +13,12 @@
 
  const BLOCK_TAGS = { paragraph: 'p', bulletList: 'ul', listItem: 'li', blockquote: 'blockquote' };
 
+ // A text node's text must be a string: anything else handed to h() would
+ // be taken as props or a vnode, and a stored document could put markup on
+ // the page that way. So any other value draws nothing.
  function marked(node) {
-  let out = node.text ?? '';
+  let out = typeof node.text === 'string' ? node.text : '';
+  if (!out) return out;
   for (const mark of node.marks ?? []) {
    if (mark.type === 'bold') out = h('strong', out);
    else if (mark.type === 'italic') out = h('em', out);
@@ -56,7 +60,7 @@
  // shows "Type here", so there's still something to click.
  function hasWords(value) {
   if (typeof value === 'string') return value.trim() !== '';
-  if (value?.type === 'text') return String(value.text ?? '').trim() !== '';
+  if (value?.type === 'text') return typeof value.text === 'string' && value.text.trim() !== '';
   return Array.isArray(value?.content) && value.content.some(hasWords);
  }
 

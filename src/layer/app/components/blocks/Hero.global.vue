@@ -7,6 +7,12 @@
  const shows = useFieldShown();
 
  const showImage = computed(() => props.data.layout !== 'centered' || Boolean(safeSrc(props.data.image.src)));
+
+ // The buttons with a label, by place. One without says nothing, so it
+ // isn't drawn.
+ const buttons = computed(() =>
+  props.data.buttons.flatMap((button, index) => (shows(`buttons.${index}.label`, button.label) ? [index] : [])),
+ );
 </script>
 
 <template>
@@ -16,8 +22,8 @@
     <TbText v-if="shows('tagline', data.tagline)" :data="data" field="tagline" tag="p" class="tb-eyebrow" />
     <TbText :data="data" field="headline" tag="h1" class="tb-hero__headline" />
     <TbRich v-if="shows('description', data.description)" :data="data" field="description" class="tb-hero__description" />
-    <div v-if="data.buttons.length" class="tb-buttons">
-     <TbButton v-for="(button, index) in data.buttons" :key="index" :data="data" :field="`buttons.${index}`" />
+    <div v-if="buttons.length" class="tb-buttons">
+     <TbButton v-for="index in buttons" :key="index" :data="data" :field="`buttons.${index}`" />
     </div>
     <TbText v-if="shows('note', data.note)" :data="data" field="note" tag="p" class="tb-note" />
    </div>

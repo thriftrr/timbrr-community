@@ -73,7 +73,8 @@
   for (const node of Array.isArray(nodes) ? nodes : []) {
    if (!node || typeof node !== 'object') continue;
    if (node.type === 'text') {
-    const text = String(node.text ?? '');
+    // Only string text, the way TbRich draws it.
+    const text = typeof node.text === 'string' ? node.text : '';
     if (text) out.push({ type: 'text', text, ...marksOf(node) });
    } else if (node.type === 'hardBreak') out.push({ type: 'hardBreak' });
    else out.push(...inline(node.content));

@@ -17,12 +17,19 @@ export function componentName(type) {
   .join('')}`;
 }
 
+// Every field, a list's row fields included, has to be in the schema: a
+// mistyped key would save where the block never reads it.
 function checkFields(fields, shape, where) {
  if (!Array.isArray(fields)) throw new Error(`${where}: fields must be a list`);
  for (const field of fields) {
   if (!WIDGETS.includes(field.widget)) throw new Error(`${where}.${field.key}: unknown widget "${field.widget}"`);
-  if (shape && !(field.key in shape)) throw new Error(`${where}.${field.key}: not in the schema`);
-  if (field.widget === 'items') checkFields(field.subfields ?? [], null, `${where}.${field.key}`);
+  if (!Object.hasOwn(shape, field.key)) throw new Error(`${where}.${field.key}: not in the schema`);
+  if (field.widget === 'items') {
+   const list = bare(shape[field.key]);
+   const row = list?.type === 'array' ? bare(list.element) : null;
+   if (row?.type !== 'object') throw new Error(`${where}.${field.key}: the schema must be a list of objects`);
+   checkFields(field.subfields ?? [], row.shape, `${where}.${field.key}`);
+  }
   if ((field.widget === 'select' || field.widget === 'buttons') && !field.options?.length) {
    throw new Error(`${where}.${field.key}: needs options`);
   }

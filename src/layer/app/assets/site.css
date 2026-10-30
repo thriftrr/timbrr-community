@@ -212,6 +212,10 @@ body {
 .tb-image {
  display: block;
  width: 100%;
+ /* A picture from the media library carries width and height attributes
+    (TbImage), which browsers also read as a height in pixels; the box
+    follows the block's ratio, not the file's size. */
+ height: auto;
  border-radius: var(--site-radius);
  object-fit: cover;
 }

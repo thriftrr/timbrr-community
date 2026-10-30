@@ -3,7 +3,9 @@
  // to call, an address to write to, and the accounts to follow. A card
  // shows when its field has something in it, and each line is a link where
  // it can be: the number dials, the email opens a new message, a handle
- // opens its profile.
+ // opens its profile. A line that can't be one is the same <a> without an
+ // address, so typing a number on the canvas until it dials doesn't swap
+ // the element (and the caret) out from under the person typing.
  const props = defineProps({ data: { type: Object, required: true } });
  // Empty fields aren't drawn, but one being typed into on the canvas stays.
  const shows = useFieldShown();
@@ -73,17 +75,17 @@
     <div v-if="hasPhone" class="tb-card tb-contact-details__card">
      <dt class="tb-eyebrow tb-contact-details__label">Call</dt>
      <dd class="tb-contact-details__value tb-contact-details__value--phone">
-      <component :is="tel ? 'a' : 'span'" :href="tel" class="tb-contact-details__link">
+      <a :href="tel" class="tb-contact-details__link">
        <TbText :data="data" field="phone" />
-      </component>
+      </a>
      </dd>
     </div>
     <div v-if="hasEmail" class="tb-card tb-contact-details__card">
      <dt class="tb-eyebrow tb-contact-details__label">Email</dt>
      <dd class="tb-contact-details__value tb-contact-details__value--email">
-      <component :is="mailto ? 'a' : 'span'" :href="mailto" class="tb-contact-details__link">
+      <a :href="mailto" class="tb-contact-details__link">
        <TbText :data="data" field="email" />
-      </component>
+      </a>
      </dd>
     </div>
     <div v-if="hasSocials" class="tb-card tb-contact-details__card">
@@ -92,15 +94,10 @@
       <ul class="tb-contact-details__socials" role="list">
        <template v-for="(item, index) in data.items" :key="index">
         <li v-if="social(item, index)">
-         <component
-          :is="links[index].href ? 'a' : 'span'"
-          :href="links[index].href"
-          :rel="links[index].rel"
-          class="tb-contact-details__link tb-contact-details__social"
-         >
+         <a :href="links[index].href" :rel="links[index].rel" class="tb-contact-details__link tb-contact-details__social">
           <TbText v-if="shows(`items.${index}.title`, item.title)" :data="data" :field="`items.${index}.title`" class="tb-contact-details__network" />
           <TbText v-if="shows(`items.${index}.body`, item.body)" :data="data" :field="`items.${index}.body`" class="tb-contact-details__handle" />
-         </component>
+         </a>
         </li>
        </template>
       </ul>
@@ -200,13 +197,13 @@
   overflow-wrap: anywhere;
  }
 
- a.tb-contact-details__link:hover {
+ .tb-contact-details__link:any-link:hover {
   text-decoration: underline;
   text-decoration-thickness: 1.5px;
   text-underline-offset: 0.2em;
  }
 
- a.tb-contact-details__link:focus-visible {
+ .tb-contact-details__link:any-link:focus-visible {
   border-radius: 4px;
   outline: 2px solid var(--site-accent);
   outline-offset: 3px;
