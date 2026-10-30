@@ -89,6 +89,12 @@ export async function useTimbrrPage(path) {
  });
 
  await fetched;
+ // A dev or staging address whose access ran out while it was open: going
+ // back through the server lands on the studio's gate.
+ if (import.meta.client && fetched.error.value?.statusCode === 401) {
+  window.location.reload();
+  return new Promise(() => {});
+ }
  if (fetched.error.value || !fetched.data.value?.page) throw pageError(fetched.error.value?.statusCode === 404, address.value);
  return { site, page, blocks, style };
 }
