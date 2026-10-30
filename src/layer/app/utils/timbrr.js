@@ -7,6 +7,13 @@ export function valueAt(data, path) {
   .reduce((value, key) => (value == null ? undefined : value[key]), data);
 }
 
+// The placement a block on the canvas belongs to. A block of a global block
+// or template has the id '<placement id>.<block id>'; any other block is its
+// own placement.
+export function placementOf(id) {
+ return String(id).split('.')[0];
+}
+
 // Only links a visitor can safely follow: the web, mail, phone, this site.
 export function safeHref(href) {
  const value = String(href ?? '').trim();

@@ -39,7 +39,10 @@ export default defineBlock({
 `html` (rich text) · `select` · `buttons` (segmented choice) · `items` (a
 list of rows with `subfields`; `itemLabel` names the subfield that labels a
 row, `max` caps it) · `image` (`{ src, alt }`, plus what the studio's media
-library knows when the picture came from there, below).
+library knows when the picture came from there, below) · `nav` (a list of
+NavItems, one level of children, `max` caps a level; `navListSchema` in
+`schema/define.js`. With `single: true` it holds one `{ label, to }`, a
+button: an object, not a list, with no children).
 
 **An image** is `{ src, alt }` at least: `src` is an https address or a
 path on the site, `alt` what it shows. One picked from the studio's media
@@ -64,8 +67,14 @@ a button's `to`: the studio offers this site's pages or an outside
 address; the shared `buttonsField` has it), `ai` (`generate` | `improve` |
 `write`, for the studio's writing help, which isn't built yet), `help`,
 `placeholder`, `options` (`[{ label, value }]` for `select` and
-`buttons`). `select` and `buttons` fields are the block's style choices:
-the studio's inspector puts them on its Style tab.
+`buttons`), `single` (for `nav`, above). `select` and `buttons` fields are
+the block's style choices: the studio's inspector puts them on its Style
+tab.
+
+**`frame: true`** on a definition marks a site's header or footer
+(`site_header`, `site_footer`; § 4, Header and footer). The studio keeps
+them in its Library, one block to an item, and never offers them in the
+tray.
 
 **wys** lists the formatting tools a rich field allows: `bold italic
 underline link h2 h3 ul ol clear`. A field in a list is named with `*` for
@@ -92,12 +101,13 @@ same-site paths). Nothing a page holds becomes markup.
   { "name": "bur-oak-site", "version": "0.0.0", "tier": "private" },
   { "name": "@timbrr/community", "version": "0.1.0", "tier": "community" }
  ],
- "widgets": ["text", "textarea", "html", "select", "buttons", "items", "image"],
+ "widgets": ["text", "textarea", "html", "select", "buttons", "items", "image", "nav"],
  "blocks": [
   {
    "type": "hours", "tier": "base", "owner": null, "layer": "@timbrr/community",
    "component": "BlocksHours", "label": "Hours", "description": "From settings, open-now indicator",
    "category": "dynamic", "icon": "hours",
+   // "frame": true on a site_header or site_footer, and left out otherwise
    "fields": [ /* as defined */ ],
    "defaults": { /* parsed through the schema: every key present */ },
    "wys": { "headline": [], "items.*.title": [], "items.*.body": [], "note": ["italic"] },
@@ -116,11 +126,12 @@ commissioned it):
 - `community`: a shared layer's block with an `owner`, commissioned by one
   site and shared with every site.
 - `base`: a shared layer's block with no owner, Timbrr's own library. All
-  38 blocks in `@timbrr/community` are `base` today.
+  40 blocks in `@timbrr/community` are `base` today.
 
 A type defined twice, an unknown category or widget, a field the schema
-doesn't have (a list's row fields included), an `items` field whose schema
-isn't a list of objects, or defaults that don't parse fail the build.
+doesn't have (a list's row fields included), an `items` or `nav` field
+whose schema isn't a list of objects (an object, for a `single` one), or
+defaults that don't parse fail the build.
 
 ## 3. What the studio does with it
 
@@ -152,8 +163,8 @@ Studio → canvas
 
 | type | payload |
 |---|---|
-| `timbrr:doc` | `blocks` (`[{ id, type, hidden, data }]`), `theme` (`{ accent }`), `site` (`{ name, domain, nav, cta? }` — what the site's header and footer draw; below), `mode` (`render`: the page between the site's header and footer; `full`, or missing: the blocks alone), `editable` (`false` when the person can only look: nothing is typed into, dragged or dropped; missing means `true`) — the whole page, on every change |
-| `timbrr:select` | `id` or null |
+| `timbrr:doc` | `blocks` (`[{ id, type, hidden, data, lock? }]`; `lock` below), `theme` (`{ accent }`), `site` (`{ name, domain, nav, cta?, frame? }` — what the site's header and footer draw; below), `mode` (`render`: the page between the site's header and footer; `full`, or missing: the blocks alone), `editable` (`false` when the person can only look: nothing is typed into, dragged or dropped; missing means `true`), `library` (`false` when the person can't open the Library: no Edit in Library pill, and a double-click does nothing; missing means `true`), `endZone` (`false` when the document takes no more blocks, like a Library header, which holds one: no dashed zone after the last block; missing means `true`) — the whole page, on every change |
+| `timbrr:select` | `id` or null. A placement's id selects all of its blocks |
 | `timbrr:view` | `scale` — how far the studio scales the frame down to fit; the canvas draws its outlines, tabs and drop zone up by as much, so they read at their real size |
 | `timbrr:format` | `tool` (`bold` `italic` `underline` `link` `h2` `h3` `ul` `ol` `clear`), with `href` for `link` (empty takes the link off) — applied to the open rich-text field if it allows that tool, ignored otherwise |
 | `timbrr:release` | nothing — the studio's keyboard went somewhere other than the format bar (the inspector, the tray): an open rich-text field goes back to text |
@@ -166,12 +177,14 @@ Canvas → studio
 | type | payload |
 |---|---|
 | `timbrr:ready` | `manifestVersion` — repeated every 250 ms until the first `timbrr:doc` |
-| `timbrr:size` | `height` — the page's height (the page's own, not the window's, so it goes down as well as up); the studio sizes the frame to it |
-| `timbrr:click` | `id` of the block clicked, or null; also sent when the caret goes into a field of another block |
+| `timbrr:size` | `height` — the page's height (the page's own, not the window's, so it goes down as well as up), measured again after every `timbrr:doc` and sent when it changed; the studio sizes the frame to it |
+| `timbrr:click` | `id` of the block clicked, or null (a locked block's own `<placement id>.<block id>`); also sent when the caret goes into a field of another block |
 | `timbrr:edit` | `id`, `field` (a path: `items.0.title`), `value` — a string for a text field, a rich-text document (`{ type: 'doc', content: […] }`) for an `html` one. The studio takes nothing else |
 | `timbrr:focus` | `id`, `field`, `kind` (`text` or `rich`), `label` (the field's name from its definition: `Description`, or `Cards 2 · Title` in a list), `tools` (what the field allows: its `wys` for rich text, none for plain), `active` (the tools on at the caret), `href` (the link at the caret, or null) — when the caret arrives, and again whenever any of it changes |
 | `timbrr:blur` | nothing — the caret left the field |
-| `timbrr:drop` | `index`, `kind`: `add` (a block from the studio's tray: answering the studio's `timbrr:drop`, or, on a canvas at the studio's own origin, dropped natively as `application/x-timbrr-block`, then with `blockType`) or `move` (with `id`, dragged by the block's tab as `application/x-timbrr-move`) |
+| `timbrr:drop` | `index`, `kind`: `add` (a block from the studio's tray: answering the studio's `timbrr:drop`, or, on a canvas at the studio's own origin, dropped natively as `application/x-timbrr-block`, then with `blockType`) or `move` (with `id`, dragged by the block's tab as `application/x-timbrr-move`). `index` counts the blocks as drawn, and is never inside a locked chunk |
+| `timbrr:open` | `id` — the placement: Edit in Library was pressed on it, or it was double-clicked. Sent whether or not the canvas is editable |
+| `timbrr:locked` | `id` — the placement: a printable key (no Ctrl or Meta, not held down) was pressed while it was selected, on an editable canvas, with no field open. The studio says why nothing happened |
 
 In the canvas each block sits in a frame (`.tb-frame`): a quiet outline
 under the pointer, and when it's selected a pine outline and a tab in the
@@ -179,8 +192,9 @@ corner naming it, which is what you drag it by. Both are drawn over the
 block, never around it, so the layout is the site's own. Hidden blocks show
 faded with their tab always up, saying so; the live site skips them. While
 something is dragged over the page, a pine line marks where it will land,
-and a dashed zone after the last block ("Drop a block here") takes it last;
-on an empty page that zone is the page. Links don't navigate, and forms
+and a dashed zone after the last block ("Drop a block here") takes it last,
+unless the studio turned it off with `endZone: false`; on an empty page that
+zone is the page. Links don't navigate, and forms
 don't send.
 
 **Render and Full.** With `mode: 'render'` and a `site` that has a name
@@ -188,9 +202,11 @@ don't send.
 footer (`<TbSiteHeader>` and `<TbSiteFooter>`, the same components a
 site's layout uses; README § Header and footer). They're locked on the
 canvas: they carry no block id, can't be selected, typed into or dropped
-on, and under the pointer they shade a little and a note says "Header and
-footer come from your pages". A drop over the header lands first, over the
-footer last. With `mode: 'full'` the blocks are drawn alone.
+on, and under the pointer they shade a little and a note says where they
+come from ("Header comes from your pages", or "… from the Library" when
+the page has a frame, below). A side the page turned off draws neither. A
+drop over the header lands first, over the footer last. With `mode:
+'full'` the blocks are drawn alone.
 
 `site` is plain data: `name`, `domain` (the site's address), `nav` (menu
 items, NavItems: `{ label, kind: 'page' | 'external' | 'none', to,
@@ -198,6 +214,52 @@ children?, layout?: 'dropdown' | 'mega', desc? }`, one level of children)
 and an optional `cta` (one NavItem, the header's button). The canvas keeps
 only strings and items of that shape, at most 40 a level; every link
 goes through `safeHref()`.
+
+**Header and footer.** `site.frame` is `{ header, footer }`, what this page
+has from the studio's Library. Each side is a frame's data (below), `null`
+or missing (draw from `nav` and `cta`, as above) or `false` (the page has
+none: draw nothing). The canvas keeps frame data to the same shapes, and
+never merges it into `nav` or `cta`. `<TbSiteHeader>` and `<TbSiteFooter>`
+read it, on the canvas and on a published page alike, where it comes from
+`page.frame` (`useTimbrrPage` puts it on `site`). An answer without it
+behaves like `null`.
+
+- `site_header`: `{ style: 'classic' | 'minimal' | 'bar', menu: NavItem[],
+  cta: { label, to }, bar }`. The menu and button replace the site's own.
+  `bar` is the words of the announcement above the header in the Bar style.
+- `site_footer`: `{ style: 'full' | 'slim', columns: NavItem[], legal }`.
+  `columns` replaces the site's menu; slim is one row, without headings.
+  `legal` replaces the "© year name" line when it isn't empty.
+
+The two blocks draw through those same components, so what's built in the
+Library is what a page shows. They read the site's name from
+`TIMBRR_SITE_KEY` (`useTimbrrSite()`), which the canvas provides in every
+mode; with no site to read, as on the starter's block shelf, the name is
+"Your site". On the canvas `bar` and `legal` are typed in place, and show
+even when empty; everything else is edited in the inspector.
+
+**Locked blocks.** A block of a global block or global template has an id of
+`<placement id>.<block id>` and carries
+`lock: { id, itemId, kind, name, index, count }`: `id` its placement,
+`itemId` the Library item, `kind` the item's kind, `name` its saved name,
+`index` and `count` its place among the placement's drawn blocks. A dot
+can't appear in a stored id, so `id.split('.')[0]` is always the placement.
+Adding `lock` doesn't change the manifest version.
+
+- It draws as the site does: `TbBlockScope` re-provides the canvas to what's
+  inside it with `editable` false, so nothing is typed into, and blocks that
+  change their drawing for editing don't.
+- All of a placement's blocks are one piece, a chunk. Its frames carry
+  `data-lock-id`. Any id in the chunk selects all of it, whether that's a
+  block's own id from a click or the placement's from `timbrr:select`. One
+  ink outline runs around the chunk.
+- The first block carries the ink tab: the saved name, a link glyph and an
+  Edit in Library pill on hover, with the pointer anywhere over the chunk.
+  It stays up, and it's what the whole chunk is dragged by, sending the
+  first block's id as `move`, unless the canvas isn't editable.
+- The drop line never goes inside a chunk: an edge there moves to the
+  chunk's nearer end, and that's the `index` sent.
+- A preview draws locked blocks like any others.
 
 **Preview.** `/__timbrr/canvas?preview=1` draws the page exactly as the
 site does, for the studio's previews (the tray's hover preview, the
@@ -216,8 +278,8 @@ preview sends one block, `{ id: 'preview', type, hidden: false, data }`
 with the block's defaults, and `mode: 'full'`, in one frame it keeps for
 the page view; before each new block it shrinks the frame to measure the
 next one, so blocks mustn't size themselves by the viewport (`vh`). The
-builder's Preview sends the page without its hidden blocks, the `site`,
-`mode: 'render'` and `editable: false`.
+builder's Preview sends the page without its hidden blocks, the `site`
+(with the page's `frame`), `mode: 'render'` and `editable: false`.
 
 ## 5. Inline editing
 

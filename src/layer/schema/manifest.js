@@ -30,6 +30,11 @@ function checkFields(fields, shape, where) {
    if (row?.type !== 'object') throw new Error(`${where}.${field.key}: the schema must be a list of objects`);
    checkFields(field.subfields ?? [], row.shape, `${where}.${field.key}`);
   }
+  if (field.widget === 'nav') {
+   const value = bare(shape[field.key]);
+   const row = !field.single && value?.type === 'array' ? bare(value.element) : value;
+   if (row?.type !== 'object') throw new Error(`${where}.${field.key}: the schema must be ${field.single ? 'an object' : 'a list of objects'}`);
+  }
   if ((field.widget === 'select' || field.widget === 'buttons') && !field.options?.length) {
    throw new Error(`${where}.${field.key}: needs options`);
   }
@@ -71,6 +76,7 @@ export function buildManifest(site, layers, definitions) {
    description: def.description ?? '',
    category: def.category,
    icon: def.icon ?? 'square',
+   ...(def.frame === true ? { frame: true } : {}),
    fields: def.fields,
    defaults,
    wys: def.wys ?? {},

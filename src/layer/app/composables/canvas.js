@@ -6,7 +6,9 @@
 //
 // What the canvas page provides (docs/manifest.md § Inline editing):
 //  selected, dragging   refs: the selected block's id; a block moved by its tab
+//  hovered              ref: the locked placement under the pointer, for its tab
 //  editable             ref: false when the studio says this person can only look
+//  library              ref: false when this person can't open the Library
 //  active               ref: { id, field, kind } of the one field being typed into
 //                       ('text' or 'rich'); a rich field keeps its editor while
 //                       it's set, even when the caret is out in the studio
@@ -14,9 +16,14 @@
 //  activate, release    take `active`, and give it up
 //  edit                 a field's new value: a string, or a rich-text document
 //  focus, blur          the caret is in a field (with what it allows there), or left
+//  open                 a locked placement's Edit in Library
 //  toolsFor, labelFor   a field's formatting tools and its name, from its block
 export const CANVAS_KEY = Symbol('timbrr-canvas');
 export const BLOCK_KEY = Symbol('timbrr-block');
+// The site as the studio sent it (a ref), in every mode of the canvas: what
+// the site_header and site_footer blocks read their name from. Nothing
+// provides it anywhere else, as on the starter's block shelf.
+export const TIMBRR_SITE_KEY = Symbol('timbrr-site');
 
 export function useCanvas() {
  return inject(CANVAS_KEY, null);
@@ -24,6 +31,10 @@ export function useCanvas() {
 
 export function useBlockScope() {
  return inject(BLOCK_KEY, null);
+}
+
+export function useTimbrrSite() {
+ return inject(TIMBRR_SITE_KEY, null);
 }
 
 // For blocks: whether an optional field drawn through <TbText> or <TbRich>

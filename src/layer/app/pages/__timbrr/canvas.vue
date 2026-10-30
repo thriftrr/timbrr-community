@@ -6,7 +6,9 @@
  // typed in place, one field at a time; where the caret is (and which tools
  // that field allows) goes to the studio's format bar, and its tools come
  // back here. In Render view the site's own header and footer frame the
- // page, locked: they come from the site's pages, not from blocks.
+ // page, locked: they come from the site's pages, or from the Library when
+ // the page has a frame of its own, not from blocks. A block of a global
+ // block or template is locked too, and one double-click from the Library.
  //
  // With ?preview=1 it's the page exactly as the site draws it: no outlines,
  // tabs, typing or drop zones, and hidden blocks stay hidden (the tray's
@@ -32,13 +34,16 @@
  const root = ref(null);
  const blocks = ref([]);
  const theme = ref({});
- const site = shallowRef(null); // the site's name, address and menu, for its header and footer
+ const site = shallowRef(null); // the site's name, address, menu and frames, for its header and footer
  const mode = ref('full'); // 'render': the page between the site's header and footer
  const connected = ref(false);
  const editable = ref(!preview); // false: a preview, or someone who can only look
+ const library = ref(true); // false: this person can't open the Library
+ const endZone = ref(true); // false: the document takes no more blocks, so nothing asks for one
  const ui = ref(1); // how much larger to draw the chrome, as the studio scales the frame down
  const selected = ref(null);
  const dragging = ref(null); // a block being moved inside the canvas
+ const hovered = ref(null); // the locked placement under the pointer
  const dropIndex = ref(null);
  const dropTop = ref(0);
  const active = shallowRef(null); // { id, field, kind } being typed into
@@ -60,7 +65,10 @@
 
  // ── The site's header and footer ──
  // Only strings and plain menu items (NavItem: label, kind, to, layout,
- // desc; children one level down) get as far as the components.
+ // desc; children one level down) get as far as the components. The same
+ // goes for a frame from the Library, which stays beside the site's own
+ // menu, never merged into it: `false` (the page has none), or its data, or
+ // null (draw the site's menu).
 
  const text = (value, max) => (typeof value === 'string' ? value.slice(0, max) : '');
 
@@ -90,9 +98,25 @@
    name: text(value.name, 120),
    domain: text(value.domain, 253),
    nav: navList(value.nav, 1),
-   cta: value.cta && typeof value.cta === 'object' ? navItem(value.cta, 0) : null,
+   cta: buttonFrom(value.cta),
+   frame: {
+    header: frameFrom(value.frame?.header, (frame) => ({ style: text(frame.style, 20), menu: navList(frame.menu, 1), cta: buttonFrom(frame.cta), bar: text(frame.bar, 200) })),
+    footer: frameFrom(value.frame?.footer, (frame) => ({ style: text(frame.style, 20), columns: navList(frame.columns, 1), legal: text(frame.legal, 300) })),
+   },
   };
  }
+
+ function buttonFrom(value) {
+  return value && typeof value === 'object' ? navItem(value, 0) : null;
+ }
+
+ function frameFrom(value, keep) {
+  if (value === false) return false;
+  return value && typeof value === 'object' ? keep(value) : null;
+ }
+
+ // What the note over the locked header or footer says.
+ const chromeNote = (name, side) => `${name} comes from ${site.value?.frame[side] ? 'the Library' : 'your pages'}`;
 
  // ── Fields: their tools and names, from the block's definition ──
 
@@ -170,7 +194,9 @@
   provide(CANVAS_KEY, {
    selected,
    dragging,
+   hovered,
    editable,
+   library,
    active,
    editor,
    activate,
@@ -178,10 +204,15 @@
    edit: (id, field, value) => post({ type: 'timbrr:edit', id, field, value }),
    focus,
    blur,
+   open: (id) => post({ type: 'timbrr:open', id }),
    toolsFor,
    labelFor,
   });
  }
+
+ // In every mode: the site_header and site_footer blocks read their name
+ // from it, and a preview draws them too.
+ provide(TIMBRR_SITE_KEY, site);
 
  // Someone who can only look: nothing stays open for typing.
  watch(editable, (value) => {
@@ -199,10 +230,14 @@
    site.value = siteFrom(message.site);
    mode.value = message.mode === 'render' ? 'render' : 'full';
    editable.value = !preview && message.editable !== false;
+   library.value = message.library !== false;
+   endZone.value = message.endZone !== false;
    connected.value = true;
-   // A preview answers every page with its size, even an unchanged one:
-   // the frame it's in may have shrunk to measure it.
-   if (preview) nextTick(() => reportSize(true));
+   // Measured every time, since what's absolute (a header's panels) moves the
+   // page's height without moving its box. A preview answers every page with
+   // its size, even an unchanged one: the frame it's in may have shrunk to
+   // measure it.
+   nextTick(() => reportSize(preview));
    return;
   }
   // A preview only ever draws the page it's sent.
@@ -252,6 +287,15 @@
   post({ type: 'timbrr:click', id });
  }
 
+ // A key pressed while a locked block is selected goes nowhere, so the
+ // studio says why. One that's going into an open field isn't that.
+ function onKeyDown(event) {
+  if (!editable.value || active.value || event.repeat) return;
+  if (event.key?.length !== 1 || event.ctrlKey || event.metaKey) return;
+  const id = placementOf(selected.value);
+  if (blocks.value.some((block) => block.lock?.id === id)) post({ type: 'timbrr:locked', id });
+ }
+
  // A middle click doesn't open a link elsewhere either, and forms never send.
  function onAuxClick(event) {
   if (event.target.closest?.('a')) event.preventDefault();
@@ -293,9 +337,22 @@
   return [...document.querySelectorAll('[data-block-id]')];
  }
 
- // The line goes on the edge between two blocks, or under the last one.
- // Over the header it's the top of the page, over the footer the end. `y`
- // is in this page's pixels; the page never scrolls, so that's clientY.
+ // The blocks of one locked placement stay together: an edge inside them
+ // moves out to whichever end of them is nearer.
+ function outsideChunk(list, index, y) {
+  const lock = list[index]?.dataset.lockId;
+  if (!lock || list[index - 1]?.dataset.lockId !== lock) return index;
+  let first = index - 1;
+  let last = index;
+  while (list[first - 1]?.dataset.lockId === lock) first -= 1;
+  while (list[last + 1]?.dataset.lockId === lock) last += 1;
+  return y < (list[first].getBoundingClientRect().top + list[last].getBoundingClientRect().bottom) / 2 ? first : last + 1;
+ }
+
+ // The line goes on the edge between two blocks, or under the last one,
+ // never inside a locked chunk. Over the header it's the top of the page,
+ // over the footer the end. `y` is in this page's pixels; the page never
+ // scrolls, so that's clientY.
  function placeDrop(y) {
   const list = frames();
   let index = list.findIndex((el) => {
@@ -303,6 +360,7 @@
    return y < rect.top + rect.height / 2;
   });
   if (index < 0) index = list.length;
+  index = outsideChunk(list, index, y);
   dropIndex.value = index;
   const page = document.querySelector('.tb-canvas__page')?.getBoundingClientRect();
   if (!page) return;
@@ -387,6 +445,7 @@
   document.addEventListener('submit', onSubmit, true);
   document.addEventListener('pointerdown', onPointerDown, true);
   document.addEventListener('focusin', onFocusIn, true);
+  document.addEventListener('keydown', onKeyDown);
   document.addEventListener('dragend', onDragEnd);
   observer = new ResizeObserver(() => reportSize());
   observer.observe(root.value);
@@ -403,6 +462,7 @@
   document.removeEventListener('submit', onSubmit, true);
   document.removeEventListener('pointerdown', onPointerDown, true);
   document.removeEventListener('focusin', onFocusIn, true);
+  document.removeEventListener('keydown', onKeyDown);
   document.removeEventListener('dragend', onDragEnd);
   observer?.disconnect();
  });
@@ -418,10 +478,10 @@
   <template v-if="connected">
    <template v-if="framed">
     <TbSiteHeader v-if="preview" :site="site" />
-    <div v-else class="tb-canvas__chrome">
+    <div v-else-if="site.frame.header !== false" class="tb-canvas__chrome">
      <TbSiteHeader :site="site" inert />
      <span class="tb-canvas__note" aria-hidden="true">
-      <span class="tb-canvas__pill"><span class="tb-canvas__pill-mark">⟲</span>Header and footer come from your pages</span>
+      <span class="tb-canvas__pill"><span class="tb-canvas__pill-mark">⟲</span>{{ chromeNote('Header', 'header') }}</span>
      </span>
     </div>
    </template>
@@ -429,7 +489,7 @@
    <main class="tb-canvas__page">
     <TbBlocks :blocks="blocks" />
     <template v-if="!preview">
-     <div v-if="editable" class="tb-canvas__end" :class="{ 'is-empty': !blocks.length, 'is-over': dropIndex !== null }">
+     <div v-if="editable && endZone" class="tb-canvas__end" :class="{ 'is-empty': !blocks.length, 'is-over': dropIndex !== null }">
       <span class="tb-canvas__end-label">
        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
         <path d="M12 5v14M5 12h14" />
@@ -445,10 +505,10 @@
 
    <template v-if="framed">
     <TbSiteFooter v-if="preview" :site="site" />
-    <div v-else class="tb-canvas__chrome tb-canvas__chrome--footer">
+    <div v-else-if="site.frame.footer !== false" class="tb-canvas__chrome tb-canvas__chrome--footer">
      <TbSiteFooter :site="site" inert />
      <span class="tb-canvas__note" aria-hidden="true">
-      <span class="tb-canvas__pill"><span class="tb-canvas__pill-mark">⟲</span>Header and footer come from your pages</span>
+      <span class="tb-canvas__pill"><span class="tb-canvas__pill-mark">⟲</span>{{ chromeNote('Footer', 'footer') }}</span>
      </span>
     </div>
    </template>

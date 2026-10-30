@@ -27,10 +27,19 @@ export async function useTimbrrPage(path) {
  // its chance (and its 8 seconds).
  const fetched = useFetch('/__timbrr/page', { query: { path: address }, retry: false });
 
- // The site as its header and footer draw it: { name, domain, nav, accent }.
+ // The site as its header and footer draw it: { name, domain, nav, accent,
+ // frame }. `frame` is the page's header and footer from the Library
+ // (docs/README.md § Header and footer), null from an older studio.
  const site = computed(() => {
   const value = fetched.data.value?.site ?? {};
-  return { name: text(value.name), domain: text(value.domain), accent: text(value.accent), nav: Array.isArray(value.nav) ? value.nav : [] };
+  const frame = fetched.data.value?.page?.frame;
+  return {
+   name: text(value.name),
+   domain: text(value.domain),
+   accent: text(value.accent),
+   nav: Array.isArray(value.nav) ? value.nav : [],
+   frame: frame && typeof frame === 'object' ? frame : null,
+  };
  });
  const page = computed(() => fetched.data.value?.page ?? {});
  const blocks = computed(() => (Array.isArray(page.value.blocks) ? page.value.blocks : []));

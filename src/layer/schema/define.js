@@ -4,7 +4,7 @@ import { z } from 'zod';
 // `fields`, so the widget set is fixed: a manifest can't invent a widget the
 // studio doesn't ship.
 export const CATEGORIES = ['content', 'common', 'layout', 'dynamic', 'cta'];
-export const WIDGETS = ['text', 'textarea', 'html', 'select', 'buttons', 'items', 'image'];
+export const WIDGETS = ['text', 'textarea', 'html', 'select', 'buttons', 'items', 'image', 'nav'];
 export const WYS_TOOLS = ['bold', 'italic', 'underline', 'link', 'h2', 'h3', 'ul', 'ol', 'clear'];
 
 // One block: its data shape (`schema`, zod), how the studio edits it
@@ -21,6 +21,8 @@ export const WYS_TOOLS = ['bold', 'italic', 'underline', 'link', 'h2', 'h3', 'ul
 //              field holding an address (the studio offers a page picker)
 //  wys         per-field formatting tools on the canvas; unlisted → bold, italic
 //  owner       the brand that commissioned it (community and private tiers)
+//  frame       true: a site's header or footer, kept in the studio's Library
+//              and never in the tray (docs/manifest.md § Header and footer)
 export function defineBlock(definition) {
  return definition;
 }
@@ -81,6 +83,19 @@ export const buttonSchema = z.object({
  to: z.string().max(2000).default(''),
  style: z.enum(['solid', 'outline']).default('solid'),
 });
+
+// One menu item, the NavItem the site's header and footer draw
+// (docs/README.md § Header and footer), one level of children at most. The
+// limits are the ones the canvas keeps to (navItem in pages/__timbrr/canvas.vue).
+const navEntrySchema = z.object({
+ label: z.string().max(120).default(''),
+ kind: z.enum(['page', 'external', 'none']).default('page'),
+ to: z.string().max(2000).default(''),
+ layout: z.enum(['dropdown', 'mega']).optional(),
+ desc: z.string().max(200).optional(),
+});
+export const navItemSchema = navEntrySchema.extend({ children: z.array(navEntrySchema).max(40).optional() });
+export const navListSchema = z.array(navItemSchema).max(40).default([]);
 
 // Fields more than one block uses.
 export const taglineField = { key: 'tagline', label: 'Tagline', widget: 'text', inline: true };
