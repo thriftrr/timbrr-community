@@ -59,9 +59,21 @@ export function richText(...paragraphs) {
  };
 }
 
+// What an image field holds. `src` and `alt` are all a pasted address has;
+// a picture picked from the studio's media library also carries what the
+// library knows about it (docs/manifest.md § Widgets): its id, the size of
+// the file the address points at, a ThumbHash placeholder and where the
+// subject is. Every one of those is optional, so pages saved before the
+// library existed validate as they are, and <TbImage> simply draws more
+// with each key it finds.
 export const imageSchema = z.object({
  src: z.string().max(2000).default(''),
  alt: z.string().max(300).default(''),
+ id: z.string().regex(/^[A-Za-z0-9_-]{16}$/).optional(),
+ width: z.int().min(1).max(12000).optional(),
+ height: z.int().min(1).max(12000).optional(),
+ placeholder: z.string().max(64).optional(),
+ focal: z.object({ x: z.number().min(0).max(1), y: z.number().min(0).max(1) }).optional(),
 });
 
 export const buttonSchema = z.object({

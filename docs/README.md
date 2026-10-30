@@ -44,9 +44,11 @@ make up        # npm install + the starter on http://localhost:3001
 make manifest  # print the manifest the starter serves
 ```
 
-`/` on the starter shows every block with its starting content. The studio
-(`make up` in thriftrr/timbrr, on :3000) uses `http://localhost:3001` as its
-canvas by default (`NUXT_PUBLIC_CANVAS_ORIGIN`).
+With no site set up (`NUXT_PUBLIC_SITE`), `/` on the starter shows every
+block with its starting content; with one, it's the site's published home
+page. The studio (`make up` in thriftrr/timbrr, on :3000) uses
+`http://localhost:3001` as its canvas by default
+(`NUXT_PUBLIC_CANVAS_ORIGIN`).
 
 ## The blocks
 
@@ -169,11 +171,53 @@ export default defineNuxtConfig({
 });
 ```
 
-Set `NUXT_PUBLIC_SITE` to the site's slug in the studio and
+Set `NUXT_PUBLIC_SITE` to the site's slug in the studio,
 `NUXT_PUBLIC_STUDIO_ORIGIN` to the studio's origin (only that origin may
-frame the canvas). Theme it by setting the `--site-*` variables in its own
-stylesheet. Serving published pages from the studio's API is the next
-piece; until then the starter is what the studio's canvas uses.
+frame the canvas) and, when it isn't `https://timbrr.app`,
+`NUXT_TIMBRR_API` to the studio its pages come from. Theme it by setting
+the `--site-*` variables in its own stylesheet. That's a whole site: the
+layer serves everything else from what's published in the studio, in the
+site's own Worker, so publishing is live within a minute with no rebuild:
+
+- `app/pages/[...slug].vue`: any address. It asks the site's own server
+  for the published page there and draws the site's header, the page's
+  blocks and the site's footer, exactly as the canvas draws them in Render
+  view, with its head tags (title, description, canonical, Open Graph,
+  noindex). Nothing published there is a 404, drawn by `app/error.vue`.
+  A site's own page wins for its address, which is why the starter's
+  `pages/index.vue` draws the published home page itself once a site is
+  set (`useTimbrrPage('/')`), and the block shelf otherwise.
+- `GET /__timbrr/page?path=…`: the site's server asking the studio's
+  public API (`GET /api/public/sites/:slug/page`, published pages of
+  approved sites only) and keeping the answer in Cloudflare's edge cache
+  for a minute. The browser never talks to the studio.
+- `GET /sitemap.xml` and `GET /robots.txt`, from the published pages. With
+  no `NUXT_PUBLIC_SITE` (the starter, the shared canvas) robots.txt turns
+  every crawler away and every page says `X-Robots-Tag: noindex`, since
+  Cloudflare's managed robots.txt can put an "Allow: /" in front of ours.
+  A site mustn't ship its own `public/robots.txt` or `public/sitemap.xml`,
+  which would shadow these.
+- `/__timbrr/canvas` and `/__timbrr/manifest.json`: what the studio edits
+  the site through. In the studio, Site settings → Site code is where the
+  builder finds them (staff only); a site whose code is deployed sets it to
+  the site's own address, so its pages are edited in its own theme.
+
+The starter (`src/starter`) is the smallest one, and Thriftrr
+(`thriftrr/thriftrr`, branch `v2`) the first real one; its
+`docs/README.md` walks through running and deploying one.
+
+## The Timbrr site
+
+timbrr.app itself is a site in the studio (slug `timbrr`, built in), and
+the starter is its code: `env.timbrr` in `src/starter/wrangler.jsonc`
+deploys the same build a second time as the Worker `timbrr-site` on the
+route `timbrr.app/*`, with `NUXT_PUBLIC_SITE=timbrr` and the studio as its
+API. The studio Worker keeps its own paths (`/forestrr`, `/api`, `/auth`,
+`/help`, `/media`, `/oauth`, `/mcp`, `/.well-known`) through more specific
+routes in its own config, so a new studio path needs a route there before
+it's reachable. `make deploy-timbrr` builds and ships it; `make deploy`
+still ships the canvas. Its pages are edited in the studio like any
+site's, and until its home page is published `/` is the 404 page.
 
 ## Header and footer
 
@@ -207,8 +251,9 @@ the `--site-*` variables.
 
 The studio's canvas draws them around the page in its Render view, from the
 `site` it sends: the name, the address, and the site's top-level pages after
-Home (manifest.md § Render and Full). A site's layout will put them on every
-page the same way once it serves its published pages:
+Home (manifest.md § Render and Full). The layer's published pages draw them
+the same way, from the `site` the studio's public API sends. A page of the
+site's own (one the studio doesn't build) can do the same in a layout:
 
 ```vue
 <!-- app/layouts/default.vue -->

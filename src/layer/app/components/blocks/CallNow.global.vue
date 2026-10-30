@@ -17,7 +17,8 @@
 
  // The number to dial: its digits (and a leading +), less any extension.
  // A number with words in it (1-800-FLOWERS, "or text us") stays text
- // rather than dial the wrong number.
+ // rather than dial the wrong number: the same <a>, without an address, so
+ // the element under the caret stays put while the number is typed.
  const tel = computed(() => {
   const number = props.data.phone.replace(/\s*(?:ext\.?|extension|x)\s*\d+\s*$/i, '');
   if (/[a-z]/i.test(number)) return undefined;
@@ -31,9 +32,9 @@
   <div class="tb-wrap tb-call-now__inner">
    <TbText v-if="shows('headline', data.headline)" :data="data" field="headline" tag="h2" class="tb-call-now__headline" />
    <p v-if="shows('phone', data.phone)" class="tb-call-now__phone">
-    <component :is="tel ? 'a' : 'span'" :href="tel" class="tb-call-now__dial">
+    <a :href="tel" class="tb-call-now__dial">
      <TbText :data="data" field="phone" />
-    </component>
+    </a>
    </p>
    <p v-if="shows('body', data.body)" class="tb-call-now__hours">
     <span class="tb-call-now__light" aria-hidden="true" />
@@ -87,13 +88,13 @@
   text-decoration: none;
  }
 
- a.tb-call-now__dial:hover {
+ .tb-call-now__dial:any-link:hover {
   text-decoration: underline;
   text-decoration-thickness: 2px;
   text-underline-offset: 0.16em;
  }
 
- a.tb-call-now__dial:focus-visible {
+ .tb-call-now__dial:any-link:focus-visible {
   outline: 2px solid var(--site-accent-ink);
   outline-offset: 4px;
  }

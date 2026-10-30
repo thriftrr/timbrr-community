@@ -10,5 +10,46 @@
  "routes": [{ "pattern": "canvas.timbrr.app", "custom_domain": true }],
  // The only studio whose messages the canvas takes and that may frame it
  // (read per request, so changing it here needs a deploy, not a rebuild).
- "vars": { "NUXT_PUBLIC_STUDIO_ORIGIN": "https://timbrr.app" }
+ "vars": { "NUXT_PUBLIC_STUDIO_ORIGIN": "https://timbrr.app" },
+ "env": {
+  // The Timbrr marketing site: the same build deployed a second time as
+  // its own Worker on the apex domain, serving what the studio publishes
+  // for its built-in `timbrr` site (the studio's docs/timbrr-site.md). The
+  // studio keeps its own paths (/forestrr, /api, /auth, /help, /media,
+  // /oauth, /mcp, /.well-known) through more specific routes in its own
+  // wrangler.jsonc; this Worker gets everything else on timbrr.app. The
+  // Timbrr team deploys it with `make deploy-timbrr`. An environment
+  // inherits the Worker's main and assets but not its vars, so every var
+  // the site needs is set here.
+  "timbrr": {
+   "name": "timbrr-site",
+   "routes": [{ "pattern": "timbrr.app/*", "zone_name": "timbrr.app" }],
+   "observability": { "enabled": true },
+   "vars": {
+    "NUXT_PUBLIC_SITE": "timbrr",
+    "NUXT_PUBLIC_STUDIO_ORIGIN": "https://timbrr.app",
+    "NUXT_TIMBRR_API": "https://timbrr.app"
+   }
+  },
+  // Every site's dev and staging addresses, for sites with no code of their
+  // own: the same build again, with no site set, since the address names
+  // it (src/layer/server/middleware/preview.js). A site with its own Worker
+  // adds routes for its own two hostnames, which win over these. The studio
+  // reaches nobody here: these are routes, and it's reached over its custom
+  // domain. `make deploy-preview` ships it. Needs a certificate covering
+  // both wildcards, and proxied DNS records for them (the studio's
+  // docs/sites.md, "Dev and staging addresses").
+  "preview": {
+   "name": "timbrr-preview",
+   "routes": [
+    { "pattern": "*.dev.timbrr.app/*", "zone_name": "timbrr.app" },
+    { "pattern": "*.staging.timbrr.app/*", "zone_name": "timbrr.app" }
+   ],
+   "observability": { "enabled": true, "redact_query_string": true },
+   "vars": {
+    "NUXT_PUBLIC_STUDIO_ORIGIN": "https://timbrr.app",
+    "NUXT_TIMBRR_API": "https://timbrr.app"
+   }
+  }
+ }
 }
