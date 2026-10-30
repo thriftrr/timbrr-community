@@ -52,9 +52,10 @@ page. The studio (`make up` in thriftrr/timbrr, on :3000) uses
 
 ## The blocks
 
-38 blocks, Timbrr's base library, in the five categories the studio's
-tray shows, in its order. The type is the file name in `blocks/` and the
-block's icon in the studio.
+40 blocks, Timbrr's base library: 38 in the five categories the studio's
+tray shows, in its order, and the site's header and footer, which live in
+the studio's Library instead. The type is the file name in `blocks/` and
+the block's icon in the studio.
 
 **Content**
 
@@ -128,6 +129,12 @@ block's icon in the studio.
   checkout.
 - `text_club` Text / email club: sign up by phone or email, with consent.
 
+**Header and footer** (`frame: true`, so never in the tray; below)
+
+- `site_header` Header: the menu, a button, and the classic, minimal or bar
+  style.
+- `site_footer` Footer: columns of links and small print, full or slim.
+
 The forms (`form`, `request_quote`, `text_club`) draw real fields but
 don't send anything yet. Every block's tray description is the design's;
 a few (hours and contact details "from settings", events "past ones
@@ -183,7 +190,10 @@ site's own Worker, so publishing is live within a minute with no rebuild:
   for the published page there and draws the site's header, the page's
   blocks and the site's footer, exactly as the canvas draws them in Render
   view, with its head tags (title, description, canonical, Open Graph,
-  noindex). Nothing published there is a 404, drawn by `app/error.vue`.
+  noindex). The page's header and footer from the Library, if it has them,
+  come with it as `page.frame`, and `useTimbrrPage` hands them on as
+  `site.frame`, so neither this page nor a site's own needs to do anything
+  about them. Nothing published there is a 404, drawn by `app/error.vue`.
   A site's own page wins for its address, which is why the starter's
   `pages/index.vue` draws the published home page itself once a site is
   set (`useTimbrrPage('/')`), and the block shelf otherwise.
@@ -249,11 +259,23 @@ an item can hold one level of `children`, which the header opens as a list
 button, a `<details>`, so it works without JavaScript. Both are styled with
 the `--site-*` variables.
 
+A site can also build headers and footers in the studio's Library, and a
+page can pick one or none. That arrives as `site.frame = { header, footer }`:
+each side is a frame's data, which replaces the menu and the button and
+picks a style (`classic`, `minimal`, or `bar` with an announcement above;
+`full` or `slim`); `false`, and that side draws nothing; or `null` or
+missing, and it draws from `nav` as above. Both components keep every class
+they've always had, and add one for the style (`tb-site-header--minimal`).
+A theme that restyles them with `:root` rules, as Thriftrr's does, still
+wins over a style except where the style needs to (Minimal has no rule under
+it, whatever the theme draws there). Details: [manifest.md](manifest.md).
+
 The studio's canvas draws them around the page in its Render view, from the
 `site` it sends: the name, the address, and the site's top-level pages after
 Home (manifest.md § Render and Full). The layer's published pages draw them
-the same way, from the `site` the studio's public API sends. A page of the
-site's own (one the studio doesn't build) can do the same in a layout:
+the same way, from the `site` the studio's public API sends and the page's
+`frame`. A page of the site's own (one the studio doesn't build) can do the
+same in a layout:
 
 ```vue
 <!-- app/layouts/default.vue -->

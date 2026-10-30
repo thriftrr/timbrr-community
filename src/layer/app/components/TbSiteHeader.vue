@@ -8,17 +8,37 @@
  // of cards) when the pointer or the keyboard gets there. Links go through
  // safeHref. The studio's canvas draws it over the page in Render view,
  // and a published page (pages/[...slug].vue) draws it the same way.
+ //
+ // A page can have a header from the Library: `site.frame.header`. `false`
+ // draws nothing; a frame's data replaces the menu and the button, and
+ // picks a style (classic, minimal, or bar, with an announcement above);
+ // null or missing is the site's own menu, as above. The site_header block
+ // draws through here too, so its announcement is typed in place.
  import { NuxtLink } from '#components';
 
  const props = defineProps({
-  site: { type: Object, required: true }, // { name, domain, nav: NavItem[], cta?: NavItem }
+  site: { type: Object, required: true }, // { name, domain, nav: NavItem[], cta?: NavItem, frame?: { header } }
  });
 
+ const STYLES = ['classic', 'minimal', 'bar'];
+
+ const canvas = useCanvas();
+ const scope = useBlockScope();
+ const shows = useFieldShown();
+
+ const chosen = computed(() => props.site.frame?.header);
+ const frame = computed(() => (chosen.value && typeof chosen.value === 'object' ? chosen.value : null));
+ const style = computed(() => (STYLES.includes(frame.value?.style) ? frame.value.style : 'classic'));
  const name = computed(() => String(props.site.name || props.site.domain || ''));
  const items = computed(() =>
-  named(props.site.nav).map((item) => ({ ...item, link: linkTo(item), children: named(item.children).map((child) => ({ ...child, link: linkTo(child) })) })),
+  named(frame.value ? frame.value.menu : props.site.nav).map((item) => ({ ...item, link: linkTo(item), children: named(item.children).map((child) => ({ ...child, link: linkTo(child) })) })),
  );
- const cta = computed(() => named([props.site.cta]).map((item) => ({ ...item, link: linkTo(item) }))[0] ?? null);
+ const cta = computed(() => named([frame.value ? frame.value.cta : props.site.cta]).map((item) => ({ ...item, link: linkTo(item) }))[0] ?? null);
+
+ // The announcement, with words to show. On the canvas, while the block can
+ // be edited, it's always there to type into.
+ const typing = computed(() => Boolean(canvas?.editable.value && scope));
+ const notice = computed(() => style.value === 'bar' && (typing.value || shows('bar', frame.value.bar)));
 
  // Items with a label to show; anything else is left out.
  function named(list) {
@@ -38,7 +58,10 @@
 </script>
 
 <template>
- <header class="tb-site-header">
+ <header v-if="chosen !== false" class="tb-site-header" :class="`tb-site-header--${style}`">
+  <div v-if="notice" class="tb-site-header__notice">
+   <TbText :data="frame" field="bar" tag="div" class="tb-wrap" />
+  </div>
   <div class="tb-wrap tb-site-header__bar">
    <NuxtLink to="/" class="tb-site-header__name">{{ name }}</NuxtLink>
 
@@ -378,6 +401,70 @@
 
   .tb-site-header__menu {
    display: block;
+  }
+ }
+
+ /* The styles a frame can pick; classic is everything above. A theme
+    restyles this header with :root rules, which outrank a single class and
+    tie with two, and component styles load in no fixed order. So a style
+    that must beat a rule a theme sets takes three (:root and both classes),
+    and the rest stay on properties themes leave alone. */
+
+ /* Bar: an announcement above the header, in the brand color. */
+ .tb-site-header__notice {
+  padding-block: 7px;
+  background: var(--site-accent);
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: center;
+  color: var(--site-accent-ink);
+ }
+
+ /* Minimal: no rule under it, a lower bar, and the menu beside the name
+    with only the button across from it. */
+ :root .tb-site-header.tb-site-header--minimal {
+  border-bottom: 0;
+ }
+
+ .tb-site-header--minimal .tb-site-header__bar {
+  min-height: 56px;
+ }
+
+ @media (min-width: 721px) {
+  .tb-site-header--minimal .tb-site-header__name {
+   margin-right: 0;
+  }
+
+  .tb-site-header--minimal .tb-site-header__bar > .tb-site-header__cta {
+   margin-left: auto;
+  }
+
+  .tb-site-header--minimal .tb-site-header__links {
+   justify-content: flex-start;
+  }
+
+  /* The menu sits on the left here, so a panel can't hang leftward off its
+     item as it does in Classic: a mega panel opens from the left of the menu
+     and at least as wide, so the pointer stays in it on the way down from
+     any item, and the first item's dropdown opens rightward. */
+  .tb-site-header--minimal .tb-site-header__nav {
+   position: relative;
+  }
+
+  .tb-site-header--minimal .tb-site-header__item:has(> .tb-site-header__panel--mega) {
+   position: static;
+  }
+
+  .tb-site-header--minimal .tb-site-header__panel--mega {
+   right: auto;
+   left: 0;
+   min-width: 100%;
+  }
+
+  .tb-site-header--minimal .tb-site-header__item:first-child > .tb-site-header__panel:not(.tb-site-header__panel--mega) {
+   right: auto;
+   left: -12px;
   }
  }
 </style>

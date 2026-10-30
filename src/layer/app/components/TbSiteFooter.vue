@@ -6,19 +6,40 @@
  // safeHref, and a page on this site through the router, as in the header.
  // The studio's canvas draws it under the page in Render view, and a
  // published page (pages/[...slug].vue) draws it the same way.
+ //
+ // A page can have a footer from the Library: `site.frame.footer`. `false`
+ // draws nothing; a frame's data replaces the menu with its own columns,
+ // can replace the © line with small print of its own, and picks a style
+ // (full, or slim: one row, without the headings); null or missing is the
+ // site's own menu, as above. The site_footer block draws through here too,
+ // so its small print is typed in place.
  import { NuxtLink } from '#components';
 
  const props = defineProps({
-  site: { type: Object, required: true }, // { name, domain, nav: NavItem[] }
+  site: { type: Object, required: true }, // { name, domain, nav: NavItem[], frame?: { footer } }
  });
 
+ const STYLES = ['full', 'slim'];
+
+ const canvas = useCanvas();
+ const scope = useBlockScope();
+ const shows = useFieldShown();
+
+ const chosen = computed(() => props.site.frame?.footer);
+ const frame = computed(() => (chosen.value && typeof chosen.value === 'object' ? chosen.value : null));
+ const style = computed(() => (STYLES.includes(frame.value?.style) ? frame.value.style : 'full'));
  const name = computed(() => String(props.site.name || props.site.domain || ''));
  const year = new Date().getFullYear();
+
+ // The frame's small print, with words to show. On the canvas, while the
+ // block can be edited, it's always there to type into.
+ const typing = computed(() => Boolean(canvas?.editable.value && scope));
+ const legal = computed(() => Boolean(frame.value) && (typing.value || shows('legal', frame.value.legal)));
 
  // The items without links under them share one column, unheaded; each
  // item with some is a column of those links.
  const columns = computed(() => {
-  const items = named(props.site.nav).map((item) => ({ ...item, link: linkTo(item), children: named(item.children).map((child) => ({ ...child, link: linkTo(child) })) }));
+  const items = named(frame.value ? frame.value.columns : props.site.nav).map((item) => ({ ...item, link: linkTo(item), children: named(item.children).map((child) => ({ ...child, link: linkTo(child) })) }));
   const loose = items.filter((item) => !item.children.length);
   return [
    ...(loose.length ? [{ heading: '', links: loose }] : []),
@@ -41,14 +62,14 @@
 </script>
 
 <template>
- <footer class="tb-site-footer">
+ <footer v-if="chosen !== false" class="tb-site-footer" :class="`tb-site-footer--${style}`">
   <div class="tb-wrap tb-site-footer__main" :style="{ '--tb-site-footer-columns': Math.max(1, columns.length) }">
    <div class="tb-site-footer__brand">
     <NuxtLink to="/" class="tb-site-footer__name">{{ name }}</NuxtLink>
    </div>
    <nav v-if="columns.length" class="tb-site-footer__nav" aria-label="Footer">
     <div v-for="(column, index) in columns" :key="index" class="tb-site-footer__column">
-     <p v-if="column.heading" class="tb-site-footer__heading">{{ column.heading }}</p>
+     <p v-if="column.heading && style !== 'slim'" class="tb-site-footer__heading">{{ column.heading }}</p>
      <ul class="tb-site-footer__links">
       <li v-for="(entry, at) in column.links" :key="at">
        <component :is="entry.link.is" :to="entry.link.to" :href="entry.link.href" class="tb-site-footer__link">{{ entry.label }}</component>
@@ -58,7 +79,8 @@
    </nav>
   </div>
   <div class="tb-wrap tb-site-footer__fine">
-   <span>© {{ year }} {{ name }}</span>
+   <TbText v-if="legal" :data="frame" field="legal" />
+   <span v-else>© {{ year }} {{ name }}</span>
    <span>Built on Timbrr</span>
   </div>
  </footer>
@@ -174,6 +196,53 @@
 
   .tb-site-footer__column {
    flex-basis: 140px;
+  }
+ }
+
+ /* Slim, a style a frame can pick: one row, the name and then every link
+    without its heading, over the small print with no rule between. Themes
+    restyle this footer with :root rules (TbSiteHeader says why that
+    matters); these stay on properties themes leave alone. */
+ .tb-site-footer--slim .tb-site-footer__main {
+  align-items: center;
+  padding-block: 22px 12px;
+ }
+
+ .tb-site-footer--slim .tb-site-footer__brand {
+  flex: none;
+ }
+
+ .tb-site-footer--slim .tb-site-footer__nav {
+  flex: 1 1 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px 22px;
+ }
+
+ /* Shrinks with the row, so its links wrap instead of running off it. */
+ .tb-site-footer--slim .tb-site-footer__column {
+  flex: 0 1 auto;
+ }
+
+ .tb-site-footer--slim .tb-site-footer__links {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 6px 22px;
+ }
+
+ .tb-site-footer--slim .tb-site-footer__fine {
+  border-top: 0;
+  padding-block: 0 18px;
+ }
+
+ @media (max-width: 640px) {
+  .tb-site-footer--slim .tb-site-footer__main {
+   align-items: flex-start;
+  }
+
+  .tb-site-footer--slim .tb-site-footer__nav {
+   flex: none;
+   justify-content: flex-start;
   }
  }
 </style>

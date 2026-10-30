@@ -98,7 +98,7 @@
   @load="loaded = true"
  />
  <div v-else class="tb-image tb-image--empty" :style="{ aspectRatio: ratio }" role="presentation">
-  <span v-if="canvas" class="tb-image__hint">Add an image in the panel on the right</span>
+  <span v-if="canvas?.editable.value" class="tb-image__hint">Add an image in the panel on the right</span>
  </div>
 </template>
 
