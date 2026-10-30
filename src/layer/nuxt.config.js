@@ -13,6 +13,9 @@ export default defineNuxtConfig({
   // the browser only ever talks to the site.
   timbrr: {
    api: 'https://timbrr.app',
+   // NUXT_TIMBRR_PREVIEW_DOMAIN: dev and staging addresses are
+   // <slug>.dev.<this> and <slug>.staging.<this> (server/utils/preview.js).
+   previewDomain: 'timbrr.app',
   },
   public: {
    // NUXT_PUBLIC_SITE: this site's slug in the studio.

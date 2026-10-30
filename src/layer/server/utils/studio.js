@@ -1,5 +1,6 @@
 import { getRequestURL } from 'h3';
 import { useRuntimeConfig } from '#imports';
+import { previewToken, studioApi } from './preview.js';
 
 // This site's published pages, from the studio's public read API
 // (docs/manifest.md § 6). Only the site's own server asks (/__timbrr/page,
@@ -37,6 +38,26 @@ export function siteOrigin(event, domain) {
  return LOCAL.test(url.hostname) ? url.origin : `https://${url.host}`;
 }
 
+// A draft for a dev or staging address, from the studio's token-checked
+// reads. Never kept: every read is checked, and what it says can change on
+// the next keystroke. { status: 401 } when the token no longer opens the
+// site. There's no list of pages here, so no sitemap.
+async function fetchDraft(event, slug, route) {
+ if (route === 'pages') return { status: 404 };
+ try {
+  const res = await fetch(`${studioApi(event)}/api/preview/sites/${encodeURIComponent(slug)}/${route}`, {
+   headers: { accept: 'application/json', authorization: `Bearer ${previewToken(event)}` },
+   signal: AbortSignal.timeout(WAIT),
+  });
+  if (res.status === 401 || res.status === 404) return { status: res.status };
+  if (res.status !== 200) throw new Error(`it answered ${res.status}`);
+  return { status: 200, data: await res.json() };
+ } catch (error) {
+  console.error(`[timbrr] Couldn't read a draft of ${route} for ${slug} from the studio: ${error.message}`);
+  return { status: 502 };
+ }
+}
+
 // One of the studio's public read routes for this site ('pages', or
 // 'page?path=%2Fabout'), as { status: 200, data }; { status: 404 } when no
 // site is set up here (NUXT_PUBLIC_SITE) or the studio has no such site or
@@ -44,6 +65,8 @@ export function siteOrigin(event, domain) {
 // WAIT, or NUXT_TIMBRR_API isn't an address. Failures are logged; 404s
 // aren't, they're ordinary.
 export async function fetchPublished(event, route) {
+ const preview = event.context.timbrrPreview;
+ if (preview) return fetchDraft(event, preview.slug, route);
  const config = useRuntimeConfig(event);
  const site = String(config.public.site ?? '').trim();
  if (!site) return { status: 404 };
