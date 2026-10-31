@@ -81,7 +81,7 @@ it, so searching the tray still finds it. Why, and how pages move over:
 - `visit` Visit: hours, address, map and phone from the site's details, with
   Open now, plus a service area and details of its own.
 - `cta` Call to action: a banner or band with one or two buttons.
-- `form` Form: contact, email signup, quote or text club.
+- `form` Form: a form from the site's Forms in the studio.
 
 **Advanced** (`advanced: true`; staff turn each on per site)
 
@@ -110,8 +110,10 @@ until pages are converted)
 - `site_footer` Footer: columns, centered or slim, with a newsletter link,
   contact details, social links and small print.
 
-The forms (`form`, and the retired `request_quote` and `text_club`) draw real fields but
-don't send anything yet. Every block's tray description is the design's;
+A Form block shows a form from the studio's Forms, and sends for real
+(`docs/manifest.md` § Forms). The retired `request_quote` and `text_club` draw
+real fields and send nothing until they're converted. Every block's tray
+description is the design's;
 a few (hours and contact details "from settings", events "past ones
 hide", specials "expire themselves") describe where they're headed, not
 what they do today.

@@ -86,8 +86,10 @@ export const footerSchema = z.object({
    headline: z.string().max(160).default(''),
    label: z.string().max(60).default(''),
    to: address,
+   // A form to show here, from the studio's Forms, in place of the button.
+   form: z.string().max(64).default(''),
   })
-  .default({ on: false, headline: '', label: '', to: '' }),
+  .default({ on: false, headline: '', label: '', to: '', form: '' }),
  contact: z
   .object({
    hours: on,

@@ -7,8 +7,9 @@
  // that field allows) goes to the studio's format bar, and its tools come
  // back here. In Render view the site's own header and footer frame the
  // page, locked: they come from the site's pages, or from the Library when
- // the page has a frame of its own, not from blocks. A block of a global
- // block or template is locked too, and one double-click from the Library.
+ // the page has a frame of its own, not from blocks. A click on one says
+ // which, and the studio takes it from there. A block of a global block or
+ // template is locked too, and one double-click from the Library.
  // A header or footer open in the Library gets the stage instead of all of
  // that (TbFrameStage): a preview with a page to scroll, nothing to edit.
  //
@@ -38,6 +39,7 @@
  const blocks = ref([]);
  const theme = ref({});
  const site = shallowRef(null); // the site's name, address, menu, details and frames, for its header and footer
+ const forms = useTimbrrForms(); // the forms this page can show, as the site draws them
  const mode = ref('full'); // 'render': the page between the site's header and footer
  const stage = ref(false); // the studio asked for the stage, for a Library header or footer
  const connected = ref(false);
@@ -114,7 +116,7 @@
  }
 
  // What the note over the locked header or footer says.
- const chromeNote = (name, side) => `${name} comes from ${site.value?.frame[side] ? 'the Library' : 'your pages'}`;
+ const chromeNote = (name, side) => `${name} comes from ${site.value?.frame[side] ? 'the Library' : 'your pages'}${library.value ? ' · click to open' : ''}`;
 
  // ── Fields: their tools and names, from the block's definition ──
 
@@ -226,6 +228,7 @@
    blocks.value = Array.isArray(message.blocks) ? message.blocks : [];
    theme.value = message.theme && typeof message.theme === 'object' ? message.theme : {};
    site.value = siteFrom(message.site, blocks.value[0]);
+   forms.value = message.forms && typeof message.forms === 'object' ? message.forms : {};
    mode.value = message.mode === 'render' ? 'render' : 'full';
    stage.value = message.stage === true;
    editable.value = !preview && message.editable !== false;
@@ -276,15 +279,17 @@
  }
 
  // Links never take the canvas anywhere. Clicking a block selects it, and
- // clicking anywhere else (the header and footer included) selects nothing.
- // The stage has nothing to select, and the studio's panel stays open.
+ // clicking anywhere else selects nothing. A click on the header or footer
+ // also says which it was. The stage has nothing to select, and the studio's
+ // panel stays open.
  function onClick(event) {
   if (event.target.closest?.('a')) event.preventDefault();
   if (preview || staged.value) return;
   const frame = event.target.closest?.('[data-block-id]');
   const id = frame?.dataset.blockId ?? null;
   selected.value = id;
-  post({ type: 'timbrr:click', id });
+  const side = event.target.closest?.('[data-chrome]')?.dataset.chrome;
+  post({ type: 'timbrr:click', id, ...(side ? { side } : {}) });
  }
 
  // Keys pressed in here never reach the studio, so F (flag something) goes
@@ -493,10 +498,10 @@
   <template v-if="connected">
    <template v-if="framed">
     <TbSiteHeader v-if="preview" :site="site" />
-    <div v-else-if="site.frame.header !== false" class="tb-canvas__chrome">
+    <div v-else-if="site.frame.header !== false" class="tb-canvas__chrome" data-chrome="header">
      <TbSiteHeader :site="site" inert />
-     <span class="tb-canvas__note" aria-hidden="true">
-      <span class="tb-canvas__pill"><span class="tb-canvas__pill-mark">⟲</span>{{ chromeNote('Header', 'header') }}</span>
+     <span class="tb-canvas__note">
+      <button type="button" class="tb-canvas__pill"><span class="tb-canvas__pill-mark" aria-hidden="true">⟲</span>{{ chromeNote('Header', 'header') }}</button>
      </span>
     </div>
    </template>
@@ -521,10 +526,10 @@
 
    <template v-if="framed">
     <TbSiteFooter v-if="preview" :site="site" />
-    <div v-else-if="site.frame.footer !== false" class="tb-canvas__chrome tb-canvas__chrome--footer">
+    <div v-else-if="site.frame.footer !== false" class="tb-canvas__chrome tb-canvas__chrome--footer" data-chrome="footer">
      <TbSiteFooter :site="site" inert />
-     <span class="tb-canvas__note" aria-hidden="true">
-      <span class="tb-canvas__pill"><span class="tb-canvas__pill-mark">⟲</span>{{ chromeNote('Footer', 'footer') }}</span>
+     <span class="tb-canvas__note">
+      <button type="button" class="tb-canvas__pill"><span class="tb-canvas__pill-mark" aria-hidden="true">⟲</span>{{ chromeNote('Footer', 'footer') }}</button>
      </span>
     </div>
    </template>

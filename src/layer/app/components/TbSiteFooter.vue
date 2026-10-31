@@ -69,9 +69,15 @@
   ];
  });
 
+ const forms = useTimbrrForms();
+ const newsletterForm = computed(() => {
+  const row = footer.value?.newsletter;
+  return row?.on && row.form ? (forms.value[row.form] ?? null) : null;
+ });
+
  const newsletter = computed(() => {
   const row = footer.value?.newsletter;
-  if (!row?.on || !(row.headline.trim() || row.label.trim())) return null;
+  if (!row?.on || !(row.headline.trim() || row.label.trim() || newsletterForm.value)) return null;
   return linked(row);
  });
 
@@ -115,7 +121,8 @@
   <div v-if="newsletter" class="tb-site-footer__newsletter">
    <div class="tb-wrap tb-site-footer__newsletter-row">
     <p v-if="newsletter.headline.trim()" class="tb-site-footer__newsletter-words">{{ newsletter.headline }}</p>
-    <component :is="newsletter.link.is" v-if="newsletter.label.trim()" :to="newsletter.link.to" :href="newsletter.link.href" class="tb-site-footer__button">{{ newsletter.label }}</component>
+    <TbForm v-if="newsletterForm" :form="newsletterForm" compact class="tb-site-footer__newsletter-form" />
+    <component :is="newsletter.link.is" v-else-if="newsletter.label.trim()" :to="newsletter.link.to" :href="newsletter.link.href" class="tb-site-footer__button">{{ newsletter.label }}</component>
    </div>
   </div>
 
@@ -191,7 +198,29 @@
   color: color-mix(in srgb, var(--site-dark-ink) 70%, var(--site-muted));
  }
 
- /* The newsletter: its words and a button to wherever the sign-up lives. */
+ /* The newsletter: its words and a form, or a button to wherever the sign-up
+    lives. */
+ .tb-site-footer__newsletter-form {
+  flex: 1 1 320px;
+  min-width: 0;
+  max-width: 460px;
+ }
+
+ /* The words around the boxes take the footer's colors; the boxes keep their
+    own, which are the page's. */
+ .tb-site-footer__newsletter-form .tb-form__label,
+ .tb-site-footer__newsletter-form .tb-form__optional,
+ .tb-site-footer__newsletter-form .tb-form__consent-row,
+ .tb-site-footer__newsletter-form .tb-form__help,
+ .tb-site-footer__newsletter-form .tb-form__sent {
+  color: inherit;
+ }
+
+ .tb-site-footer__newsletter-form .tb-form__error {
+  color: inherit;
+  font-weight: 600;
+ }
+
  .tb-site-footer__newsletter {
   border-bottom: 1px solid color-mix(in srgb, var(--site-dark-ink) 12%, transparent);
  }
