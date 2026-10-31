@@ -43,7 +43,8 @@ library knows when the picture came from there, below) · `nav` (a list of
 NavItems, one level of children, `max` caps a level; `navListSchema` in
 `schema/define.js`. With `single: true` it holds one `{ label, to }`, a
 button: an object, not a list, with no children) · `switch` (a boolean, on
-or off) · `group` (one object's keys, with `subfields`, folded away until
+or off) · `form` (a form from the site's Forms, by id: the studio's own
+picker) · `group` (one object's keys, with `subfields`, folded away until
 they're wanted).
 
 **An image** is `{ src, alt }` at least: `src` is an https address or a
@@ -185,7 +186,7 @@ Studio → canvas
 
 | type | payload |
 |---|---|
-| `timbrr:doc` | `blocks` (`[{ id, type, hidden, data, lock? }]`; `lock` below), `theme` (`{ accent }`), `site` (`{ name, domain, nav, cta?, details?, frame? }` — what the site's header and footer draw; below), `mode` (`render`: the page between the site's header and footer; `full`, or missing: the blocks alone), `editable` (`false` when the person can only look: nothing is typed into, dragged or dropped; missing means `true`), `library` (`false` when the person can't open the Library: no Edit in Library pill, and a double-click does nothing; missing means `true`), `endZone` (`false` when the document takes no more blocks, like a Library header, which holds one: no dashed zone after the last block; missing means `true`), `stage` (`true` only for a Library header or footer: the first block goes on the stage instead of the page, below; missing means `false`) — the whole page, on every change |
+| `timbrr:doc` | `blocks` (`[{ id, type, hidden, data, lock? }]`; `lock` below), `theme` (`{ accent }`), `site` (`{ name, domain, nav, cta?, details?, frame? }` — what the site's header and footer draw; below), `forms` (`{ [id]: form }`, what Form blocks and a footer draw, § Forms), `mode` (`render`: the page between the site's header and footer; `full`, or missing: the blocks alone), `editable` (`false` when the person can only look: nothing is typed into, dragged or dropped; missing means `true`), `library` (`false` when the person can't open the Library: no Edit in Library pill, and a double-click does nothing; missing means `true`), `endZone` (`false` when the document takes no more blocks, like a Library header, which holds one: no dashed zone after the last block; missing means `true`), `stage` (`true` only for a Library header or footer: the first block goes on the stage instead of the page, below; missing means `false`) — the whole page, on every change |
 | `timbrr:select` | `id` or null. A placement's id selects all of its blocks |
 | `timbrr:view` | `scale` — how far the studio scales the frame down to fit; the canvas draws its outlines, tabs and drop zone up by as much, so they read at their real size |
 | `timbrr:format` | `tool` (`bold` `italic` `underline` `link` `h2` `h3` `ul` `ol` `clear`), with `href` for `link` (empty takes the link off) — applied to the open rich-text field if it allows that tool, ignored otherwise |
@@ -415,3 +416,33 @@ the site, except the one being typed into (`useFieldShown()`, from the
 `active` field above), so clearing a field to start over doesn't take it
 away. Blocks that draw text without `<TbText>` or `<TbRich>` are edited in
 the inspector only.
+
+## 7. Forms
+
+A Form block holds a form's id, in `form`, and a footer's newsletter can too.
+The form itself is the studio's (its `docs/forms.md`). The studio sends each
+form a page shows in `page.forms`, `{ [id]: form }`, on the page answers, and
+`forms` on `timbrr:doc` in the canvas. `useTimbrrForms()` keeps them and
+`TbForm` draws one. A form in there is only what a visitor may see: fields,
+button words and whether the Human check runs. A studio or a page that sends
+none draws nothing for the block.
+
+The browser posts to the site's own `POST /__timbrr/forms/:id`, as JSON
+`{ answers, page, elapsed, trap, token }`, or multipart with that as `payload`
+and each upload as `file:<fieldId>`. It's relayed to the studio as it came, with
+the visitor's address in `x-timbrr-visitor`, and the answer comes back unchanged:
+
+| Status | Body | Means |
+|---|---|---|
+| 200 | `{ ok, after: 'message', message }` | Taken: show the rich-text `message` |
+| 200 | `{ ok, after: 'redirect', to }` | Taken: go to the page at `to` |
+| 422 | `{ errors: { [fieldId]: words } }` | An answer is wrong |
+| 428 | `{ challenge, siteKey }` | Pass Turnstile, then send again with `token` |
+| 404 | `{ statusCode, message }` | No such form here |
+
+`app/utils/forms.js` is a copy of the rules a visitor sees, so mistakes show
+without waiting. The studio's `scripts/check-forms.mjs` holds it to the studio's
+own, so change them together.
+
+A block's old `purpose` and words stay in its schema until a later release, for
+pages not yet converted, and draw through `TbFormLegacy`.

@@ -4,7 +4,7 @@ import { z } from 'zod';
 // `fields`, so the widget set is fixed: a manifest can't invent a widget the
 // studio doesn't ship.
 export const CATEGORIES = ['content', 'common', 'layout', 'dynamic', 'cta'];
-export const WIDGETS = ['text', 'textarea', 'html', 'select', 'buttons', 'items', 'image', 'nav', 'switch', 'group'];
+export const WIDGETS = ['text', 'textarea', 'html', 'select', 'buttons', 'items', 'image', 'nav', 'switch', 'group', 'form'];
 export const WYS_TOOLS = ['bold', 'italic', 'underline', 'link', 'h2', 'h3', 'ul', 'ol', 'clear'];
 
 // What every block can set about how it sits on the page: its background,

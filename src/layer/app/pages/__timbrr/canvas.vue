@@ -39,6 +39,7 @@
  const blocks = ref([]);
  const theme = ref({});
  const site = shallowRef(null); // the site's name, address, menu, details and frames, for its header and footer
+ const forms = useTimbrrForms(); // the forms this page can show, as the site draws them
  const mode = ref('full'); // 'render': the page between the site's header and footer
  const stage = ref(false); // the studio asked for the stage, for a Library header or footer
  const connected = ref(false);
@@ -227,6 +228,7 @@
    blocks.value = Array.isArray(message.blocks) ? message.blocks : [];
    theme.value = message.theme && typeof message.theme === 'object' ? message.theme : {};
    site.value = siteFrom(message.site, blocks.value[0]);
+   forms.value = message.forms && typeof message.forms === 'object' ? message.forms : {};
    mode.value = message.mode === 'render' ? 'render' : 'full';
    stage.value = message.stage === true;
    editable.value = !preview && message.editable !== false;

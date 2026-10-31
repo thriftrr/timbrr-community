@@ -23,6 +23,7 @@ export async function useTimbrrPage(path) {
  // never a page. Asking for one there could only ever loop back here.
  if (address.value.startsWith('/__timbrr/')) throw pageError(true, address.value);
  const here = useRequestURL();
+ const forms = useTimbrrForms();
  // No second try: a 502 means the site's server already gave the studio
  // its chance (and its 8 seconds).
  const fetched = useFetch('/__timbrr/page', { query: { path: address }, retry: false });
@@ -104,7 +105,13 @@ export async function useTimbrrPage(path) {
   twitterImage: () => head.value.image,
  });
 
+ // The forms the page shows, for the blocks and footer that name one. This has
+ // to be set up before the await: a watcher made after it belongs to no
+ // component, outlives the page, and would empty the next page's forms when this
+ // page's data is cleared.
+ watch(page, (value) => (forms.value = value.forms ?? {}));
  await fetched;
+ forms.value = page.value.forms ?? {};
  // A dev or staging address whose access ran out while it was open: going
  // back through the server lands on the studio's gate.
  if (import.meta.client && fetched.error.value?.statusCode === 401) {
