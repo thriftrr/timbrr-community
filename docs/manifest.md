@@ -200,7 +200,7 @@ Canvas → studio
 |---|---|
 | `timbrr:ready` | `manifestVersion` — repeated every 250 ms until the first `timbrr:doc` |
 | `timbrr:size` | `height` — the page's height (the page's own, not the window's, so it goes down as well as up), measured again after every `timbrr:doc` and sent when it changed; the studio sizes the frame to it. Never sent from the stage, whose frame has a fixed height |
-| `timbrr:click` | `id` of the block clicked, or null (a locked block's own `<placement id>.<block id>`); also sent when the caret goes into a field of another block |
+| `timbrr:click` | `id` of the block clicked, or null (a locked block's own `<placement id>.<block id>`); also sent when the caret goes into a field of another block. A click on the site's header or footer in Render view has a null `id` and `side`, `header` or `footer` |
 | `timbrr:edit` | `id`, `field` (a path: `items.0.title`), `value` — a string for a text field, a rich-text document (`{ type: 'doc', content: […] }`) for an `html` one. The studio takes nothing else |
 | `timbrr:focus` | `id`, `field`, `kind` (`text` or `rich`), `label` (the field's name from its definition: `Description`, or `Cards 2 · Title` in a list), `tools` (what the field allows: its `wys` for rich text, none for plain), `active` (the tools on at the caret), `href` (the link at the caret, or null) — when the caret arrives, and again whenever any of it changes |
 | `timbrr:blur` | nothing — the caret left the field |
@@ -227,7 +227,10 @@ site's layout uses; README § Header and footer). They're locked on the
 canvas: they carry no block id, can't be selected, typed into or dropped
 on, and under the pointer they shade a little and a note says where they
 come from ("Header comes from your pages", or "… from the Library" when
-the page has a frame, below). A side the page turned off draws neither. A
+the page has a frame, below), adding "· click to open" unless `library` is
+`false`. A click on either tells the studio which, with `side` on
+`timbrr:click`; the note is a button, so Tab and Enter do the same. A side
+the page turned off draws neither. A
 drop over the header lands first, over the footer last. With `mode:
 'full'` the blocks are drawn alone.
 

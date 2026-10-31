@@ -429,10 +429,13 @@ html[data-timbrr-canvas] body {
 /* Render view: the site's header and footer around the page, drawn by the
    site and locked here (they come from its pages, not from blocks). Under
    the pointer they shade a little and a note says so, in the design's ink
-   pill over the header and its paper pill over the footer. */
+   pill over the header and its paper pill over the footer. A click anywhere
+   on one goes to the studio; the note is a button for the keyboard's sake,
+   which the keyboard's focus shows. */
 
 .tb-canvas__chrome {
  position: relative;
+ cursor: pointer;
 }
 
 .tb-canvas__chrome::after {
@@ -460,7 +463,9 @@ html[data-timbrr-canvas] body {
 }
 
 .tb-canvas__chrome:hover::after,
-.tb-canvas__chrome:hover > .tb-canvas__note {
+.tb-canvas__chrome:hover > .tb-canvas__note,
+.tb-canvas__chrome:focus-within::after,
+.tb-canvas__chrome:focus-within > .tb-canvas__note {
  opacity: 1;
 }
 
@@ -468,6 +473,7 @@ html[data-timbrr-canvas] body {
  display: inline-flex;
  align-items: center;
  gap: 6px;
+ border: 0;
  border-radius: 20px;
  padding: 5px 10px 5px 8px;
  background: #3b2a1b;
