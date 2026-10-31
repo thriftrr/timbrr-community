@@ -7,9 +7,11 @@ export default defineBlock({
  description: 'Interior, food, finished jobs',
  category: 'content',
  icon: 'gallery',
+ keywords: ['photos', 'pictures', 'images', 'portfolio', 'slideshow'],
  schema: z.object({
   tagline: z.string().max(80).default(''),
   headline: z.string().max(160).default(''),
+  layout: z.enum(['grid', 'masonry', 'slider']).default('grid'),
   columns: z.enum(['2', '3', '4']).default('3'),
   items: z
    .array(
@@ -24,6 +26,16 @@ export default defineBlock({
  fields: [
   taglineField,
   headlineField,
+  {
+   key: 'layout',
+   label: 'Layout',
+   widget: 'buttons',
+   options: [
+    { label: 'Grid', value: 'grid' },
+    { label: 'Masonry', value: 'masonry' },
+    { label: 'Slider', value: 'slider' },
+   ],
+  },
   {
    key: 'columns',
    label: 'Columns',
@@ -49,6 +61,7 @@ export default defineBlock({
  defaults: {
   tagline: 'Take a look',
   headline: 'Come see for yourself',
+  layout: 'grid',
   columns: '3',
   items: [{ caption: 'Out front' }, { caption: 'Inside' }, { caption: 'Our work' }],
  },

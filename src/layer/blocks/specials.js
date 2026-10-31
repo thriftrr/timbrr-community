@@ -11,6 +11,8 @@ export default defineBlock({
  description: 'Deals that expire themselves',
  category: 'cta',
  icon: 'specials',
+ advanced: true,
+ keywords: ['special', 'deals', 'offers', 'discount', 'promotion'],
  schema: z.object({
   tagline: z.string().max(80).default(''),
   headline: z.string().max(160).default(''),

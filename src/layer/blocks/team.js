@@ -10,6 +10,7 @@ export default defineBlock({
  description: 'Photo, role, book-with link',
  category: 'common',
  icon: 'team',
+ retired: true,
  schema: z.object({
   tagline: z.string().max(80).default(''),
   headline: z.string().max(160).default(''),

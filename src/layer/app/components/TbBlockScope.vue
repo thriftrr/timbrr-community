@@ -26,6 +26,17 @@
 
  const data = computed(() => (props.def ? blockData(props.def, props.block.data) : null));
  const component = computed(() => (props.def ? componentName(props.def.type) : null));
+
+ // How the block sits on the page (site.css, § The look of a block), set on
+ // its root. A retired block has none of these keys, so it gets none.
+ const look = computed(() => ({
+  'tb-look--soft': data.value?.background === 'soft',
+  'tb-look--brand': data.value?.background === 'brand',
+  'tb-look--dark': data.value?.background === 'dark',
+  'tb-look--tight': data.value?.spacing === 'tight',
+  'tb-look--roomy': data.value?.spacing === 'roomy',
+  'tb-look--divider': data.value?.divider === true,
+ }));
  const placement = computed(() => props.block.lock?.id ?? props.block.id);
  const selected = computed(() => placementOf(canvas?.selected.value) === placement.value);
  const dragged = computed(() => placementOf(canvas?.dragging.value) === placement.value);
@@ -54,7 +65,7 @@
 </script>
 
 <template>
- <component :is="component" v-if="!canvas && data" :data="data" />
+ <component :is="component" v-if="!canvas && data" :data="data" :class="look" />
  <div
   v-else-if="canvas"
   class="tb-frame"
@@ -73,7 +84,7 @@
   @pointerleave="hover(false)"
   @dblclick="open"
  >
-  <component :is="component" v-if="data" :data="data" />
+  <component :is="component" v-if="data" :data="data" :class="look" />
   <div v-else class="tb-frame__missing">This site can't show “{{ block.type }}” blocks. Its code doesn't have them.</div>
   <span
    v-if="tabbed"

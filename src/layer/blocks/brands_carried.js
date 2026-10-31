@@ -9,6 +9,7 @@ export default defineBlock({
  description: 'Logo row for product lines',
  category: 'common',
  icon: 'brands_carried',
+ retired: true,
  schema: z.object({
   tagline: z.string().max(80).default(''),
   items: z

@@ -2,10 +2,14 @@
  // The page's opener: tagline, headline, a line or two about the business,
  // buttons and small print, beside a tall photo on either side. Centered
  // stacks the text in one column with the photo under it, when there is one.
+ // Full bleed runs the photo edge to edge behind the words, darkened so
+ // light text reads on any picture, and it's what a see-through header can
+ // sit on: the header's height is added to the room above the words.
  const props = defineProps({ data: { type: Object, required: true } });
  // Empty fields aren't drawn, but one being typed into on the canvas stays.
  const shows = useFieldShown();
 
+ const bleed = computed(() => props.data.layout === 'bleed');
  const showImage = computed(() => props.data.layout !== 'centered' || Boolean(safeSrc(props.data.image.src)));
 
  // The buttons with a label, by place. One without says nothing, so it
@@ -27,7 +31,7 @@
     </div>
     <TbText v-if="shows('note', data.note)" :data="data" field="note" tag="p" class="tb-note" />
    </div>
-   <TbImage v-if="showImage" :image="data.image" ratio="4 / 5" class="tb-hero__image" eager />
+   <TbImage v-if="showImage" :image="data.image" ratio="4 / 5" :sizes="bleed ? '100vw' : undefined" class="tb-hero__image" eager />
   </div>
  </section>
 </template>
@@ -93,6 +97,65 @@
   height: clamp(200px, 40vw, 480px);
  }
 
+ /* Full bleed: the photo fills the block, a wash of the site's dark color
+    over it, darkest behind the words, and the words over that. The photo
+    stays where the other layouts put it, in the column, and is laid out
+    against the block. Its height follows the width, never the window. The
+    site's dark color and its ink are what's repainted here, not a band's
+    (.tb-look), so a block set to Brand reads the same over a photo. */
+ .tb-section.tb-hero--bleed {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  min-height: clamp(440px, 52vw, 680px);
+  padding-block: calc(var(--site-space) * 1.4 + var(--tb-header-height, 0px)) calc(var(--site-space) * 1.4);
+  overflow: hidden;
+  background: var(--site-dark);
+ }
+
+ .tb-hero--bleed::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(
+   90deg,
+   color-mix(in srgb, var(--site-dark) 86%, transparent),
+   color-mix(in srgb, var(--site-dark) 56%, transparent)
+  );
+  pointer-events: none;
+ }
+
+ .tb-hero--bleed .tb-hero__image {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+ }
+
+ .tb-section.tb-hero--bleed .tb-hero__inner {
+  --site-accent: var(--site-dark-ink);
+  --site-accent-ink: var(--site-dark);
+  --site-heading: var(--site-dark-ink);
+  --site-ink: var(--site-dark-ink);
+  --site-body: color-mix(in srgb, var(--site-dark-ink) 88%, var(--site-dark));
+  --site-muted: color-mix(in srgb, var(--site-dark-ink) 72%, var(--site-dark));
+  --site-eyebrow: color-mix(in srgb, var(--site-dark-ink) 80%, var(--site-dark));
+  --site-border: color-mix(in srgb, var(--site-dark-ink) 22%, var(--site-dark));
+  grid-template-columns: minmax(0, 1fr);
+ }
+
+ /* The words are what's lifted, not the column around them: the column has
+    to stay unpositioned for the photo inside it to fill the block. */
+ .tb-hero--bleed .tb-hero__text {
+  position: relative;
+  z-index: 1;
+  max-width: 640px;
+ }
+
  /* Small screens: text first, then the photo across the full width, cropped
     wider so it doesn't take the whole screen. */
  @media (max-width: 720px) {
@@ -107,6 +170,11 @@
 
   .tb-hero__image {
    height: clamp(240px, 68vw, 460px);
+  }
+
+  /* Words run the full width here, so the wash can't lighten past them. */
+  .tb-hero--bleed::after {
+   background: color-mix(in srgb, var(--site-dark) 74%, transparent);
   }
  }
 </style>

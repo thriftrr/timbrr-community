@@ -7,6 +7,7 @@ export default defineBlock({
  description: 'Hand-picked quotes',
  category: 'common',
  icon: 'testimonials',
+ retired: true,
  schema: z.object({
   tagline: z.string().max(80).default(''),
   headline: z.string().max(160).default(''),

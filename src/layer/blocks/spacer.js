@@ -8,6 +8,7 @@ export default defineBlock({
  description: 'Vertical whitespace by size',
  category: 'layout',
  icon: 'spacer',
+ retired: true,
  schema: z.object({
   size: z.enum(['sm', 'md', 'lg', 'xl']).default('md'),
  }),

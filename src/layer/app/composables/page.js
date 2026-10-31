@@ -28,21 +28,28 @@ export async function useTimbrrPage(path) {
  const fetched = useFetch('/__timbrr/page', { query: { path: address }, retry: false });
 
  // The site as its header and footer draw it: { name, domain, nav, accent,
- // frame }. `frame` is the page's header and footer from the Library
- // (docs/README.md § Header and footer), null from an older studio.
+ // frame, details, overHero }. `frame` is the page's header and footer from
+ // the Library (docs/README.md § Header and footer), null from an older
+ // studio; `details` the business's phone, address and hours, null from one;
+ // `overHero` whether the page opens on a full-bleed hero, the one thing a
+ // see-through header can sit over.
+ const page = computed(() => fetched.data.value?.page ?? {});
+ const blocks = computed(() => (Array.isArray(page.value.blocks) ? page.value.blocks : []));
  const site = computed(() => {
   const value = fetched.data.value?.site ?? {};
-  const frame = fetched.data.value?.page?.frame;
+  const frame = page.value.frame;
   return {
    name: text(value.name),
    domain: text(value.domain),
    accent: text(value.accent),
    nav: Array.isArray(value.nav) ? value.nav : [],
    frame: frame && typeof frame === 'object' ? frame : null,
+   details: value.details && typeof value.details === 'object' ? value.details : null,
+   overHero: isHeroBleed(blocks.value[0]),
   };
  });
- const page = computed(() => fetched.data.value?.page ?? {});
- const blocks = computed(() => (Array.isArray(page.value.blocks) ? page.value.blocks : []));
+ // Every block reads the site from here, on a live page as on the canvas.
+ provide(TIMBRR_SITE_KEY, site);
 
  // The brand color, exactly as the canvas applies the studio's theme.
  const style = computed(() => (HEX.test(site.value.accent) ? { '--site-accent': site.value.accent, '--site-accent-ink': inkOn(site.value.accent) } : {}));
@@ -125,6 +132,12 @@ function pageError(missing, address) {
 
 function text(value) {
  return typeof value === 'string' ? value.trim() : '';
+}
+
+// A page that opens on a full-bleed hero, the only thing a see-through
+// header can sit over. The canvas asks the same.
+export function isHeroBleed(block) {
+ return block?.type === 'hero' && block.data?.layout === 'bleed';
 }
 
 // A share image's full address: an https one as it is, a path on the site

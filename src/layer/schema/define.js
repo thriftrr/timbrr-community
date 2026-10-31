@@ -4,13 +4,50 @@ import { z } from 'zod';
 // `fields`, so the widget set is fixed: a manifest can't invent a widget the
 // studio doesn't ship.
 export const CATEGORIES = ['content', 'common', 'layout', 'dynamic', 'cta'];
-export const WIDGETS = ['text', 'textarea', 'html', 'select', 'buttons', 'items', 'image', 'nav'];
+export const WIDGETS = ['text', 'textarea', 'html', 'select', 'buttons', 'items', 'image', 'nav', 'switch', 'group'];
 export const WYS_TOOLS = ['bold', 'italic', 'underline', 'link', 'h2', 'h3', 'ul', 'ol', 'clear'];
+
+// What every block can set about how it sits on the page: its background,
+// the room around it and a rule above it. They're what the Section, Spacer
+// and Divider blocks used to do, and TbBlockScope turns them into classes on
+// the block's root (site.css, § The look of a block), so a block needs no
+// code of its own for them. Flat keys, because the inspector only sets
+// top-level ones.
+const lookShape = {
+ background: z.enum(['page', 'soft', 'brand', 'dark']).default('page'),
+ spacing: z.enum(['tight', 'normal', 'roomy']).default('normal'),
+ divider: z.boolean().default(false),
+};
+const lookFields = [
+ {
+  key: 'background',
+  label: 'Background',
+  widget: 'buttons',
+  options: [
+   { label: 'Page', value: 'page' },
+   { label: 'Soft', value: 'soft' },
+   { label: 'Brand', value: 'brand' },
+   { label: 'Dark', value: 'dark' },
+  ],
+ },
+ {
+  key: 'spacing',
+  label: 'Spacing',
+  widget: 'buttons',
+  options: [
+   { label: 'Tight', value: 'tight' },
+   { label: 'Normal', value: 'normal' },
+   { label: 'Roomy', value: 'roomy' },
+  ],
+ },
+ { key: 'divider', label: 'Line above', widget: 'switch' },
+];
 
 // One block: its data shape (`schema`, zod), how the studio edits it
 // (`fields`), what a new one starts with (`defaults`), and how it shows in
 // the tray. The Vue component sits beside it by name:
-// blocks/hero.js → app/components/blocks/Hero.global.vue.
+// blocks/hero.js → app/components/blocks/Hero.global.vue. Its root must be
+// one element, which is what takes the look's classes.
 //
 //  type        unique; community and private blocks carry a prefix (buroak_hours)
 //  category    content | common | layout | dynamic | cta
@@ -23,8 +60,19 @@ export const WYS_TOOLS = ['bold', 'italic', 'underline', 'link', 'h2', 'h3', 'ul
 //  owner       the brand that commissioned it (community and private tiers)
 //  frame       true: a site's header or footer, kept in the studio's Library
 //              and never in the tray (docs/manifest.md § Header and footer)
+//  advanced    true: offered in the tray only on sites staff turned it on for
+//  retired     true: replaced by a Core block. Never in the tray; pages that
+//              still hold one keep drawing and saving until they're converted
+//  presets     [{ key, label, description?, data }]: ways to start this block,
+//              found by name in the tray's search; `data` goes over `defaults`
+//  keywords    more words the tray's search finds this block by
 export function defineBlock(definition) {
- return definition;
+ if (definition.frame || definition.retired) return definition;
+ return {
+  ...definition,
+  schema: definition.schema.extend(lookShape),
+  fields: [...definition.fields, ...lookFields],
+ };
 }
 
 // Rich text is stored as a small document tree, never HTML, so nothing a
@@ -86,13 +134,17 @@ export const buttonSchema = z.object({
 
 // One menu item, the NavItem the site's header and footer draw
 // (docs/README.md § Header and footer), one level of children at most. The
-// limits are the ones the canvas keeps to (navItem in pages/__timbrr/canvas.vue).
-const navEntrySchema = z.object({
+// limits are the ones the canvas keeps to (navItem in schema/frames.js).
+// `layout` says how an item opens: as a plain link (its children stay, not
+// drawn), a dropdown or a big menu; missing is a dropdown with children and a
+// link without. `group` is a big menu's column heading, on a child.
+export const navEntrySchema = z.object({
  label: z.string().max(120).default(''),
  kind: z.enum(['page', 'external', 'none']).default('page'),
  to: z.string().max(2000).default(''),
- layout: z.enum(['dropdown', 'mega']).optional(),
+ layout: z.enum(['link', 'dropdown', 'mega']).optional(),
  desc: z.string().max(200).optional(),
+ group: z.string().max(60).optional(),
 });
 export const navItemSchema = navEntrySchema.extend({ children: z.array(navEntrySchema).max(40).optional() });
 export const navListSchema = z.array(navItemSchema).max(40).default([]);

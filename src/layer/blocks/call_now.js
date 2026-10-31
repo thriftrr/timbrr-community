@@ -10,6 +10,7 @@ export default defineBlock({
  description: 'Click-to-call, mobile-first',
  category: 'cta',
  icon: 'call_now',
+ retired: true,
  schema: z.object({
   headline: z.string().max(120).default(''),
   phone: z.string().max(40).default(''),

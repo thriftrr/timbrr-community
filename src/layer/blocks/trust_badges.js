@@ -10,6 +10,7 @@ export default defineBlock({
  description: 'Licensed, insured, years in',
  category: 'common',
  icon: 'trust_badges',
+ retired: true,
  schema: z.object({
   items: z
    .array(

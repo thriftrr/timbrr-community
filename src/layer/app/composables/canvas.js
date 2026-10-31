@@ -20,9 +20,10 @@
 //  toolsFor, labelFor   a field's formatting tools and its name, from its block
 export const CANVAS_KEY = Symbol('timbrr-canvas');
 export const BLOCK_KEY = Symbol('timbrr-block');
-// The site as the studio sent it (a ref), in every mode of the canvas: what
-// the site_header and site_footer blocks read their name from. Nothing
-// provides it anywhere else, as on the starter's block shelf.
+// The site (a ref): what the site_header and site_footer blocks read their
+// name from, and Visit its details. The canvas provides what the studio sent,
+// useTimbrrPage what it published. Nothing provides it anywhere else, as on
+// the starter's block shelf.
 export const TIMBRR_SITE_KEY = Symbol('timbrr-site');
 
 export function useCanvas() {

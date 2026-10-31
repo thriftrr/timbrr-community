@@ -5,10 +5,12 @@ import { defineBlock, headlineField, richText, richTextSchema, taglineField } fr
 // the studio, so the page never waits on Google or changes on its own.
 export default defineBlock({
  type: 'reviews',
- label: 'Reviews',
+ label: 'Google reviews',
  description: 'Google rating + recent reviews',
  category: 'dynamic',
  icon: 'reviews',
+ advanced: true,
+ keywords: ['reviews', 'google', 'rating', 'stars'],
  schema: z.object({
   tagline: z.string().max(80).default(''),
   headline: z.string().max(160).default(''),

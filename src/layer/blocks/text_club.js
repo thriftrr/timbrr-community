@@ -12,6 +12,7 @@ export default defineBlock({
  description: 'Loyalty signup with consent',
  category: 'cta',
  icon: 'text_club',
+ retired: true,
  schema: z.object({
   headline: z.string().max(160).default(''),
   body: richTextSchema.default(richText('')),

@@ -7,6 +7,8 @@ export default defineBlock({
  description: 'Toast, Square, delivery app',
  category: 'cta',
  icon: 'order_online',
+ advanced: true,
+ keywords: ['order', 'takeout', 'delivery', 'toast', 'square'],
  schema: z.object({
   headline: z.string().max(160).default(''),
   body: richTextSchema.default(richText('')),

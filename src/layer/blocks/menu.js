@@ -3,10 +3,12 @@ import { defineBlock, headlineField, richText, richTextSchema, taglineField } fr
 
 export default defineBlock({
  type: 'menu',
- label: 'Menu',
+ label: 'Restaurant menu',
  description: 'Items with price + dietary tags',
  category: 'common',
  icon: 'menu',
+ advanced: true,
+ keywords: ['menu', 'food', 'drinks', 'dishes', 'restaurant', 'cafe'],
  schema: z.object({
   tagline: z.string().max(80).default(''),
   headline: z.string().max(160).default(''),

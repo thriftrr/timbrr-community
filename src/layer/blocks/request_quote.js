@@ -11,6 +11,7 @@ export default defineBlock({
  description: 'Name, phone, service, photo',
  category: 'cta',
  icon: 'request_quote',
+ retired: true,
  schema: z.object({
   tagline: z.string().max(80).default(''),
   headline: z.string().max(160).default(''),

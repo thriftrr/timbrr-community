@@ -42,7 +42,9 @@ row, `max` caps it) · `image` (`{ src, alt }`, plus what the studio's media
 library knows when the picture came from there, below) · `nav` (a list of
 NavItems, one level of children, `max` caps a level; `navListSchema` in
 `schema/define.js`. With `single: true` it holds one `{ label, to }`, a
-button: an object, not a list, with no children).
+button: an object, not a list, with no children) · `switch` (a boolean, on
+or off) · `group` (one object's keys, with `subfields`, folded away until
+they're wanted).
 
 **An image** is `{ src, alt }` at least: `src` is an https address or a
 path on the site, `alt` what it shows. One picked from the studio's media
@@ -74,7 +76,26 @@ tab.
 **`frame: true`** on a definition marks a site's header or footer
 (`site_header`, `site_footer`; § 4, Header and footer). The studio keeps
 them in its Library, one block to an item, and never offers them in the
-tray.
+tray. Their `fields` are empty: the studio edits them with panels of its
+own, chosen by block type.
+
+**`advanced: true`** marks a block the tray offers only on sites staff
+turned it on for; the rest of the time a search finds it, off. That's about
+keeping the tray short: it's checked in the tray, never on a save, and
+turning one off leaves the blocks already on pages alone.
+
+**`retired: true`** marks a block a Core block has replaced. It's never in
+the tray, and pages that still hold one keep drawing and saving until
+they're converted. A block can't be both. `defineBlock` adds the settings
+every block has (`background`, `spacing`, `divider`) to everything except a
+frame or a retired block.
+
+**`presets`** is a list of ways to start a block, `[{ key, label,
+description?, data }]`. A preset's `data` goes over the block's `defaults`,
+and the build fails if the result doesn't fit the schema. **`keywords`** is
+a list of more words the tray's search finds the block by. The manifest
+passes all four through as they are, and leaves out what a block doesn't
+set.
 
 **wys** lists the formatting tools a rich field allows: `bold italic
 underline link h2 h3 ul ol clear`. A field in a list is named with `*` for
@@ -101,13 +122,14 @@ same-site paths). Nothing a page holds becomes markup.
   { "name": "bur-oak-site", "version": "0.0.0", "tier": "private" },
   { "name": "@timbrr/community", "version": "0.1.0", "tier": "community" }
  ],
- "widgets": ["text", "textarea", "html", "select", "buttons", "items", "image", "nav"],
+ "widgets": ["text", "textarea", "html", "select", "buttons", "items", "image", "nav", "switch", "group"],
  "blocks": [
   {
    "type": "hours", "tier": "base", "owner": null, "layer": "@timbrr/community",
    "component": "BlocksHours", "label": "Hours", "description": "From settings, open-now indicator",
    "category": "dynamic", "icon": "hours",
-   // "frame": true on a site_header or site_footer, and left out otherwise
+   // "frame": true on a site_header or site_footer; "advanced": true, "retired": true,
+   // "presets": [ ... ] and "keywords": [ ... ] the same way: left out unless set
    "fields": [ /* as defined */ ],
    "defaults": { /* parsed through the schema: every key present */ },
    "wys": { "headline": [], "items.*.title": [], "items.*.body": [], "note": ["italic"] },
@@ -125,8 +147,8 @@ commissioned it):
 - `private`: the block comes from a private layer (the site's own code).
 - `community`: a shared layer's block with an `owner`, commissioned by one
   site and shared with every site.
-- `base`: a shared layer's block with no owner, Timbrr's own library. All
-  40 blocks in `@timbrr/community` are `base` today.
+- `base`: a shared layer's block with no owner, Timbrr's own library. Every
+  block in `@timbrr/community` is `base` today.
 
 A type defined twice, an unknown category or widget, a field the schema
 doesn't have (a list's row fields included), an `items` or `nav` field
@@ -163,7 +185,7 @@ Studio → canvas
 
 | type | payload |
 |---|---|
-| `timbrr:doc` | `blocks` (`[{ id, type, hidden, data, lock? }]`; `lock` below), `theme` (`{ accent }`), `site` (`{ name, domain, nav, cta?, frame? }` — what the site's header and footer draw; below), `mode` (`render`: the page between the site's header and footer; `full`, or missing: the blocks alone), `editable` (`false` when the person can only look: nothing is typed into, dragged or dropped; missing means `true`), `library` (`false` when the person can't open the Library: no Edit in Library pill, and a double-click does nothing; missing means `true`), `endZone` (`false` when the document takes no more blocks, like a Library header, which holds one: no dashed zone after the last block; missing means `true`) — the whole page, on every change |
+| `timbrr:doc` | `blocks` (`[{ id, type, hidden, data, lock? }]`; `lock` below), `theme` (`{ accent }`), `site` (`{ name, domain, nav, cta?, details?, frame? }` — what the site's header and footer draw; below), `mode` (`render`: the page between the site's header and footer; `full`, or missing: the blocks alone), `editable` (`false` when the person can only look: nothing is typed into, dragged or dropped; missing means `true`), `library` (`false` when the person can't open the Library: no Edit in Library pill, and a double-click does nothing; missing means `true`), `endZone` (`false` when the document takes no more blocks, like a Library header, which holds one: no dashed zone after the last block; missing means `true`), `stage` (`true` only for a Library header or footer: the first block goes on the stage instead of the page, below; missing means `false`) — the whole page, on every change |
 | `timbrr:select` | `id` or null. A placement's id selects all of its blocks |
 | `timbrr:view` | `scale` — how far the studio scales the frame down to fit; the canvas draws its outlines, tabs and drop zone up by as much, so they read at their real size |
 | `timbrr:format` | `tool` (`bold` `italic` `underline` `link` `h2` `h3` `ul` `ol` `clear`), with `href` for `link` (empty takes the link off) — applied to the open rich-text field if it allows that tool, ignored otherwise |
@@ -177,7 +199,7 @@ Canvas → studio
 | type | payload |
 |---|---|
 | `timbrr:ready` | `manifestVersion` — repeated every 250 ms until the first `timbrr:doc` |
-| `timbrr:size` | `height` — the page's height (the page's own, not the window's, so it goes down as well as up), measured again after every `timbrr:doc` and sent when it changed; the studio sizes the frame to it |
+| `timbrr:size` | `height` — the page's height (the page's own, not the window's, so it goes down as well as up), measured again after every `timbrr:doc` and sent when it changed; the studio sizes the frame to it. Never sent from the stage, whose frame has a fixed height |
 | `timbrr:click` | `id` of the block clicked, or null (a locked block's own `<placement id>.<block id>`); also sent when the caret goes into a field of another block |
 | `timbrr:edit` | `id`, `field` (a path: `items.0.title`), `value` — a string for a text field, a rich-text document (`{ type: 'doc', content: […] }`) for an `html` one. The studio takes nothing else |
 | `timbrr:focus` | `id`, `field`, `kind` (`text` or `rich`), `label` (the field's name from its definition: `Description`, or `Cards 2 · Title` in a list), `tools` (what the field allows: its `wys` for rich text, none for plain), `active` (the tools on at the caret), `href` (the link at the caret, or null) — when the caret arrives, and again whenever any of it changes |
@@ -210,33 +232,102 @@ drop over the header lands first, over the footer last. With `mode:
 
 `site` is plain data: `name`, `domain` (the site's address), `nav` (menu
 items, NavItems: `{ label, kind: 'page' | 'external' | 'none', to,
-children?, layout?: 'dropdown' | 'mega', desc? }`, one level of children)
-and an optional `cta` (one NavItem, the header's button). The canvas keeps
-only strings and items of that shape, at most 40 a level; every link
-goes through `safeHref()`.
+children?, layout?: 'link' | 'dropdown' | 'mega', desc?, group? }`, one
+level of children), an optional `cta` (one NavItem, the header's button) and
+an optional `details` (Site details: `{ phone, email, street, city, region,
+postal, timezone, note, hours: [{ closed, open, close }] }`, null from an
+older studio). The canvas keeps only strings and items of that shape, at
+most 40 a level, and at most seven rows of hours; every link goes through
+`safeHref()`. It works out one thing itself, `overHero`: whether the page's
+first block is a full-bleed Hero, the one thing a see-through header can sit
+over. `useTimbrrPage` does the same on a published page.
+
+**NavItem `layout`** says how an item opens: `link` draws no menu (its
+children are kept, not drawn, so switching to a link and back loses
+nothing), `dropdown` a list under it, `mega` a big menu. Missing is a
+dropdown with children and a link without. **`group`**, on a child, is its
+column in a big menu. Children without one go in a column headed "More" when
+any sibling has one; with none at all they run in three flat columns.
 
 **Header and footer.** `site.frame` is `{ header, footer }`, what this page
 has from the studio's Library. Each side is a frame's data (below), `null`
 or missing (draw from `nav` and `cta`, as above) or `false` (the page has
-none: draw nothing). The canvas keeps frame data to the same shapes, and
-never merges it into `nav` or `cta`. `<TbSiteHeader>` and `<TbSiteFooter>`
-read it, on the canvas and on a published page alike, where it comes from
-`page.frame` (`useTimbrrPage` puts it on `site`). An answer without it
-behaves like `null`.
+none: draw nothing). The canvas brings frame data down to what its schema
+holds, and never merges it into `nav` or `cta`. `<TbSiteHeader>` and
+`<TbSiteFooter>` read it, on the canvas and on a published page alike, where
+it comes from `page.frame` (`useTimbrrPage` puts it on `site`). An answer
+without it behaves like `null`, and a site with no frame becomes header data
+with the defaults (`headerFromSite`), so there's one way of drawing them.
 
-- `site_header`: `{ style: 'classic' | 'minimal' | 'bar', menu: NavItem[],
-  cta: { label, to }, bar }`. The menu and button replace the site's own.
-  `bar` is the words of the announcement above the header in the Bar style.
-- `site_footer`: `{ style: 'full' | 'slim', columns: NavItem[], legal }`.
-  `columns` replaces the site's menu; slim is one row, without headings.
-  `legal` replaces the "© year name" line when it isn't empty.
+`headerSchema` and `footerSchema` are in `schema/frames.js`:
+
+```js
+// site_header
+{
+ layout: 'left',                       // 'left' | 'center' | 'button'
+ logo: { src: '', alt: '' },           // an image field; empty draws the site's name
+ announce: { on: false, text: '', to: '' },  // text 200
+ utility: { on: false, links: [] },    // NavEntry[] (a NavItem without children), 6 at most
+ menu: [],                             // NavItem[]
+ primary: { label: '', to: '' },
+ secondary: { label: '', to: '' },
+ icons: {
+  search: { on: false, to: '' },
+  account: { on: false, to: '' },
+  cart: { on: false, to: '' },
+  phone: { on: false },                // the number from site.details
+  language: { on: false, to: '', label: '' },  // label empty reads EN
+ },
+ sticky: 'never',                      // 'never' | 'always' | 'up'
+ transparent: false,
+ phone: {
+  style: 'accordion',                  // 'accordion' | 'drill' | 'full'
+  pins: { button: false, phone: false, cart: false },
+ },
+}
+
+// site_footer
+{
+ layout: 'columns',                    // 'columns' | 'centered' | 'slim'
+ columns: [],                          // NavItem[]: an item with children is a headed column
+ newsletter: { on: false, headline: '', label: '', to: '' },  // words and a link, not a form
+ contact: { hours: false, address: false, phone: false },     // from site.details
+ social: [],                           // [{ network, to }], 6 at most;
+                                       // network: instagram | facebook | x | youtube | linkedin | tiktok
+ legal: '',                            // 300; empty draws "© year name"
+ legal_links: [],                      // NavEntry[], 4 at most
+}
+```
+
+A frame saved in the shape before this one (`style`, `cta`, `bar`; a
+footer's `style`) still draws: the components read everything through
+`upgradeHeader` and `upgradeFooter`, pure functions that return the new
+shape and hand new-shape data back untouched. `layout` is what marks the new
+shape. `transparent` only applies with `overHero`, and draws solid otherwise.
+It goes solid after 30px of scroll or while a menu is open, and while it
+applies the header sets `--tb-header-height` on the document root, so a
+full-bleed Hero can pad for it.
 
 The two blocks draw through those same components, so what's built in the
-Library is what a page shows. They read the site's name from
+Library is what a page shows. They read the site's name and details from
 `TIMBRR_SITE_KEY` (`useTimbrrSite()`), which the canvas provides in every
 mode; with no site to read, as on the starter's block shelf, the name is
-"Your site". On the canvas `bar` and `legal` are typed in place, and show
-even when empty; everything else is edited in the inspector.
+"Your site". Nothing in them is typed in place.
+
+**The stage.** A Library header or footer is previewed, not edited on the
+canvas, so with `stage: true` the first block (a `site_header` or
+`site_footer`; anything else draws as usual) goes on a stand-in page instead
+of the blocks: a striped hero and placeholder rows, tall enough to scroll,
+with the frame drawn by `<TbFrameStage>` through the same component a page
+uses. Its `site` is the one sent, with `frame: { [side]: <the block's data> }`
+and `overHero: true`, so a see-through header always has something to sit
+over. There are no block frames, no selection, no typing and no drops, and
+clicking never sends `timbrr:click`, so the studio's panel stays open. The
+header's own controls work and links still don't go anywhere. The frame's
+document scrolls, so sticky, slide-away and see-through run as on a live
+page, which is why the studio gives this frame a fixed height, and why the
+canvas sends no `timbrr:size` here. Its width is what the header's phone
+menu goes by, under 860px.
 
 **Locked blocks.** A block of a global block or global template has an id of
 `<placement id>.<block id>` and carries
