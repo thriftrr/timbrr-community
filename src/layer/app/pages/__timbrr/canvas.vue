@@ -287,10 +287,22 @@
   post({ type: 'timbrr:click', id });
  }
 
+ // Keys pressed in here never reach the studio, so F (flag something) goes
+ // over, unless it's being typed into something.
+ function flagKey(event) {
+  if (event.key?.toLowerCase() !== 'f' || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return false;
+  return !active.value && !event.target.closest?.('input, textarea, select, [contenteditable]');
+ }
+
  // A key pressed while a locked block is selected goes nowhere, so the
  // studio says why. One that's going into an open field isn't that.
  function onKeyDown(event) {
-  if (!editable.value || staged.value || active.value || event.repeat) return;
+  if (event.repeat) return;
+  if (flagKey(event)) {
+   post({ type: 'timbrr:flag' });
+   return;
+  }
+  if (!editable.value || staged.value || active.value) return;
   if (event.key?.length !== 1 || event.ctrlKey || event.metaKey) return;
   const id = placementOf(selected.value);
   if (blocks.value.some((block) => block.lock?.id === id)) post({ type: 'timbrr:locked', id });
