@@ -30,6 +30,11 @@ function checkFields(fields, shape, where) {
    if (row?.type !== 'object') throw new Error(`${where}.${field.key}: the schema must be a list of objects`);
    checkFields(field.subfields ?? [], row.shape, `${where}.${field.key}`);
   }
+  if (field.widget === 'group') {
+   const group = bare(shape[field.key]);
+   if (group?.type !== 'object') throw new Error(`${where}.${field.key}: the schema must be an object`);
+   checkFields(field.subfields ?? [], group.shape, `${where}.${field.key}`);
+  }
   if (field.widget === 'nav') {
    const value = bare(shape[field.key]);
    const row = !field.single && value?.type === 'array' ? bare(value.element) : value;
@@ -38,6 +43,20 @@ function checkFields(fields, shape, where) {
   if ((field.widget === 'select' || field.widget === 'buttons') && !field.options?.length) {
    throw new Error(`${where}.${field.key}: needs options`);
   }
+ }
+}
+
+// Ways to start a block. Each one's data goes over the block's defaults,
+// and the whole has to fit: a preset that didn't would add a broken block.
+function checkPresets(def, where) {
+ if (def.presets === undefined) return;
+ if (!Array.isArray(def.presets)) throw new Error(`${where}: presets must be a list`);
+ const keys = new Set();
+ for (const preset of def.presets) {
+  if (typeof preset?.key !== 'string' || typeof preset.label !== 'string') throw new Error(`${where}: a preset has no key or label`);
+  if (keys.has(preset.key)) throw new Error(`${where}: preset "${preset.key}" is repeated`);
+  keys.add(preset.key);
+  if (!def.schema.safeParse({ ...def.defaults, ...preset.data }).success) throw new Error(`${where}: preset "${preset.key}" doesn't fit the schema`);
  }
 }
 
@@ -65,6 +84,8 @@ export function buildManifest(site, layers, definitions) {
    const bad = tools.find((tool) => !WYS_TOOLS.includes(tool));
    if (bad) throw new Error(`${where}: wys.${key} has unknown tool "${bad}"`);
   }
+  if (def.advanced && def.retired) throw new Error(`${where}: a block can't be advanced and retired`);
+  checkPresets(def, where);
   const defaults = def.schema.parse(def.defaults ?? {});
   return {
    type: def.type,
@@ -77,6 +98,10 @@ export function buildManifest(site, layers, definitions) {
    category: def.category,
    icon: def.icon ?? 'square',
    ...(def.frame === true ? { frame: true } : {}),
+   ...(def.advanced === true ? { advanced: true } : {}),
+   ...(def.retired === true ? { retired: true } : {}),
+   ...(def.presets?.length ? { presets: def.presets } : {}),
+   ...(def.keywords?.length ? { keywords: def.keywords } : {}),
    fields: def.fields,
    defaults,
    wys: def.wys ?? {},

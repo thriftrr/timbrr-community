@@ -7,6 +7,7 @@ export default defineBlock({
  description: 'Title, blurb, starting price',
  category: 'common',
  icon: 'services',
+ retired: true,
  schema: z.object({
   tagline: z.string().max(80).default(''),
   headline: z.string().max(160).default(''),

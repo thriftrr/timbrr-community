@@ -7,6 +7,7 @@ export default defineBlock({
  description: '2–4 feature cards',
  category: 'layout',
  icon: 'columns',
+ retired: true,
  schema: z.object({
   tagline: z.string().max(80).default(''),
   headline: z.string().max(160).default(''),

@@ -7,6 +7,8 @@ export default defineBlock({
  description: 'Two images, drag slider',
  category: 'content',
  icon: 'before_after',
+ advanced: true,
+ keywords: ['before', 'after', 'before and after', 'compare', 'slider'],
  schema: z.object({
   tagline: z.string().max(80).default(''),
   headline: z.string().max(160).default(''),

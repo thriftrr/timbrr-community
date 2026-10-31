@@ -9,6 +9,8 @@ export default defineBlock({
  description: 'Latest posts from the account',
  category: 'dynamic',
  icon: 'instagram',
+ advanced: true,
+ keywords: ['instagram', 'social', 'photos'],
  schema: z.object({
   handle: z.string().max(100).default(''),
   headline: z.string().max(120).default(''),

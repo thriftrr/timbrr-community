@@ -10,6 +10,7 @@ export default defineBlock({
  description: 'Upcoming, past ones hide',
  category: 'dynamic',
  icon: 'events',
+ retired: true,
  schema: z.object({
   tagline: z.string().max(80).default(''),
   headline: z.string().max(160).default(''),

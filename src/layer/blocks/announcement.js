@@ -11,6 +11,7 @@ export default defineBlock({
  description: 'Closures, hiring, emergency',
  category: 'cta',
  icon: 'announcement',
+ retired: true,
  schema: z.object({
   text: richTextSchema.default(richText('')),
   link: z.string().max(60).default(''),

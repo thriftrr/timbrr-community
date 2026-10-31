@@ -7,6 +7,7 @@ export default defineBlock({
  description: 'Rule or decorative break',
  category: 'layout',
  icon: 'divider',
+ retired: true,
  schema: z.object({
   style: z.enum(['line', 'dots', 'leaf']).default('line'),
  }),

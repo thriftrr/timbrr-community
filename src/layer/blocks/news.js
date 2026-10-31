@@ -9,6 +9,7 @@ export default defineBlock({
  description: 'Latest posts',
  category: 'dynamic',
  icon: 'news',
+ retired: true,
  schema: z.object({
   tagline: z.string().max(80).default(''),
   headline: z.string().max(160).default(''),

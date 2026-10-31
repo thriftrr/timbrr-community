@@ -66,6 +66,58 @@ body {
  padding-block: var(--site-space);
 }
 
+/* The look of a block: every block's background, spacing and line above it
+   (lookShape in schema/define.js), set on its root by TbBlockScope. A colored
+   band repaints the --site-* variables for what's inside it, so a block needs
+   no code of its own to sit on one. Two steps, because a variable can't be
+   defined from itself: the root keeps the page's colors in --tb-look-*, and
+   its children read those. */
+.tb-look--soft {
+ background: var(--site-surface);
+}
+
+.tb-look--brand,
+.tb-look--dark {
+ background: var(--tb-look-fill);
+ color: var(--tb-look-ink);
+}
+
+.tb-look--brand {
+ --tb-look-fill: var(--site-accent);
+ --tb-look-ink: var(--site-accent-ink);
+}
+
+.tb-look--dark {
+ --tb-look-fill: var(--site-dark);
+ --tb-look-ink: var(--site-dark-ink);
+}
+
+.tb-look--brand > *,
+.tb-look--dark > * {
+ --site-accent: var(--tb-look-ink);
+ --site-accent-ink: var(--tb-look-fill);
+ --site-heading: var(--tb-look-ink);
+ --site-ink: var(--tb-look-ink);
+ --site-body: color-mix(in srgb, var(--tb-look-ink) 82%, var(--tb-look-fill));
+ --site-muted: color-mix(in srgb, var(--tb-look-ink) 65%, var(--tb-look-fill));
+ --site-eyebrow: color-mix(in srgb, var(--tb-look-ink) 75%, var(--tb-look-fill));
+ --site-bg: var(--tb-look-fill);
+ --site-surface: color-mix(in srgb, var(--tb-look-ink) 9%, var(--tb-look-fill));
+ --site-border: color-mix(in srgb, var(--tb-look-ink) 22%, var(--tb-look-fill));
+}
+
+.tb-look--tight {
+ --site-space: clamp(28px, 4vw, 44px);
+}
+
+.tb-look--roomy {
+ --site-space: clamp(72px, 12vw, 132px);
+}
+
+.tb-look--divider {
+ border-top: 1px solid var(--site-border);
+}
+
 .tb-section__head {
  max-width: 620px;
  margin: 0 auto 32px;
@@ -268,6 +320,42 @@ body {
  font-size: 14.5px;
  color: var(--site-body);
  white-space: pre-line;
+}
+
+/* ── Slider (shared by blocks that offer one) ── */
+
+/* A row that scrolls sideways and stops on each item, with no script: the
+   browser's own scroll snap. --tb-slider-across says how many show; a quarter
+   of the next one peeks in, so the row reads as more than it shows. */
+.tb-slider {
+ --tb-slider-gap: clamp(14px, 1.8vw, 20px);
+ display: grid;
+ grid-auto-columns: calc((100% - var(--tb-slider-across, 3) * var(--tb-slider-gap)) / (var(--tb-slider-across, 3) + 0.25));
+ grid-auto-flow: column;
+ gap: var(--tb-slider-gap);
+ margin: 0;
+ padding: 0 0 12px;
+ overflow-x: auto;
+ overscroll-behavior-x: contain;
+ scroll-snap-type: x mandatory;
+ scrollbar-width: thin;
+ list-style: none;
+}
+
+.tb-slider > * {
+ min-width: 0;
+ scroll-snap-align: start;
+}
+
+.tb-slider:focus-visible {
+ outline: 2px solid var(--site-accent);
+ outline-offset: 3px;
+}
+
+@media (max-width: 760px) {
+ .tb-slider {
+  grid-auto-columns: min(78%, 340px);
+ }
 }
 
 /* ── The pages a site serves ── */

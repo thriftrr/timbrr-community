@@ -8,6 +8,7 @@ export default defineBlock({
  description: 'Careers list, no page rebuild',
  category: 'dynamic',
  icon: 'jobs',
+ retired: true,
  schema: z.object({
   tagline: z.string().max(80).default(''),
   headline: z.string().max(160).default(''),

@@ -10,6 +10,7 @@ export default defineBlock({
  description: 'Phone, email, socials from settings',
  category: 'dynamic',
  icon: 'contact_details',
+ retired: true,
  schema: z.object({
   tagline: z.string().max(80).default(''),
   phone: z.string().max(40).default(''),

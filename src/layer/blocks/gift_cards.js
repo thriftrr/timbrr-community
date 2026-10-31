@@ -10,6 +10,7 @@ export default defineBlock({
  description: 'Link to gift card checkout',
  category: 'cta',
  icon: 'gift_cards',
+ retired: true,
  schema: z.object({
   tagline: z.string().max(80).default(''),
   headline: z.string().max(160).default(''),

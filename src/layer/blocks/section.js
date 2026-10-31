@@ -10,6 +10,7 @@ export default defineBlock({
  description: 'Background, padding, width wrapper',
  category: 'layout',
  icon: 'section',
+ retired: true,
  schema: z.object({
   tagline: z.string().max(60).default(''),
   bg: z.enum(['paper', 'white', 'pine']).default('paper'),

@@ -10,6 +10,7 @@ export default defineBlock({
  description: 'From settings, open-now indicator',
  category: 'dynamic',
  icon: 'hours',
+ retired: true,
  schema: z.object({
   tagline: z.string().max(80).default(''),
   headline: z.string().max(160).default(''),

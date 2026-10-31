@@ -7,6 +7,7 @@ export default defineBlock({
  description: 'Card grid, set column count',
  category: 'layout',
  icon: 'grid',
+ retired: true,
  schema: z.object({
   columns: z.enum(['2', '3', '4']).default('3'),
   items: z

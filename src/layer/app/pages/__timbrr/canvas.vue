@@ -9,6 +9,8 @@
  // page, locked: they come from the site's pages, or from the Library when
  // the page has a frame of its own, not from blocks. A block of a global
  // block or template is locked too, and one double-click from the Library.
+ // A header or footer open in the Library gets the stage instead of all of
+ // that (TbFrameStage): a preview with a page to scroll, nothing to edit.
  //
  // With ?preview=1 it's the page exactly as the site draws it: no outlines,
  // tabs, typing or drop zones, and hidden blocks stay hidden (the tray's
@@ -17,6 +19,7 @@
  // checked against one origin: the configured studio, or localhost in
  // development.
  import { WYS_TOOLS } from '#timbrr/define';
+ import { footerData, headerData, navItem, navList } from '../../../schema/frames.js';
 
  definePageMeta({ layout: false });
 
@@ -34,8 +37,9 @@
  const root = ref(null);
  const blocks = ref([]);
  const theme = ref({});
- const site = shallowRef(null); // the site's name, address, menu and frames, for its header and footer
+ const site = shallowRef(null); // the site's name, address, menu, details and frames, for its header and footer
  const mode = ref('full'); // 'render': the page between the site's header and footer
+ const stage = ref(false); // the studio asked for the stage, for a Library header or footer
  const connected = ref(false);
  const editable = ref(!preview); // false: a preview, or someone who can only look
  const library = ref(true); // false: this person can't open the Library
@@ -51,8 +55,12 @@
  let parentOrigin = null;
  let focused = null; // { id, field, key } the studio last heard has the caret
 
- // A site with no name or address to show isn't framed at all.
- const framed = computed(() => mode.value === 'render' && Boolean(site.value?.name || site.value?.domain));
+ // The block on the stage, if there is one. It's only ever a frame.
+ const staged = computed(() => (stage.value && ['site_header', 'site_footer'].includes(blocks.value[0]?.type) ? blocks.value[0] : null));
+
+ // A site with no name or address to show isn't framed at all, and the
+ // stage draws its own.
+ const framed = computed(() => !staged.value && mode.value === 'render' && Boolean(site.value?.name || site.value?.domain));
 
  function allowed(origin) {
   if (studio) return origin === studio;
@@ -65,49 +73,39 @@
 
  // ── The site's header and footer ──
  // Only strings and plain menu items (NavItem: label, kind, to, layout,
- // desc; children one level down) get as far as the components. The same
- // goes for a frame from the Library, which stays beside the site's own
- // menu, never merged into it: `false` (the page has none), or its data, or
- // null (draw the site's menu).
+ // desc, group; children one level down) get as far as the components, and
+ // of Site details, its strings and the rows of its hours. A frame from the
+ // Library stays beside the site's own menu, never merged into it, and comes
+ // down to what its schema holds, in the shape the site draws: `false` (the
+ // page has none), or its data, or null (draw the site's menu).
 
  const text = (value, max) => (typeof value === 'string' ? value.slice(0, max) : '');
 
- function navItem(item, depth) {
-  return {
-   label: text(item.label, 120),
-   kind: ['page', 'external', 'none'].includes(item.kind) ? item.kind : undefined,
-   to: text(item.to, 2000),
-   layout: item.layout === 'mega' ? 'mega' : 'dropdown',
-   desc: text(item.desc, 200),
-   children: depth > 0 ? navList(item.children, depth - 1) : [],
-  };
- }
-
- function navList(list, depth) {
-  return Array.isArray(list)
-   ? list
-      .filter((item) => item && typeof item === 'object')
-      .slice(0, 40)
-      .map((item) => navItem(item, depth))
-   : [];
- }
-
- function siteFrom(value) {
+ function siteFrom(value, firstBlock) {
   if (!value || typeof value !== 'object') return null;
   return {
    name: text(value.name, 120),
    domain: text(value.domain, 253),
    nav: navList(value.nav, 1),
    cta: buttonFrom(value.cta),
+   details: detailsFrom(value.details),
+   overHero: isHeroBleed(firstBlock),
    frame: {
-    header: frameFrom(value.frame?.header, (frame) => ({ style: text(frame.style, 20), menu: navList(frame.menu, 1), cta: buttonFrom(frame.cta), bar: text(frame.bar, 200) })),
-    footer: frameFrom(value.frame?.footer, (frame) => ({ style: text(frame.style, 20), columns: navList(frame.columns, 1), legal: text(frame.legal, 300) })),
+    header: frameFrom(value.frame?.header, headerData),
+    footer: frameFrom(value.frame?.footer, footerData),
    },
   };
  }
 
  function buttonFrom(value) {
   return value && typeof value === 'object' ? navItem(value, 0) : null;
+ }
+
+ function detailsFrom(value) {
+  if (!value || typeof value !== 'object') return null;
+  const strings = ['phone', 'email', 'street', 'city', 'region', 'postal', 'timezone', 'note'].map((key) => [key, text(value[key], 300)]);
+  const hours = (Array.isArray(value.hours) ? value.hours : []).slice(0, 7).map((row) => ({ closed: row?.closed === true, open: text(row?.open, 5), close: text(row?.close, 5) }));
+  return { ...Object.fromEntries(strings), hours };
  }
 
  function frameFrom(value, keep) {
@@ -227,8 +225,9 @@
   if (message.type === 'timbrr:doc') {
    blocks.value = Array.isArray(message.blocks) ? message.blocks : [];
    theme.value = message.theme && typeof message.theme === 'object' ? message.theme : {};
-   site.value = siteFrom(message.site);
+   site.value = siteFrom(message.site, blocks.value[0]);
    mode.value = message.mode === 'render' ? 'render' : 'full';
+   stage.value = message.stage === true;
    editable.value = !preview && message.editable !== false;
    library.value = message.library !== false;
    endZone.value = message.endZone !== false;
@@ -245,7 +244,7 @@
   // A block from the studio's tray, carried over the page by the studio
   // (its frame can't take the drop itself; see Drops below).
   if (message.type === 'timbrr:dragover') {
-   if (editable.value && Number.isFinite(message.y)) placeDrop(message.y);
+   if (takesDrops.value && Number.isFinite(message.y)) placeDrop(message.y);
    return;
   }
   if (message.type === 'timbrr:dragleave') {
@@ -253,7 +252,7 @@
    return;
   }
   if (message.type === 'timbrr:drop') {
-   if (editable.value && Number.isFinite(message.y)) {
+   if (takesDrops.value && Number.isFinite(message.y)) {
     placeDrop(message.y);
     post({ type: 'timbrr:drop', kind: 'add', index: dropIndex.value });
    }
@@ -278,9 +277,10 @@
 
  // Links never take the canvas anywhere. Clicking a block selects it, and
  // clicking anywhere else (the header and footer included) selects nothing.
+ // The stage has nothing to select, and the studio's panel stays open.
  function onClick(event) {
   if (event.target.closest?.('a')) event.preventDefault();
-  if (preview) return;
+  if (preview || staged.value) return;
   const frame = event.target.closest?.('[data-block-id]');
   const id = frame?.dataset.blockId ?? null;
   selected.value = id;
@@ -290,7 +290,7 @@
  // A key pressed while a locked block is selected goes nowhere, so the
  // studio says why. One that's going into an open field isn't that.
  function onKeyDown(event) {
-  if (!editable.value || active.value || event.repeat) return;
+  if (!editable.value || staged.value || active.value || event.repeat) return;
   if (event.key?.length !== 1 || event.ctrlKey || event.metaKey) return;
   const id = placementOf(selected.value);
   if (blocks.value.some((block) => block.lock?.id === id)) post({ type: 'timbrr:locked', id });
@@ -327,8 +327,10 @@
  // with timbrr:drop as a native drop would be. The native path stays for
  // a canvas on the studio's own origin.
 
+ const takesDrops = computed(() => editable.value && !staged.value);
+
  function accepts(event) {
-  if (!editable.value) return false;
+  if (!takesDrops.value) return false;
   const types = [...(event.dataTransfer?.types ?? [])];
   return types.includes('application/x-timbrr-block') || types.includes('application/x-timbrr-move');
  }
@@ -400,13 +402,14 @@
  // ── Size ──
  // The studio sizes the frame to the page, so the page never scrolls
  // itself. It's the page that's measured, not the window, so the frame
- // shrinks again when the page does.
+ // shrinks again when the page does. The stage is the exception: its frame
+ // has a fixed height and the page scrolls inside it, so it reports nothing.
 
  let observer;
  let lastHeight = -1;
  function reportSize(again = false) {
   const el = root.value;
-  if (!el || !parentOrigin) return;
+  if (!el || !parentOrigin || staged.value) return;
   const height = Math.ceil(Math.max(el.scrollHeight, el.getBoundingClientRect().height));
   if (height === lastHeight && !again) return;
   lastHeight = height;
@@ -486,7 +489,8 @@
     </div>
    </template>
 
-   <main class="tb-canvas__page">
+   <TbFrameStage v-if="staged" :site="site" :block="staged" />
+   <main v-else class="tb-canvas__page">
     <TbBlocks :blocks="blocks" />
     <template v-if="!preview">
      <div v-if="editable && endZone" class="tb-canvas__end" :class="{ 'is-empty': !blocks.length, 'is-over': dropIndex !== null }">
