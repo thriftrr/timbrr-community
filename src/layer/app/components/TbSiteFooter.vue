@@ -239,7 +239,7 @@
   margin: 0;
   font-family: var(--site-font-display);
   font-size: 20px;
-  font-weight: 800;
+  font-weight: var(--site-heading-weight);
   line-height: 1.25;
   color: var(--site-dark-ink);
  }
@@ -278,7 +278,7 @@
  .tb-site-footer__name {
   font-family: var(--site-font-display);
   font-size: 20px;
-  font-weight: 800;
+  font-weight: var(--site-heading-weight);
   line-height: 1.2;
   letter-spacing: -0.01em;
   color: var(--site-dark-ink);

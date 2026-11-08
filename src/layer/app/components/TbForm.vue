@@ -355,7 +355,7 @@
   min-width: 0;
   margin: 0;
   border: 1px solid color-mix(in srgb, var(--site-muted) 12%, var(--site-border));
-  border-radius: 9px;
+  border-radius: var(--site-control-radius);
   padding: 11px 14px;
   background: var(--site-bg);
   font: inherit;
@@ -421,7 +421,7 @@
   align-items: center;
   gap: 10px;
   border: 1px solid color-mix(in srgb, var(--site-muted) 12%, var(--site-border));
-  border-radius: 9px;
+  border-radius: var(--site-control-radius);
   padding: 11px 14px;
   background: var(--site-bg);
   font-size: 16px;
@@ -469,7 +469,7 @@
   position: relative;
   display: block;
   border: 1px dashed color-mix(in srgb, var(--site-muted) 40%, var(--site-border));
-  border-radius: 9px;
+  border-radius: var(--site-control-radius);
   padding: 14px;
   background: var(--site-bg);
   cursor: pointer;
@@ -500,7 +500,7 @@
 
  .tb-form__total {
   margin: 0;
-  border-radius: 9px;
+  border-radius: var(--site-control-radius);
   padding: 12px 14px;
   background: color-mix(in srgb, var(--site-accent) 8%, var(--site-bg));
   font-size: 26px;

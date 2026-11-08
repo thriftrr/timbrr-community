@@ -104,7 +104,7 @@
   min-width: 0;
   margin: 0;
   border: 1px solid color-mix(in srgb, var(--site-muted) 12%, var(--site-border));
-  border-radius: 9px;
+  border-radius: var(--site-control-radius);
   padding: 11px 14px;
   background: var(--site-bg);
   font: inherit;
@@ -176,7 +176,7 @@
   grid-column: 1 / -1;
   display: block;
   border: 1.5px dashed color-mix(in srgb, var(--site-muted) 28%, var(--site-border));
-  border-radius: 9px;
+  border-radius: var(--site-control-radius);
   padding: 18px 14px;
   font-size: 15px;
   line-height: 1.4;

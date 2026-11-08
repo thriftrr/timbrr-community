@@ -16,6 +16,10 @@ export default defineNuxtConfig({
    // NUXT_TIMBRR_PREVIEW_DOMAIN: dev and staging addresses are
    // <slug>.dev.<this> and <slug>.staging.<this> (server/utils/preview.js).
    previewDomain: 'timbrr.app',
+   // NUXT_TIMBRR_HOSTED=true: this Worker serves every site on a launch
+   // domain, asking the studio which site each hostname belongs to
+   // (server/utils/hosted.js). Off for a site with its own Worker.
+   hosted: false,
   },
   public: {
    // NUXT_PUBLIC_SITE: this site's slug in the studio.

@@ -25,7 +25,18 @@
  --site-font-mono: 'IBM Plex Mono', ui-monospace, monospace;
  --site-max: 1080px;
  --site-gutter: clamp(20px, 5vw, 44px);
- --site-space: clamp(48px, 8vw, 88px);
+ --site-space-scale: 1;
+ --site-space: calc(clamp(48px, 8vw, 88px) * var(--site-space-scale));
+ /* Type and shape, set by a site's brand (utils/brand.js). The defaults are
+    the look the blocks always had. */
+ --site-text-size: 16px;
+ --site-heading-scale: 1;
+ --site-heading-weight: 800;
+ --site-heading-tracking: -0.01em;
+ --site-control-radius: 9px;
+ --site-shadow: 0 6px 16px color-mix(in srgb, var(--site-heading) 10%, transparent);
+ --site-narrow: 720px;
+ --site-wide: 1280px;
 }
 
 *,
@@ -38,7 +49,7 @@ body {
  margin: 0;
  background: var(--site-bg);
  font-family: var(--site-font-body);
- font-size: 16px;
+ font-size: var(--site-text-size);
  line-height: 1.6;
  color: var(--site-ink);
  -webkit-font-smoothing: antialiased;
@@ -52,13 +63,13 @@ body {
 }
 
 .tb-wrap--narrow {
- max-width: 720px;
+ max-width: var(--site-narrow);
 }
 
 /* Wider than the page's own measure (--site-max), so it sets the width
    rather than capping it. */
 .tb-wrap--wide {
- width: min(100% - 2 * var(--site-gutter), 1280px);
+ width: min(100% - 2 * var(--site-gutter), var(--site-wide));
 }
 
 .tb-section {
@@ -107,11 +118,11 @@ body {
 }
 
 .tb-look--tight {
- --site-space: clamp(28px, 4vw, 44px);
+ --site-space: calc(clamp(28px, 4vw, 44px) * var(--site-space-scale));
 }
 
 .tb-look--roomy {
- --site-space: clamp(72px, 12vw, 132px);
+ --site-space: calc(clamp(72px, 12vw, 132px) * var(--site-space-scale));
 }
 
 .tb-look--divider {
@@ -144,15 +155,15 @@ body {
 .tb-hero__headline {
  margin: 0;
  font-family: var(--site-font-display);
- font-weight: 800;
+ font-weight: var(--site-heading-weight);
  line-height: 1.1;
- letter-spacing: -0.01em;
+ letter-spacing: var(--site-heading-tracking);
  color: var(--site-heading);
  text-wrap: balance;
 }
 
 .tb-heading {
- font-size: clamp(26px, 3.2vw, 34px);
+ font-size: calc(clamp(26px, 3.2vw, 34px) * var(--site-heading-scale));
 }
 
 .tb-lede {
@@ -235,7 +246,7 @@ body {
  display: inline-flex;
  align-items: center;
  border: 1.5px solid var(--site-accent);
- border-radius: 9px;
+ border-radius: var(--site-control-radius);
  padding: 11px 18px;
  font-size: 14.5px;
  font-weight: 700;
@@ -304,7 +315,7 @@ body {
  padding: 0 8px;
  background: color-mix(in srgb, var(--site-accent) 12%, var(--site-bg));
  font-family: var(--site-font-display);
- font-weight: 800;
+ font-weight: var(--site-heading-weight);
  color: var(--site-accent);
 }
 

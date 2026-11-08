@@ -88,7 +88,7 @@
   width: max-content;
   min-width: 36px;
   height: 36px;
-  border-radius: 9px;
+  border-radius: var(--site-control-radius);
   font-size: 16px;
   line-height: 1;
  }
@@ -153,7 +153,7 @@
 
  .tb-columns .tb-columns__card--stretched:hover {
   border-color: var(--site-accent);
-  box-shadow: 0 6px 16px color-mix(in srgb, var(--site-heading) 10%, transparent);
+  box-shadow: var(--site-shadow);
   transform: translateY(-1px);
  }
 

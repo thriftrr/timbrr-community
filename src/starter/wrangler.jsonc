@@ -31,6 +31,23 @@
     "NUXT_TIMBRR_API": "https://timbrr.app"
    }
   },
+  // Every launch domain: the same build again, with no site set. A domain
+  // reaches it through Cloudflare for SaaS, the customer's CNAME pointing at
+  // sites.timbrr.app, and the studio says which site that hostname is
+  // (src/layer/server/middleware/hosted.js). `make deploy-hosted` ships it.
+  // Needs Cloudflare for SaaS on the zone with sites.timbrr.app as its
+  // fallback origin, a proxied DNS record for that name, and this route
+  // (the studio's docs/sites.md, "Launch domain").
+  "hosted": {
+   "name": "timbrr-sites",
+   "routes": [{ "pattern": "sites.timbrr.app/*", "zone_name": "timbrr.app" }],
+   "observability": { "enabled": true, "redact_query_string": true },
+   "vars": {
+    "NUXT_PUBLIC_STUDIO_ORIGIN": "https://timbrr.app",
+    "NUXT_TIMBRR_API": "https://timbrr.app",
+    "NUXT_TIMBRR_HOSTED": "true"
+   }
+  },
   // Every site's dev and staging addresses, for sites with no code of their
   // own: the same build again, with no site set, since the address names
   // it (src/layer/server/middleware/preview.js). A site with its own Worker

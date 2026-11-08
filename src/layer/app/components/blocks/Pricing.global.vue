@@ -113,7 +113,7 @@
   min-width: 0;
   font-family: var(--site-font-display);
   font-size: clamp(30px, 1vw + 24px, 36px);
-  font-weight: 800;
+  font-weight: var(--site-heading-weight);
   line-height: 1.1;
   letter-spacing: -0.01em;
   color: var(--site-heading);

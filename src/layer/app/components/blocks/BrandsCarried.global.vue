@@ -69,7 +69,7 @@
   padding: var(--tb-brands-carried-pad) clamp(18px, 1.9vw, 24px);
   font-family: var(--site-font-display);
   font-size: clamp(16px, 0.35vw + 13.5px, 18px);
-  font-weight: 800;
+  font-weight: var(--site-heading-weight);
   letter-spacing: 0.02em;
   line-height: 1.2;
   color: var(--site-body);

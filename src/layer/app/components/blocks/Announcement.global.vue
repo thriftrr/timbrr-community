@@ -91,7 +91,7 @@
  }
 
  .tb-announcement__text strong {
-  font-weight: 800;
+  font-weight: var(--site-heading-weight);
  }
 
  .tb-announcement .tb-announcement__text :is(a, h2, h3) {

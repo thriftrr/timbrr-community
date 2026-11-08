@@ -97,7 +97,7 @@
   margin: 0;
   font-family: var(--site-font-display);
   font-size: clamp(28px, 4vw, 38px);
-  font-weight: 800;
+  font-weight: var(--site-heading-weight);
   line-height: 1.1;
  }
 

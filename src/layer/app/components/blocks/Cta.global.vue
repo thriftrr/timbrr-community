@@ -69,7 +69,7 @@
  .tb-cta .tb-cta__headline {
   max-width: 19em;
   margin-inline: auto;
-  font-size: clamp(28px, 2.2vw + 14px, 38px);
+  font-size: calc(clamp(28px, 2.2vw + 14px, 38px) * var(--site-heading-scale));
  }
 
  .tb-cta__body {
