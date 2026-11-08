@@ -130,7 +130,7 @@
   background: var(--site-bg);
   font-family: var(--site-font-display);
   font-size: 18px;
-  font-weight: 800;
+  font-weight: var(--site-heading-weight);
   line-height: 1;
   color: #4285f4;
  }
@@ -139,7 +139,7 @@
   margin: 0;
   font-family: var(--site-font-display);
   font-size: 26px;
-  font-weight: 800;
+  font-weight: var(--site-heading-weight);
   line-height: 1;
   color: var(--site-heading);
  }

@@ -148,7 +148,7 @@
 
  a.tb-book__calendar:hover {
   border-color: color-mix(in srgb, var(--site-accent) 45%, var(--site-border));
-  box-shadow: 0 6px 16px color-mix(in srgb, var(--site-heading) 8%, transparent);
+  box-shadow: var(--site-shadow);
  }
 
  .tb-book__month {

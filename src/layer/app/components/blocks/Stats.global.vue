@@ -141,7 +141,7 @@
   font-family: var(--site-font-display);
   font-size: clamp(36px, 2.4vw + 24px, 52px);
   font-variant-numeric: tabular-nums;
-  font-weight: 800;
+  font-weight: var(--site-heading-weight);
   letter-spacing: -0.01em;
   line-height: 1.1;
   color: var(--site-accent);

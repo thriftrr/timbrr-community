@@ -83,9 +83,10 @@
 
  const text = (value, max) => (typeof value === 'string' ? value.slice(0, max) : '');
 
- function siteFrom(value, firstBlock) {
+ function siteFrom(value, firstBlock, brand) {
   if (!value || typeof value !== 'object') return null;
   return {
+   brand: normalizeBrand(brand),
    name: text(value.name, 120),
    domain: text(value.domain, 253),
    nav: navList(value.nav, 1),
@@ -227,7 +228,7 @@
   if (message.type === 'timbrr:doc') {
    blocks.value = Array.isArray(message.blocks) ? message.blocks : [];
    theme.value = message.theme && typeof message.theme === 'object' ? message.theme : {};
-   site.value = siteFrom(message.site, blocks.value[0]);
+   site.value = siteFrom(message.site, blocks.value[0], theme.value.brand);
    forms.value = message.forms && typeof message.forms === 'object' ? message.forms : {};
    mode.value = message.mode === 'render' ? 'render' : 'full';
    stage.value = message.stage === true;
@@ -487,10 +488,11 @@
   observer?.disconnect();
  });
 
- const themeStyle = computed(() => ({
-  ...(theme.value.accent ? { '--site-accent': theme.value.accent, '--site-accent-ink': inkOn(theme.value.accent) } : {}),
-  '--tb-ui': ui.value,
- }));
+ // The studio's theme: the brand color and the brand (utils/brand.js),
+ // applied the way a live page applies them (composables/page.js).
+ const brandOnly = computed(() => brandStyle(theme.value.accent, theme.value.brand));
+ useBrandHead(brandOnly, () => theme.value.brand);
+ const themeStyle = computed(() => ({ ...brandOnly.value, '--tb-ui': ui.value }));
 </script>
 
 <template>

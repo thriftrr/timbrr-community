@@ -147,7 +147,7 @@
 
  .tb-jobs .tb-jobs__item--stretched:hover {
   border-color: var(--site-accent);
-  box-shadow: 0 6px 16px color-mix(in srgb, var(--site-heading) 10%, transparent);
+  box-shadow: var(--site-shadow);
   transform: translateY(-1px);
  }
 

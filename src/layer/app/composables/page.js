@@ -46,6 +46,7 @@ export async function useTimbrrPage(path) {
    nav: Array.isArray(value.nav) ? value.nav : [],
    frame: frame && typeof frame === 'object' ? frame : null,
    details: value.details && typeof value.details === 'object' ? value.details : null,
+   brand: normalizeBrand(value.brand),
    overHero: isHeroBleed(blocks.value[0]),
   };
  });
@@ -53,7 +54,10 @@ export async function useTimbrrPage(path) {
  provide(TIMBRR_SITE_KEY, site);
 
  // The brand color, exactly as the canvas applies the studio's theme.
- const style = computed(() => (HEX.test(site.value.accent) ? { '--site-accent': site.value.accent, '--site-accent-ink': inkOn(site.value.accent) } : {}));
+ // The brand (utils/brand.js) sets the rest of the --site-* variables. They
+ // go on :root too, so the page's own background and type follow.
+ const style = computed(() => brandStyle(site.value.accent, site.value.brand));
+ useBrandHead(style, () => site.value.brand);
 
  // Where the site lives: https://<its domain>, or this host until it has one.
  const origin = computed(() => {
@@ -152,4 +156,38 @@ export function isHeroBleed(block) {
 function absolute(src, origin) {
  if (/^https:\/\//i.test(src)) return src;
  return /^\/(?!\/)/.test(src) ? origin + src : undefined;
+}
+
+// The brand color and the brand's variables, as one style object: what the
+// page root (and the canvas) set. The text on the brand color is worked out
+// for contrast unless the brand sets it.
+export function brandStyle(accent, brand) {
+ const vars = brandVars(brand);
+ if (HEX.test(accent ?? '')) {
+  vars['--site-accent'] = accent;
+  vars['--site-accent-ink'] ??= inkOn(accent);
+ }
+ return vars;
+}
+
+// The brand in the page's head: its variables on :root (the body's own
+// background and type read them), its fonts, and its icon. Every value has
+// passed normalizeBrand, so none can close the rule or add another.
+export function useBrandHead(style, brand) {
+ useHead({
+  style: () => {
+   const css = Object.entries(toValue(style))
+    .map(([name, value]) => `${name}:${value}`)
+    .join(';');
+   return css ? [{ key: 'timbrr-brand', innerHTML: `:root{${css}}` }] : [];
+  },
+  link: () => {
+   const value = normalizeBrand(toValue(brand));
+   const href = brandFontsHref(value);
+   return [
+    ...(href ? [{ key: 'timbrr-brand-fonts', rel: 'stylesheet', href }] : []),
+    ...(value.favicon ? [{ key: 'timbrr-brand-icon', rel: 'icon', href: value.favicon.src }] : []),
+   ];
+  },
+ });
 }

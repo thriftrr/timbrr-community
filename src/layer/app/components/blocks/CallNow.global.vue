@@ -76,8 +76,8 @@
  .tb-call-now__phone {
   margin: 12px 0 0;
   font-family: var(--site-font-display);
-  font-size: clamp(34px, 3.6vw + 13px, 54px);
-  font-weight: 800;
+  font-size: calc(clamp(34px, 3.6vw + 13px, 54px) * var(--site-heading-scale));
+  font-weight: var(--site-heading-weight);
   line-height: 1.05;
   letter-spacing: -0.01em;
  }

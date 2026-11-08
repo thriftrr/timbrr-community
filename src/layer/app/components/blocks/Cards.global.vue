@@ -154,7 +154,7 @@
   width: 38px;
   height: 38px;
   margin-bottom: 14px;
-  border-radius: 9px;
+  border-radius: var(--site-control-radius);
   background: color-mix(in srgb, var(--site-accent) 10%, var(--site-bg));
   color: var(--site-accent);
  }
@@ -178,8 +178,8 @@
   max-width: 100%;
   margin-bottom: 12px;
   font-family: var(--site-font-display);
-  font-size: clamp(34px, 1.6vw + 26px, 44px);
-  font-weight: 800;
+  font-size: calc(clamp(34px, 1.6vw + 26px, 44px) * var(--site-heading-scale));
+  font-weight: var(--site-heading-weight);
   line-height: 1;
   color: var(--site-accent);
  }
@@ -191,7 +191,7 @@
   min-width: 36px;
   height: 36px;
   margin-bottom: 14px;
-  border-radius: 9px;
+  border-radius: var(--site-control-radius);
   padding: 0 8px;
   background: color-mix(in srgb, var(--site-accent) 12%, var(--site-bg));
   font-size: 16px;
@@ -285,7 +285,7 @@
 
  .tb-cards .tb-cards__card--stretched:hover {
   border-color: var(--site-accent);
-  box-shadow: 0 6px 16px color-mix(in srgb, var(--site-heading) 10%, transparent);
+  box-shadow: var(--site-shadow);
   transform: translateY(-1px);
  }
 

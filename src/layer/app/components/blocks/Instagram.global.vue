@@ -92,7 +92,7 @@
   margin: 0;
   font-family: var(--site-font-display);
   font-size: 18px;
-  font-weight: 800;
+  font-weight: var(--site-heading-weight);
   line-height: 1.2;
   color: var(--site-heading);
  }

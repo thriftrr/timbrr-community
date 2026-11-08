@@ -86,7 +86,7 @@
  .tb-gift-cards__name {
   font-family: var(--site-font-display);
   font-size: max(15px, 4.6cqi);
-  font-weight: 800;
+  font-weight: var(--site-heading-weight);
   line-height: 1.15;
  }
 

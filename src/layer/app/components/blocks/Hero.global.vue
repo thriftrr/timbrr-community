@@ -61,7 +61,7 @@
  }
 
  .tb-hero .tb-hero__headline {
-  font-size: clamp(32px, 2.4vw + 18px, 48px);
+  font-size: calc(clamp(32px, 2.4vw + 18px, 48px) * var(--site-heading-scale));
   line-height: 1.08;
  }
 

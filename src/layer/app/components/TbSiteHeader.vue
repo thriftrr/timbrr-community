@@ -48,7 +48,9 @@
  const layout = computed(() => header.value?.layout);
  const name = computed(() => String(props.site.name || props.site.domain || ''));
  const logo = computed(() => {
-  const image = header.value?.logo;
+  // The header's own logo, else the brand's (utils/brand.js).
+  const own = header.value?.logo;
+  const image = safeSrc(own?.src) ? own : props.site.brand?.logo;
   const src = safeSrc(image?.src);
   if (!src) return null;
   return { src, alt: image.alt || name.value, width: image.width, height: image.height, srcset: image.width ? mediaSrcset(src, image.width) : '' };
@@ -623,7 +625,7 @@
   flex: none;
   font-family: var(--site-font-display);
   font-size: 20px;
-  font-weight: 800;
+  font-weight: var(--site-heading-weight);
   line-height: 1.2;
   letter-spacing: -0.01em;
   color: var(--site-heading);
@@ -1219,7 +1221,7 @@
   padding: 2px var(--tb-sheet-inset) 8px;
   font-family: var(--site-font-display);
   font-size: 24px;
-  font-weight: 800;
+  font-weight: var(--site-heading-weight);
   line-height: 1.2;
   color: var(--site-heading);
  }
@@ -1246,7 +1248,7 @@
   min-height: 64px;
   font-family: var(--site-font-display);
   font-size: 28px;
-  font-weight: 800;
+  font-weight: var(--site-heading-weight);
  }
 
  .tb-site-header__overlay {
@@ -1261,7 +1263,7 @@
   padding-block: 4px;
   font-family: var(--site-font-display);
   font-size: clamp(28px, 4vw, 40px);
-  font-weight: 800;
+  font-weight: var(--site-heading-weight);
   line-height: 1.15;
   color: var(--site-heading);
   text-decoration: none;

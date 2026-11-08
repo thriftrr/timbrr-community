@@ -146,7 +146,7 @@
   min-width: 0;
   margin: 0;
   border: 1px solid color-mix(in srgb, var(--site-muted) 12%, var(--site-border));
-  border-radius: 9px;
+  border-radius: var(--site-control-radius);
   padding: 11px 14px;
   background: var(--site-bg);
   font: inherit;

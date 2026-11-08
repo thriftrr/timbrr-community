@@ -153,7 +153,7 @@
  .tb-contact-details__value--phone {
   font-family: var(--site-font-display);
   font-size: clamp(20px, 0.6vw + 16px, 23px);
-  font-weight: 800;
+  font-weight: var(--site-heading-weight);
   line-height: 1.25;
  }
 
@@ -161,7 +161,7 @@
   margin-top: 10px;
   font-family: var(--site-font-display);
   font-size: clamp(17px, 0.4vw + 14.5px, 19px);
-  font-weight: 800;
+  font-weight: var(--site-heading-weight);
   line-height: 1.3;
  }
 
