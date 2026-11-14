@@ -201,14 +201,15 @@ Canvas → studio
 |---|---|
 | `timbrr:ready` | `manifestVersion` — repeated every 250 ms until the first `timbrr:doc` |
 | `timbrr:size` | `height` — the page's height (the page's own, not the window's, so it goes down as well as up), measured again after every `timbrr:doc` and sent when it changed; the studio sizes the frame to it. Never sent from the stage, whose frame has a fixed height |
-| `timbrr:click` | `id` of the block clicked, or null (a locked block's own `<placement id>.<block id>`); also sent when the caret goes into a field of another block. A click on the site's header or footer in Render view has a null `id` and `side`, `header` or `footer` |
+| `timbrr:click` | `id` of the block clicked, or null (a locked block's own `<placement id>.<block id>`); also sent when the caret goes into a field of another block. A click on the site's header or footer in Render view has a null `id` and `side`, `header` or `footer`. A click on an image a block drew with `field`, on an editable canvas, adds `field`, its path (`items.0.image`), and the studio opens that field in its inspector. A studio that doesn't know it just selects the block, and a click without it always does |
 | `timbrr:edit` | `id`, `field` (a path: `items.0.title`), `value` — a string for a text field, a rich-text document (`{ type: 'doc', content: […] }`) for an `html` one. The studio takes nothing else |
 | `timbrr:focus` | `id`, `field`, `kind` (`text` or `rich`), `label` (the field's name from its definition: `Description`, or `Cards 2 · Title` in a list), `tools` (what the field allows: its `wys` for rich text, none for plain), `active` (the tools on at the caret), `href` (the link at the caret, or null) — when the caret arrives, and again whenever any of it changes |
 | `timbrr:blur` | nothing — the caret left the field |
 | `timbrr:drop` | `index`, `kind`: `add` (a block from the studio's tray: answering the studio's `timbrr:drop`, or, on a canvas at the studio's own origin, dropped natively as `application/x-timbrr-block`, then with `blockType`) or `move` (with `id`, dragged by the block's tab as `application/x-timbrr-move`). `index` counts the blocks as drawn, and is never inside a locked chunk |
 | `timbrr:open` | `id` — the placement: Edit in Library was pressed on it, or it was double-clicked. Sent whether or not the canvas is editable |
-| `timbrr:locked` | `id` — the placement: a printable key (no Ctrl or Meta, not held down) was pressed while it was selected, on an editable canvas, with no field open. The studio says why nothing happened |
+| `timbrr:locked` | `id` — the placement: a printable key (no Ctrl or Meta, not held down) other than those `timbrr:flag` and `timbrr:key` carry was pressed while it was selected, on an editable canvas, with no field open. The studio says why nothing happened. A studio too old for `timbrr:key` says nothing for those; the studio deploys first, so no site should meet one |
 | `timbrr:flag` | Nothing else: F was pressed in the frame (no Ctrl, Meta, Alt or Shift) with no field open. Keys pressed here never reach the studio, so this is how it opens its Flag something panel. Goes first: such a key doesn't also send `timbrr:locked` |
+| `timbrr:key` | `key` (`Delete`, `Backspace`, `n`, `d` or `h`, or `ArrowUp` or `ArrowDown` with `alt: true`), `alt` — a key for the selected block was pressed in the frame on an editable canvas, with no field open, not on the stage and not held down, with no other modifier. The studio decides what it does, and may ignore it; a studio that doesn't know the message drops it, and a canvas that doesn't send it just has no keys. Such a key doesn't also send `timbrr:locked` |
 
 In the canvas each block sits in a frame (`.tb-frame`): a quiet outline
 under the pointer, and when it's selected a pine outline and a tab in the
@@ -416,6 +417,17 @@ the site, except the one being typed into (`useFieldShown()`, from the
 `active` field above), so clearing a field to start over doesn't take it
 away. Blocks that draw text without `<TbText>` or `<TbRich>` are edited in
 the inspector only.
+
+`<TbImage :image="data.image" field="image" />` is the same for a picture:
+`field` is its path (`` `items.${index}.image` `` in a list). On an editable
+canvas it goes on the element as `data-image-field`, with a dashed outline
+under the pointer, and a click sends it in `timbrr:click`. The studio does
+the rest. On the site, in a preview and in a locked block it adds nothing,
+and an image without `field` still selects its block. Anything a block lays
+over its photo has to let the click through on the canvas (a full-bleed
+Hero's column does, with `.tb-frame` rules), and a block that takes the
+pointer on a photo has to leave a plain click alone (Before / after moves
+its line only once the pointer has moved).
 
 ## 7. Forms
 

@@ -11,7 +11,7 @@
 <template>
  <section class="tb-section tb-text-image" :class="`tb-text-image--${data.image_side}`">
   <div class="tb-wrap tb-text-image__inner" :class="{ 'tb-wrap--narrow': alone, 'tb-text-image__inner--center': alone && data.alignment === 'center' }">
-   <TbImage v-if="!alone" :image="data.image" ratio="4 / 5" sizes="(min-width: 720px) 500px, 100vw" class="tb-text-image__image" />
+   <TbImage v-if="!alone" :image="data.image" field="image" ratio="4 / 5" sizes="(min-width: 720px) 500px, 100vw" class="tb-text-image__image" />
    <div class="tb-text-image__text">
     <TbText v-if="shows('tagline', data.tagline)" :data="data" field="tagline" tag="p" class="tb-eyebrow" />
     <TbText v-if="shows('headline', data.headline)" :data="data" field="headline" tag="h2" class="tb-heading" />

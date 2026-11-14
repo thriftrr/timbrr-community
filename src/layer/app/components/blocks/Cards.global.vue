@@ -68,7 +68,7 @@
      class="tb-cards__card"
      :class="{ 'tb-card': boxed, 'tb-cards__card--link': hrefs[index], 'tb-cards__card--stretched': hrefs[index] && !typing }"
     >
-     <TbImage v-if="data.style === 'image'" :image="item.image" ratio="3 / 2" sizes="(min-width: 720px) 400px, 100vw" class="tb-cards__image" />
+     <TbImage v-if="data.style === 'image'" :image="item.image" :field="`items.${index}.image`" ratio="3 / 2" sizes="(min-width: 720px) 400px, 100vw" class="tb-cards__image" />
      <span v-if="data.style === 'icon' || data.style === 'badge'" class="tb-cards__icon" aria-hidden="true">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
        <path v-for="(path, part) in ICONS[data.style === 'badge' ? 'shield' : item.icon]" :key="part" :d="path" />

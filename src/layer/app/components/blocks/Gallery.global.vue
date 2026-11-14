@@ -37,7 +37,7 @@
    >
     <li v-for="(item, index) in data.items" :key="index">
      <figure class="tb-gallery__item">
-      <TbImage :image="item.image" :ratio="ratio(item, index)" />
+      <TbImage :image="item.image" :field="`items.${index}.image`" :ratio="ratio(item, index)" />
       <TbText v-if="shows(`items.${index}.caption`, item.caption)" :data="data" :field="`items.${index}.caption`" tag="figcaption" class="tb-gallery__caption" />
      </figure>
     </li>

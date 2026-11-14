@@ -25,7 +25,7 @@
        <TbRich :data="data" :field="`items.${index}.quote`" />
       </blockquote>
       <figcaption v-if="signed(item, index)" class="tb-quotes__by">
-       <TbImage v-if="safeSrc(item.image.src)" :image="item.image" ratio="1 / 1" sizes="40px" class="tb-quotes__photo" />
+       <TbImage v-if="safeSrc(item.image.src)" :image="item.image" :field="`items.${index}.image`" ratio="1 / 1" sizes="40px" class="tb-quotes__photo" />
        <span class="tb-quotes__who">
         <TbText v-if="shows(`items.${index}.name`, item.name)" :data="data" :field="`items.${index}.name`" class="tb-quotes__name" />
         <TbText v-if="shows(`items.${index}.role`, item.role)" :data="data" :field="`items.${index}.role`" class="tb-quotes__role" />

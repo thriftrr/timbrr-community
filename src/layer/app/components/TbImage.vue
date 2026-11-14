@@ -13,8 +13,14 @@
  // here in the browser (app/utils/thumbhash.js), never on the server; and
  // the crop keeps the subject by anchoring on the focal point. A pasted
  // address has none of these and draws as it always did.
+ //
+ // `field` is the image's path in its block's data, as TbText's is. It's for
+ // the studio's canvas alone: there a click says which image it was, and the
+ // inspector opens on it. Anywhere else, and in a block that can't be edited,
+ // it adds nothing to the page.
  const props = defineProps({
   image: { type: Object, default: null },
+  field: { type: String, default: '' },
   ratio: { type: String, default: '4 / 3' },
   eager: { type: Boolean, default: false },
   // How wide the picture is drawn, for the browser's choice from srcset:
@@ -24,6 +30,7 @@
 
  const canvas = useCanvas();
  const src = computed(() => safeSrc(props.image?.src));
+ const clickable = computed(() => (canvas?.editable.value && props.field ? props.field : undefined));
 
  const size = computed(() => {
   const width = Number(props.image?.width);
@@ -93,11 +100,12 @@
   class="tb-image"
   :class="{ 'tb-image--placeholder': placeholder && !loaded }"
   :style="style"
+  :data-image-field="clickable"
   :loading="eager ? 'eager' : 'lazy'"
   :fetchpriority="eager ? 'high' : undefined"
   @load="loaded = true"
  />
- <div v-else class="tb-image tb-image--empty" :style="{ aspectRatio: ratio }" role="presentation">
+ <div v-else class="tb-image tb-image--empty" :style="{ aspectRatio: ratio }" role="presentation" :data-image-field="clickable">
   <span v-if="canvas?.editable.value" class="tb-image__hint">Add an image in the panel on the right</span>
  </div>
 </template>

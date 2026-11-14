@@ -31,7 +31,7 @@
     </div>
     <TbText v-if="shows('note', data.note)" :data="data" field="note" tag="p" class="tb-note" />
    </div>
-   <TbImage v-if="showImage" :image="data.image" ratio="4 / 5" :sizes="bleed ? '100vw' : undefined" class="tb-hero__image" eager />
+   <TbImage v-if="showImage" :image="data.image" field="image" ratio="4 / 5" :sizes="bleed ? '100vw' : undefined" class="tb-hero__image" eager />
   </div>
  </section>
 </template>
@@ -154,6 +154,18 @@
   position: relative;
   z-index: 1;
   max-width: 640px;
+ }
+
+ /* On the canvas a click on the photo has to reach it, past the column it
+    sits under. The words still take theirs. */
+ .tb-frame .tb-hero--bleed .tb-hero__inner,
+ .tb-frame .tb-hero--bleed .tb-hero__text {
+  pointer-events: none;
+ }
+
+ .tb-frame .tb-hero--bleed .tb-hero__text > *,
+ .tb-frame .tb-hero--bleed .tb-hero__image {
+  pointer-events: auto;
  }
 
  /* Small screens: text first, then the photo across the full width, cropped

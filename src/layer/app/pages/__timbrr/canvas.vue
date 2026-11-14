@@ -281,8 +281,9 @@
 
  // Links never take the canvas anywhere. Clicking a block selects it, and
  // clicking anywhere else selects nothing. A click on the header or footer
- // also says which it was. The stage has nothing to select, and the studio's
- // panel stays open.
+ // also says which it was, and one on an image which field it is, for the
+ // studio to open. The stage has nothing to select, and the studio's panel
+ // stays open.
  function onClick(event) {
   if (event.target.closest?.('a')) event.preventDefault();
   if (preview || staged.value) return;
@@ -290,14 +291,27 @@
   const id = frame?.dataset.blockId ?? null;
   selected.value = id;
   const side = event.target.closest?.('[data-chrome]')?.dataset.chrome;
-  post({ type: 'timbrr:click', id, ...(side ? { side } : {}) });
+  const field = frame && event.target.closest?.('[data-image-field]')?.dataset.imageField;
+  post({ type: 'timbrr:click', id, ...(side ? { side } : {}), ...(field ? { field } : {}) });
  }
 
- // Keys pressed in here never reach the studio, so F (flag something) goes
- // over, unless it's being typed into something.
+ // Keys pressed in here never reach the studio, so F (flag something) and the
+ // keys for the selected block go over, unless they're being typed into
+ // something. The studio says what each does (blockAction, docs/manifest.md).
+ const BLOCK_KEYS = ['Delete', 'Backspace', 'n', 'd', 'h'];
+ const BLOCK_ALT_KEYS = ['ArrowUp', 'ArrowDown'];
+
+ const typingHere = (event) => Boolean(active.value || event.target.closest?.('input, textarea, select, [contenteditable]'));
+
  function flagKey(event) {
   if (event.key?.toLowerCase() !== 'f' || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return false;
-  return !active.value && !event.target.closest?.('input, textarea, select, [contenteditable]');
+  return !typingHere(event);
+ }
+
+ function blockKey(event) {
+  if (preview || !editable.value || staged.value || event.ctrlKey || event.metaKey || event.shiftKey) return null;
+  const key = event.key?.length === 1 ? event.key.toLowerCase() : event.key;
+  return (event.altKey ? BLOCK_ALT_KEYS : BLOCK_KEYS).includes(key) && !typingHere(event) ? key : null;
  }
 
  // A key pressed while a locked block is selected goes nowhere, so the
@@ -306,6 +320,12 @@
   if (event.repeat) return;
   if (flagKey(event)) {
    post({ type: 'timbrr:flag' });
+   return;
+  }
+  const key = blockKey(event);
+  if (key) {
+   event.preventDefault();
+   post({ type: 'timbrr:key', key, alt: event.altKey });
    return;
   }
   if (!editable.value || staged.value || active.value) return;

@@ -31,7 +31,7 @@
    </header>
    <ul v-if="data.items.length" class="tb-feed__list" :class="{ 'tb-slider': slider }" :tabindex="slider ? 0 : undefined" role="list">
     <li v-for="(item, index) in data.items" :key="index" class="tb-feed__item" :class="{ 'tb-card': !list, 'tb-feed__item--stretched': hrefs[index] && !typing }">
-     <TbImage v-if="photos[index]" :image="item.image" ratio="3 / 2" sizes="(min-width: 720px) 360px, 100vw" class="tb-feed__image" />
+     <TbImage v-if="photos[index]" :image="item.image" :field="`items.${index}.image`" ratio="3 / 2" sizes="(min-width: 720px) 360px, 100vw" class="tb-feed__image" />
      <TbText v-if="shows(`items.${index}.eyebrow`, item.eyebrow)" :data="data" :field="`items.${index}.eyebrow`" tag="p" class="tb-eyebrow tb-feed__eyebrow" />
      <span v-else-if="list" class="tb-feed__eyebrow" aria-hidden="true"></span>
      <div class="tb-feed__text">

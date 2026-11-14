@@ -36,7 +36,7 @@
     <ul v-for="copy in 2" :key="copy" class="tb-logos__list" role="list" :aria-hidden="copy === 2 ? 'true' : undefined">
      <li v-for="(item, index) in data.items" :key="index" class="tb-logos__logo" :class="{ 'tb-logos__logo--image': logos[index] }">
       <component :is="hrefs[index] ? 'a' : 'span'" :href="hrefs[index]" :tabindex="copy === 2 && hrefs[index] ? -1 : undefined" class="tb-logos__mark">
-       <TbImage v-if="logos[index]" :image="logos[index]" ratio="auto" class="tb-logos__image" />
+       <TbImage v-if="logos[index]" :image="logos[index]" :field="`items.${index}.image`" ratio="auto" class="tb-logos__image" />
        <span v-else>{{ item.title }}</span>
       </component>
      </li>
@@ -48,7 +48,7 @@
      <ul class="tb-logos__list" role="list">
       <li v-for="{ row, index } in group.rows" :key="index" class="tb-logos__logo" :class="{ 'tb-logos__logo--image': logos[index] }">
        <component :is="hrefs[index] ? 'a' : 'span'" :href="hrefs[index]" class="tb-logos__mark">
-        <TbImage v-if="logos[index]" :image="logos[index]" ratio="auto" class="tb-logos__image" />
+        <TbImage v-if="logos[index]" :image="logos[index]" :field="`items.${index}.image`" ratio="auto" class="tb-logos__image" />
         <TbText v-else :data="data" :field="`items.${index}.title`" />
        </component>
       </li>
