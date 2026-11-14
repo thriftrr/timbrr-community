@@ -42,7 +42,7 @@
    <ul v-if="data.items.length" class="tb-instagram__grid" role="list" :style="{ '--tb-instagram-columns': columns }">
     <li v-for="(item, index) in data.items" :key="index" class="tb-instagram__item">
      <figure class="tb-instagram__tile">
-      <TbImage :image="item.image" ratio="1 / 1" class="tb-instagram__image" />
+      <TbImage :image="item.image" :field="`items.${index}.image`" ratio="1 / 1" class="tb-instagram__image" />
       <figcaption v-if="shows(`items.${index}.caption`, item.caption)" class="tb-instagram__caption">
        <TbText :data="data" :field="`items.${index}.caption`" />
       </figcaption>
@@ -196,6 +196,16 @@
  .tb-instagram__tile:hover .tb-instagram__caption,
  .tb-instagram__tile:focus-within .tb-instagram__caption {
   opacity: 1;
+ }
+
+ /* On the canvas a click on the photo has to reach it, past the caption
+    laid over it. The words still take theirs. */
+ .tb-frame .tb-instagram__caption {
+  pointer-events: none;
+ }
+
+ .tb-frame .tb-instagram__caption > * {
+  pointer-events: auto;
  }
 
  @media (prefers-reduced-motion: reduce) {

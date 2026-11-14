@@ -6,10 +6,12 @@
  // went: taken (a thank-you, or a page to go to), a mistake to show on a field,
  // or that the Human check has to run first. `locked` is the studio's canvas,
  // where it's only a picture; `compact` is a footer's, with no heading or room
- // around it.
+ // around it; `hideTitle` leaves the heading out and names the form for screen
+ // readers instead.
  const props = defineProps({
   form: { type: Object, required: true },
   heading: { type: String, default: '' },
+  hideTitle: { type: Boolean, default: false },
   locked: { type: Boolean, default: false },
   compact: { type: Boolean, default: false },
  });
@@ -163,11 +165,11 @@
 </script>
 
 <template>
- <div ref="root" class="tb-form__body" :class="{ 'tb-form__body--compact': compact }" :inert="locked">
+ <div ref="root" class="tb-form__body" :class="{ 'tb-form__body--compact': compact, 'tb-form__body--untitled': hideTitle }" :inert="locked">
   <div v-if="sent" class="tb-form__sent" role="status"><TbRich :doc="sent" /></div>
-  <form v-else novalidate @submit.prevent="last ? submit() : next()">
+  <form v-else novalidate :aria-label="hideTitle ? title : undefined" @submit.prevent="last ? submit() : next()">
    <template v-if="!compact">
-    <h2 v-if="title" class="tb-heading tb-form__title">{{ title }}</h2>
+    <h2 v-if="title && !hideTitle" class="tb-heading tb-form__title">{{ title }}</h2>
     <p v-if="form.intro" class="tb-form__lede">{{ form.intro }}</p>
    </template>
 
@@ -271,6 +273,10 @@
 
  .tb-form__title {
   margin: 0;
+ }
+
+ .tb-form__body--untitled form > :first-child {
+  margin-top: 0;
  }
 
  .tb-form__lede {

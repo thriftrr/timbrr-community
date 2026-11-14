@@ -29,7 +29,7 @@
      class="tb-media__player"
     ></iframe>
    </div>
-   <TbImage v-else :image="data.image" ratio="16 / 9" class="tb-media__image" />
+   <TbImage v-else :image="data.image" field="image" ratio="16 / 9" class="tb-media__image" />
    <p v-if="outLink" class="tb-media__out" :class="{ 'tb-wrap': data.width === 'wide' }">
     <a :href="outLink" rel="noopener">Watch the video</a>
    </p>

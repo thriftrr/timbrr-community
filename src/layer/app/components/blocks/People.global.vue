@@ -39,7 +39,7 @@
     role="list"
    >
     <li v-for="(item, index) in data.items" :key="index" class="tb-card tb-people__card">
-     <TbImage v-if="photos[index]" :image="item.image" ratio="1 / 1" sizes="96px" class="tb-people__photo" />
+     <TbImage v-if="photos[index]" :image="item.image" :field="`items.${index}.image`" ratio="1 / 1" sizes="96px" class="tb-people__photo" />
      <span v-else class="tb-people__photo tb-people__initials" aria-hidden="true">{{ initials(item.title) }}</span>
      <div class="tb-people__text">
       <TbText :data="data" :field="`items.${index}.title`" tag="h3" class="tb-card__title tb-people__name" />

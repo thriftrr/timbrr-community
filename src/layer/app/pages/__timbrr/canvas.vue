@@ -42,6 +42,7 @@
  const forms = useTimbrrForms(); // the forms this page can show, as the site draws them
  const mode = ref('full'); // 'render': the page between the site's header and footer
  const stage = ref(false); // the studio asked for the stage, for a Library header or footer
+ const sheet = ref(''); // 'system': the design system instead of a page (the Branding editor's preview)
  const connected = ref(false);
  const editable = ref(!preview); // false: a preview, or someone who can only look
  const library = ref(true); // false: this person can't open the Library
@@ -62,7 +63,7 @@
 
  // A site with no name or address to show isn't framed at all, and the
  // stage draws its own.
- const framed = computed(() => !staged.value && mode.value === 'render' && Boolean(site.value?.name || site.value?.domain));
+ const framed = computed(() => !sheet.value && !staged.value && mode.value === 'render' && Boolean(site.value?.name || site.value?.domain));
 
  function allowed(origin) {
   if (studio) return origin === studio;
@@ -232,6 +233,7 @@
    forms.value = message.forms && typeof message.forms === 'object' ? message.forms : {};
    mode.value = message.mode === 'render' ? 'render' : 'full';
    stage.value = message.stage === true;
+   sheet.value = message.sheet === 'system' ? 'system' : '';
    editable.value = !preview && message.editable !== false;
    library.value = message.library !== false;
    endZone.value = message.endZone !== false;
@@ -265,6 +267,9 @@
   }
   if (message.type === 'timbrr:select') {
    selected.value = message.id ?? null;
+   // Picked with the keyboard or the outline: it comes into view, in the
+   // studio's own scroller too (the frame is as tall as the page).
+   if (selected.value) nextTick(() => document.querySelector(`[data-block-id="${CSS.escape(String(selected.value))}"]`)?.scrollIntoView({ block: 'nearest' }));
   } else if (message.type === 'timbrr:view' && Number.isFinite(message.scale) && message.scale > 0) {
    // The studio shows this page scaled down to fit; the outlines, tabs and
    // drop zone are drawn up by as much, so they read at their real size.
@@ -281,8 +286,9 @@
 
  // Links never take the canvas anywhere. Clicking a block selects it, and
  // clicking anywhere else selects nothing. A click on the header or footer
- // also says which it was. The stage has nothing to select, and the studio's
- // panel stays open.
+ // also says which it was, and one on an image which field it is, for the
+ // studio to open. The stage has nothing to select, and the studio's panel
+ // stays open.
  function onClick(event) {
   if (event.target.closest?.('a')) event.preventDefault();
   if (preview || staged.value) return;
@@ -290,14 +296,29 @@
   const id = frame?.dataset.blockId ?? null;
   selected.value = id;
   const side = event.target.closest?.('[data-chrome]')?.dataset.chrome;
-  post({ type: 'timbrr:click', id, ...(side ? { side } : {}) });
+  const field = frame && event.target.closest?.('[data-image-field]')?.dataset.imageField;
+  post({ type: 'timbrr:click', id, ...(side ? { side } : {}), ...(field ? { field } : {}) });
  }
 
- // Keys pressed in here never reach the studio, so F (flag something) goes
- // over, unless it's being typed into something.
+ // Keys pressed in here never reach the studio, so F (flag something) and the
+ // keys for the selected block go over, unless they're being typed into
+ // something. The studio says what each does (blockAction, docs/manifest.md).
+ const BLOCK_KEYS = ['Delete', 'Backspace', 'n', 'd', 'h', 'ArrowUp', 'ArrowDown'];
+ const BLOCK_ALT_KEYS = ['ArrowUp', 'ArrowDown'];
+
+ const typingHere = (event) => Boolean(active.value || event.target.closest?.('input, textarea, select, [contenteditable]'));
+
  function flagKey(event) {
   if (event.key?.toLowerCase() !== 'f' || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return false;
-  return !active.value && !event.target.closest?.('input, textarea, select, [contenteditable]');
+  return !typingHere(event);
+ }
+
+ function blockKey(event) {
+  if (preview || !editable.value || staged.value || event.ctrlKey || event.metaKey || event.shiftKey) return null;
+  const key = event.key?.length === 1 ? event.key.toLowerCase() : event.key;
+  // A bare arrow moves the selection; with nothing selected it's the page's.
+  if (!event.altKey && key.startsWith('Arrow') && !selected.value) return null;
+  return (event.altKey ? BLOCK_ALT_KEYS : BLOCK_KEYS).includes(key) && !typingHere(event) ? key : null;
  }
 
  // A key pressed while a locked block is selected goes nowhere, so the
@@ -306,6 +327,20 @@
   if (event.repeat) return;
   if (flagKey(event)) {
    post({ type: 'timbrr:flag' });
+   return;
+  }
+  // Undo and redo are the studio's (its History), unless a field here has
+  // the caret: then they're that text's own.
+  const letter = event.key?.toLowerCase();
+  if (!preview && (event.metaKey || event.ctrlKey) && !event.altKey && (letter === 'z' || letter === 'y') && !typingHere(event)) {
+   event.preventDefault();
+   post({ type: 'timbrr:key', key: letter, mod: true, shift: event.shiftKey, ctrl: event.ctrlKey });
+   return;
+  }
+  const key = blockKey(event);
+  if (key) {
+   event.preventDefault();
+   post({ type: 'timbrr:key', key, alt: event.altKey });
    return;
   }
   if (!editable.value || staged.value || active.value) return;
@@ -508,7 +543,8 @@
     </div>
    </template>
 
-   <TbFrameStage v-if="staged" :site="site" :block="staged" />
+   <TbDesignSystem v-if="sheet === 'system'" :brand="theme.brand" :accent="theme.accent" />
+   <TbFrameStage v-else-if="staged" :site="site" :block="staged" />
    <main v-else class="tb-canvas__page">
     <TbBlocks :blocks="blocks" />
     <template v-if="!preview">

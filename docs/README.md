@@ -129,7 +129,8 @@ what they do today.
    `<TbText :data="data" field="headline" tag="h2" />` so it can be edited
    in place on the canvas, rich text through
    `<TbRich :data="data" field="body" />`, links through `<TbButton>` or
-   `safeHref()`, images through `<TbImage>`. An optional field that's
+   `safeHref()`, images through `<TbImage :image="data.image" field="image" />`
+   so a click on the canvas opens them in the inspector. An optional field that's
    empty isn't drawn: gate it with `const shows = useFieldShown()` and
    `v-if="shows('tagline', data.tagline)"` (a row's field by its path,
    `` shows(`items.${index}.body`, item.body) ``). That also keeps the field

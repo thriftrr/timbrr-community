@@ -24,7 +24,7 @@
      class="tb-brands-carried__brand"
      :class="{ 'tb-brands-carried__brand--logo': logos[index] }"
     >
-     <TbImage v-if="logos[index]" :image="logos[index]" ratio="auto" class="tb-brands-carried__logo" />
+     <TbImage v-if="logos[index]" :image="logos[index]" :field="`items.${index}.image`" ratio="auto" class="tb-brands-carried__logo" />
      <TbText v-else :data="data" :field="`items.${index}.title`" class="tb-brands-carried__name" />
     </li>
    </ul>

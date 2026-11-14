@@ -74,6 +74,11 @@ address; the shared `buttonsField` has it), `ai` (`generate` | `improve` |
 the block's style choices: the studio's inspector puts them on its Style
 tab.
 
+A `buttons` field may say `draws: 'button'` (the shared `buttonsField`'s
+`style` does): the studio then lists its options as the buttons they make,
+in the site's brand, instead of a row of segments. A studio that doesn't
+know it draws the segments.
+
 **`frame: true`** on a definition marks a site's header or footer
 (`site_header`, `site_footer`; § 4, Header and footer). The studio keeps
 them in its Library, one block to an item, and never offers them in the
@@ -186,7 +191,7 @@ Studio → canvas
 
 | type | payload |
 |---|---|
-| `timbrr:doc` | `blocks` (`[{ id, type, hidden, data, lock? }]`; `lock` below), `theme` (`{ accent }`), `site` (`{ name, domain, nav, cta?, details?, frame? }` — what the site's header and footer draw; below), `forms` (`{ [id]: form }`, what Form blocks and a footer draw, § Forms), `mode` (`render`: the page between the site's header and footer; `full`, or missing: the blocks alone), `editable` (`false` when the person can only look: nothing is typed into, dragged or dropped; missing means `true`), `library` (`false` when the person can't open the Library: no Edit in Library pill, and a double-click does nothing; missing means `true`), `endZone` (`false` when the document takes no more blocks, like a Library header, which holds one: no dashed zone after the last block; missing means `true`), `stage` (`true` only for a Library header or footer: the first block goes on the stage instead of the page, below; missing means `false`) — the whole page, on every change |
+| `timbrr:doc` | `blocks` (`[{ id, type, hidden, data, lock? }]`; `lock` below), `theme` (`{ accent }`), `site` (`{ name, domain, nav, cta?, details?, frame? }` — what the site's header and footer draw; below), `forms` (`{ [id]: form }`, what Form blocks and a footer draw, § Forms), `mode` (`render`: the page between the site's header and footer; `full`, or missing: the blocks alone), `editable` (`false` when the person can only look: nothing is typed into, dragged or dropped; missing means `true`), `library` (`false` when the person can't open the Library: no Edit in Library pill, and a double-click does nothing; missing means `true`), `endZone` (`false` when the document takes no more blocks, like a Library header, which holds one: no dashed zone after the last block; missing means `true`), `stage` (`true` only for a Library header or footer: the first block goes on the stage instead of the page, below; missing means `false`), `sheet` (`system`: draw the site's design system instead of a page, `TbDesignSystem.vue`, for the Branding editor's preview; blocks are ignored; missing means a page) — the whole page, on every change |
 | `timbrr:select` | `id` or null. A placement's id selects all of its blocks |
 | `timbrr:view` | `scale` — how far the studio scales the frame down to fit; the canvas draws its outlines, tabs and drop zone up by as much, so they read at their real size |
 | `timbrr:format` | `tool` (`bold` `italic` `underline` `link` `h2` `h3` `ul` `ol` `clear`), with `href` for `link` (empty takes the link off) — applied to the open rich-text field if it allows that tool, ignored otherwise |
@@ -201,14 +206,15 @@ Canvas → studio
 |---|---|
 | `timbrr:ready` | `manifestVersion` — repeated every 250 ms until the first `timbrr:doc` |
 | `timbrr:size` | `height` — the page's height (the page's own, not the window's, so it goes down as well as up), measured again after every `timbrr:doc` and sent when it changed; the studio sizes the frame to it. Never sent from the stage, whose frame has a fixed height |
-| `timbrr:click` | `id` of the block clicked, or null (a locked block's own `<placement id>.<block id>`); also sent when the caret goes into a field of another block. A click on the site's header or footer in Render view has a null `id` and `side`, `header` or `footer` |
+| `timbrr:click` | `id` of the block clicked, or null (a locked block's own `<placement id>.<block id>`); also sent when the caret goes into a field of another block. A click on the site's header or footer in Render view has a null `id` and `side`, `header` or `footer`. A click on an image a block drew with `field`, on an editable canvas, adds `field`, its path (`items.0.image`), and the studio opens that field in its inspector. A studio that doesn't know it just selects the block, and a click without it always does |
 | `timbrr:edit` | `id`, `field` (a path: `items.0.title`), `value` — a string for a text field, a rich-text document (`{ type: 'doc', content: […] }`) for an `html` one. The studio takes nothing else |
 | `timbrr:focus` | `id`, `field`, `kind` (`text` or `rich`), `label` (the field's name from its definition: `Description`, or `Cards 2 · Title` in a list), `tools` (what the field allows: its `wys` for rich text, none for plain), `active` (the tools on at the caret), `href` (the link at the caret, or null) — when the caret arrives, and again whenever any of it changes |
 | `timbrr:blur` | nothing — the caret left the field |
 | `timbrr:drop` | `index`, `kind`: `add` (a block from the studio's tray: answering the studio's `timbrr:drop`, or, on a canvas at the studio's own origin, dropped natively as `application/x-timbrr-block`, then with `blockType`) or `move` (with `id`, dragged by the block's tab as `application/x-timbrr-move`). `index` counts the blocks as drawn, and is never inside a locked chunk |
 | `timbrr:open` | `id` — the placement: Edit in Library was pressed on it, or it was double-clicked. Sent whether or not the canvas is editable |
-| `timbrr:locked` | `id` — the placement: a printable key (no Ctrl or Meta, not held down) was pressed while it was selected, on an editable canvas, with no field open. The studio says why nothing happened |
+| `timbrr:locked` | `id` — the placement: a printable key (no Ctrl or Meta, not held down) other than those `timbrr:flag` and `timbrr:key` carry was pressed while it was selected, on an editable canvas, with no field open. The studio says why nothing happened. A studio too old for `timbrr:key` says nothing for those; the studio deploys first, so no site should meet one |
 | `timbrr:flag` | Nothing else: F was pressed in the frame (no Ctrl, Meta, Alt or Shift) with no field open. Keys pressed here never reach the studio, so this is how it opens its Flag something panel. Goes first: such a key doesn't also send `timbrr:locked` |
+| `timbrr:key` | `key` (`Delete`, `Backspace`, `n`, `d` or `h`; `ArrowUp` or `ArrowDown`, bare with a block selected to select its neighbour, or with `alt: true` to move it), `alt` — a key for the selected block was pressed in the frame on an editable canvas, with no field open, not on the stage and not held down, with no other modifier. The studio decides what it does, and may ignore it; a studio that doesn't know the message drops it, and a canvas that doesn't send it just has no keys. Such a key doesn't also send `timbrr:locked`. With `mod: true` the key is `z` or `y` pressed with ⌘ or Ctrl (`ctrl: true` for Ctrl, `shift` for Shift), no field open: undo or redo, for the studio's History |
 
 In the canvas each block sits in a frame (`.tb-frame`): a quiet outline
 under the pointer, and when it's selected a pine outline and a tab in the
@@ -417,6 +423,17 @@ the site, except the one being typed into (`useFieldShown()`, from the
 away. Blocks that draw text without `<TbText>` or `<TbRich>` are edited in
 the inspector only.
 
+`<TbImage :image="data.image" field="image" />` is the same for a picture:
+`field` is its path (`` `items.${index}.image` `` in a list). On an editable
+canvas it goes on the element as `data-image-field`, with a dashed outline
+under the pointer, and a click sends it in `timbrr:click`. The studio does
+the rest. On the site, in a preview and in a locked block it adds nothing,
+and an image without `field` still selects its block. Anything a block lays
+over its photo has to let the click through on the canvas (a full-bleed
+Hero's column does, with `.tb-frame` rules), and a block that takes the
+pointer on a photo has to leave a plain click alone (Before / after moves
+its line only once the pointer has moved).
+
 ## 7. Forms
 
 A Form block holds a form's id, in `form`, and a footer's newsletter can too.
@@ -446,3 +463,17 @@ own, so change them together.
 
 A block's old `purpose` and words stay in its schema until a later release, for
 pages not yet converted, and draw through `TbFormLegacy`.
+
+## Since manifest version 1: the header
+
+`headerSchema` gained `mark` (`logo` or `wordmark`) and `wordmark` (the
+words, the site's name when empty). A menu item of layout `mega` may carry
+`feature` (`{ image, heading, text, to }`) and `button` (`{ label, to }`). A
+dropdown's own `to` is no longer drawn: its label opens the list. Search,
+Sign in, Cart and Language arrive switched off unless the studio's feature
+flag for each is on for the site.
+
+The site's copies of what it reads from the studio are keyed by the site's
+cache epoch (`server/utils/studio.js`), asked for at most every five
+seconds, so a page or a site taken down in the studio is gone from the site
+within seconds.

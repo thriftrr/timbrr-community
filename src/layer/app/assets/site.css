@@ -720,6 +720,20 @@ html[data-timbrr-canvas] body {
  box-shadow: 0 0 0 calc(6.5px * var(--tb-ui, 1)) rgb(247 245 236 / 0.3);
 }
 
+/* An image you can click to edit: the same outline, drawn inside its edge
+   since a block may clip them. */
+
+.tb-frame [data-image-field] {
+ outline: calc(1.5px * var(--tb-ui, 1)) dashed transparent;
+ outline-offset: calc(-5px * var(--tb-ui, 1));
+ cursor: pointer;
+ transition: outline-color 120ms ease;
+}
+
+.tb-frame [data-image-field]:hover {
+ outline-color: #b9c9b3;
+}
+
 /* An empty field still has a line to click. */
 .tb-text:empty::before,
 .tb-rich[data-empty]:not([contenteditable])::before {

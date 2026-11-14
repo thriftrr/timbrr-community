@@ -9,7 +9,7 @@
 <template>
  <section class="tb-section tb-story" :class="`tb-story--${data.layout}`">
   <div class="tb-wrap tb-story__inner">
-   <TbImage :image="data.image" ratio="4 / 5" class="tb-story__image" />
+   <TbImage :image="data.image" field="image" ratio="4 / 5" class="tb-story__image" />
    <div class="tb-story__text">
     <TbText v-if="shows('tagline', data.tagline)" :data="data" field="tagline" tag="p" class="tb-eyebrow" />
     <TbText v-if="shows('headline', data.headline)" :data="data" field="headline" tag="h2" class="tb-heading" />

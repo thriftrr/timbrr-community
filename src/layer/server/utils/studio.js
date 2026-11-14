@@ -15,6 +15,28 @@ import { previewToken, studioApi } from './preview.js';
 
 const KEEP = 60; // seconds a copy stays at the edge
 const WAIT = 8000; // ms the studio gets to answer
+const EPOCH_FOR = 5000; // ms a site's cache epoch is trusted before asking again
+const EPOCH_WAIT = 2000;
+
+// A site's cache epoch, from the studio: it moves when a page or the whole
+// site is taken down or put back, and the copies kept here are keyed by it,
+// so something taken down is gone from this site within seconds, not when a
+// copy runs out. Asked at most every EPOCH_FOR ms per isolate. A studio that
+// can't be reached, or is too old to know, leaves the last one standing.
+const epochs = new Map(); // site → { epoch, at }
+async function siteEpoch(api, site) {
+ const known = epochs.get(site);
+ if (known && Date.now() - known.at < EPOCH_FOR) return known.epoch;
+ let epoch = known?.epoch ?? 0;
+ try {
+  const res = await fetch(`${api}/api/public/sites/${encodeURIComponent(site)}/epoch`, { headers: { accept: 'application/json' }, signal: AbortSignal.timeout(EPOCH_WAIT) });
+  if (res.ok) epoch = Number((await res.json())?.epoch) || 0;
+ } catch {
+  // keep what we had
+ }
+ epochs.set(site, { epoch, at: Date.now() });
+ return epoch;
+}
 
 // The studio's rule for a domain, and the hosts that are this computer.
 const DOMAIN = /^(?=.{4,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i;
@@ -77,17 +99,19 @@ export async function fetchPublished(event, route) {
  const cache = globalThis.caches?.default;
  try {
   if (!/^https?:\/\/[^/]/.test(api)) throw new Error('NUXT_TIMBRR_API is not an http(s) address');
-  const kept = cache ? await cache.match(url).catch(() => undefined) : undefined;
+  // The copy's key carries the epoch; the studio is asked for the plain address.
+  const key = cache ? `${url}${url.includes('?') ? '&' : '?'}epoch=${await siteEpoch(api, site)}` : url;
+  const kept = cache ? await cache.match(key).catch(() => undefined) : undefined;
   const res = kept ?? (await fetch(url, { headers: { accept: 'application/json' }, signal: AbortSignal.timeout(WAIT) }));
   const text = await res.text();
   if (res.status === 404) {
-   if (cache && !kept) await keep(cache, url, 404, text);
+   if (cache && !kept) await keep(cache, key, 404, text);
    return { status: 404 };
   }
   if (res.status !== 200) throw new Error(`it answered ${res.status}`);
   const data = JSON.parse(text);
   if (!data?.site || typeof data.site !== 'object') throw new Error('its answer has no site');
-  if (cache && !kept) await keep(cache, url, 200, text);
+  if (cache && !kept) await keep(cache, key, 200, text);
   return { status: 200, data };
  } catch (error) {
   console.error(`[timbrr] Couldn't read ${route} for ${site} from the studio at ${api || '(none)'}: ${error.message}`);

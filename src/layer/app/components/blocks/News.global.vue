@@ -22,7 +22,7 @@
    </header>
    <ul v-if="data.items.length" class="tb-news__list" role="list">
     <li v-for="(item, index) in data.items" :key="index" class="tb-news__post" :class="{ 'tb-news__post--stretched': hrefs[index] && !typing }">
-     <TbImage :image="item.image" ratio="3 / 2" class="tb-news__image" />
+     <TbImage :image="item.image" :field="`items.${index}.image`" ratio="3 / 2" class="tb-news__image" />
      <TbText v-if="shows(`items.${index}.eyebrow`, item.eyebrow)" :data="data" :field="`items.${index}.eyebrow`" tag="p" class="tb-eyebrow tb-news__date" />
      <h3 v-if="hrefs[index]" class="tb-news__title">
       <a :href="hrefs[index]" class="tb-news__link">

@@ -14,6 +14,7 @@
  const live = ref(false);
  const at = ref(50); // the line, as a percent of the frame's width from the left
  let pointer = null; // the pointer moving the line
+ let held = null; // where it pressed on a photo on the canvas, until it moves
 
  onMounted(() => {
   live.value = true;
@@ -27,10 +28,15 @@
 
  // A mouse moves the line where it presses; a finger only by sliding
  // sideways, so scrolling past the block never moves it. A label being
- // typed into (in the studio's canvas) is left alone.
+ // typed into (in the studio's canvas) is left alone, and a press on a photo
+ // there is a click on it, which opens it in the studio, until it moves.
  function onPointerDown(event) {
   if (!live.value || event.button !== 0 || event.target.isContentEditable) return;
   pointer = event.pointerId;
+  if (event.target.closest?.('[data-image-field]')) {
+   held = event.clientX;
+   return;
+  }
   frame.value.setPointerCapture?.(event.pointerId);
   if (event.pointerType === 'mouse') {
    event.preventDefault();
@@ -39,7 +45,19 @@
  }
 
  function onPointerMove(event) {
-  if (event.pointerId === pointer) slideTo(event.clientX);
+  if (event.pointerId !== pointer) return;
+  if (held !== null) {
+   // Let go outside the frame, where nothing here hears it.
+   if (!event.buttons) {
+    pointer = null;
+    held = null;
+    return;
+   }
+   if (Math.abs(event.clientX - held) < 4) return;
+   held = null;
+   frame.value.setPointerCapture?.(event.pointerId);
+  }
+  slideTo(event.clientX);
  }
 
  // Letting go of the mouse leaves the slider focused, so the arrow keys
@@ -47,6 +65,10 @@
  function onPointerEnd(event) {
   if (event.pointerId !== pointer) return;
   pointer = null;
+  if (held !== null) {
+   held = null;
+   return;
+  }
   if (event.type === 'pointerup' && event.pointerType === 'mouse') range.value?.focus({ preventScroll: true });
  }
 
@@ -82,11 +104,11 @@
      @dragstart.prevent
     >
      <div class="tb-before-after__side tb-before-after__side--before">
-      <TbImage :image="data.before_image" ratio="auto" class="tb-before-after__image" draggable="false" />
+      <TbImage :image="data.before_image" field="before_image" ratio="auto" class="tb-before-after__image" draggable="false" />
       <TbText v-if="shows('before', data.before)" :data="data" field="before" class="tb-before-after__label" />
      </div>
      <div class="tb-before-after__side tb-before-after__side--after">
-      <TbImage :image="data.after_image" ratio="auto" class="tb-before-after__image" draggable="false" />
+      <TbImage :image="data.after_image" field="after_image" ratio="auto" class="tb-before-after__image" draggable="false" />
       <TbText v-if="shows('after', data.after)" :data="data" field="after" class="tb-before-after__label" />
      </div>
      <input

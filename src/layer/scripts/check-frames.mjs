@@ -30,7 +30,9 @@ const GROUPS = {
   deepEqual(HEADER_DEFAULTS.icons.phone, { on: false });
   deepEqual(HEADER_DEFAULTS.icons.language, { on: false, to: '', label: '' });
   equal(FOOTER_DEFAULTS.layout, 'columns');
-  deepEqual(FOOTER_DEFAULTS.newsletter, { on: false, headline: '', label: '', to: '' });
+  deepEqual(FOOTER_DEFAULTS.newsletter, { on: false, headline: '', label: '', to: '', form: '' });
+  equal(HEADER_DEFAULTS.mark, 'logo');
+  equal(HEADER_DEFAULTS.wordmark, '');
   deepEqual(FOOTER_DEFAULTS.contact, { hours: false, address: false, phone: false });
   deepEqual(FOOTER_DEFAULTS.legal_links, []);
  },
