@@ -221,11 +221,28 @@
   if (!value && active.value) release(active.value.id, active.value.field);
  });
 
+ // The studio records its sessions with rrweb and can't see into this frame,
+ // so when it asks, rrweb here passes what happens on the canvas up to the
+ // studio's. Asked again, it sends the whole page afresh: the studio has
+ // taken a new snapshot of its own. rrweb loads only when asked, so a
+ // site's visitors never download it. It posts to any parent, which gives
+ // nothing away: this page only ever holds what its parent sent it.
+ let rrweb = null;
+ async function joinRecording() {
+  if (rrweb) return void (await rrweb).record.takeFullSnapshot();
+  rrweb = import('rrweb');
+  (await rrweb).record({ recordCrossOriginIframes: true, sampling: { mousemove: 100, scroll: 150 } });
+ }
+
  function onMessage(event) {
   if (event.source !== window.parent || !allowed(event.origin)) return;
   const message = event.data;
   if (!message || message.v !== 1) return;
   parentOrigin = event.origin;
+  if (message.type === 'timbrr:record') {
+   joinRecording();
+   return;
+  }
   if (message.type === 'timbrr:doc') {
    blocks.value = Array.isArray(message.blocks) ? message.blocks : [];
    theme.value = message.theme && typeof message.theme === 'object' ? message.theme : {};
