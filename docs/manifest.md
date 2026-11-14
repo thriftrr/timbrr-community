@@ -74,6 +74,11 @@ address; the shared `buttonsField` has it), `ai` (`generate` | `improve` |
 the block's style choices: the studio's inspector puts them on its Style
 tab.
 
+A `buttons` field may say `draws: 'button'` (the shared `buttonsField`'s
+`style` does): the studio then lists its options as the buttons they make,
+in the site's brand, instead of a row of segments. A studio that doesn't
+know it draws the segments.
+
 **`frame: true`** on a definition marks a site's header or footer
 (`site_header`, `site_footer`; § 4, Header and footer). The studio keeps
 them in its Library, one block to an item, and never offers them in the
@@ -186,7 +191,7 @@ Studio → canvas
 
 | type | payload |
 |---|---|
-| `timbrr:doc` | `blocks` (`[{ id, type, hidden, data, lock? }]`; `lock` below), `theme` (`{ accent }`), `site` (`{ name, domain, nav, cta?, details?, frame? }` — what the site's header and footer draw; below), `forms` (`{ [id]: form }`, what Form blocks and a footer draw, § Forms), `mode` (`render`: the page between the site's header and footer; `full`, or missing: the blocks alone), `editable` (`false` when the person can only look: nothing is typed into, dragged or dropped; missing means `true`), `library` (`false` when the person can't open the Library: no Edit in Library pill, and a double-click does nothing; missing means `true`), `endZone` (`false` when the document takes no more blocks, like a Library header, which holds one: no dashed zone after the last block; missing means `true`), `stage` (`true` only for a Library header or footer: the first block goes on the stage instead of the page, below; missing means `false`) — the whole page, on every change |
+| `timbrr:doc` | `blocks` (`[{ id, type, hidden, data, lock? }]`; `lock` below), `theme` (`{ accent }`), `site` (`{ name, domain, nav, cta?, details?, frame? }` — what the site's header and footer draw; below), `forms` (`{ [id]: form }`, what Form blocks and a footer draw, § Forms), `mode` (`render`: the page between the site's header and footer; `full`, or missing: the blocks alone), `editable` (`false` when the person can only look: nothing is typed into, dragged or dropped; missing means `true`), `library` (`false` when the person can't open the Library: no Edit in Library pill, and a double-click does nothing; missing means `true`), `endZone` (`false` when the document takes no more blocks, like a Library header, which holds one: no dashed zone after the last block; missing means `true`), `stage` (`true` only for a Library header or footer: the first block goes on the stage instead of the page, below; missing means `false`), `sheet` (`system`: draw the site's design system instead of a page, `TbDesignSystem.vue`, for the Branding editor's preview; blocks are ignored; missing means a page) — the whole page, on every change |
 | `timbrr:select` | `id` or null. A placement's id selects all of its blocks |
 | `timbrr:view` | `scale` — how far the studio scales the frame down to fit; the canvas draws its outlines, tabs and drop zone up by as much, so they read at their real size |
 | `timbrr:format` | `tool` (`bold` `italic` `underline` `link` `h2` `h3` `ul` `ol` `clear`), with `href` for `link` (empty takes the link off) — applied to the open rich-text field if it allows that tool, ignored otherwise |
@@ -209,7 +214,7 @@ Canvas → studio
 | `timbrr:open` | `id` — the placement: Edit in Library was pressed on it, or it was double-clicked. Sent whether or not the canvas is editable |
 | `timbrr:locked` | `id` — the placement: a printable key (no Ctrl or Meta, not held down) other than those `timbrr:flag` and `timbrr:key` carry was pressed while it was selected, on an editable canvas, with no field open. The studio says why nothing happened. A studio too old for `timbrr:key` says nothing for those; the studio deploys first, so no site should meet one |
 | `timbrr:flag` | Nothing else: F was pressed in the frame (no Ctrl, Meta, Alt or Shift) with no field open. Keys pressed here never reach the studio, so this is how it opens its Flag something panel. Goes first: such a key doesn't also send `timbrr:locked` |
-| `timbrr:key` | `key` (`Delete`, `Backspace`, `n`, `d` or `h`, or `ArrowUp` or `ArrowDown` with `alt: true`), `alt` — a key for the selected block was pressed in the frame on an editable canvas, with no field open, not on the stage and not held down, with no other modifier. The studio decides what it does, and may ignore it; a studio that doesn't know the message drops it, and a canvas that doesn't send it just has no keys. Such a key doesn't also send `timbrr:locked` |
+| `timbrr:key` | `key` (`Delete`, `Backspace`, `n`, `d` or `h`; `ArrowUp` or `ArrowDown`, bare with a block selected to select its neighbour, or with `alt: true` to move it), `alt` — a key for the selected block was pressed in the frame on an editable canvas, with no field open, not on the stage and not held down, with no other modifier. The studio decides what it does, and may ignore it; a studio that doesn't know the message drops it, and a canvas that doesn't send it just has no keys. Such a key doesn't also send `timbrr:locked`. With `mod: true` the key is `z` or `y` pressed with ⌘ or Ctrl (`ctrl: true` for Ctrl, `shift` for Shift), no field open: undo or redo, for the studio's History |
 
 In the canvas each block sits in a frame (`.tb-frame`): a quiet outline
 under the pointer, and when it's selected a pine outline and a tab in the

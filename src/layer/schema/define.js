@@ -164,6 +164,7 @@ export const buttonsField = {
    key: 'style',
    label: 'Style',
    widget: 'buttons',
+   draws: 'button', // the studio lists these as the buttons they make
    options: [
     { label: 'Solid', value: 'solid' },
     { label: 'Outline', value: 'outline' },

@@ -6,7 +6,8 @@
 //
 // Everything is checked on the way in and again on the way out, because the
 // values end up inside CSS: colors are #rrggbb, numbers are clamped to their
-// range, fonts come from the list below, images are https or site-relative.
+// range, fonts come from the list below or the site's own checked list,
+// images are https or site-relative.
 // The brand color itself stays sites.accent; it's in BRAND_COLORS for the
 // editor, under `accent`.
 
@@ -55,6 +56,45 @@ export const BRAND_FONTS = [
  { name: 'Space Mono', axis: 'wght@400;700', kind: 'mono' },
 ];
 const STACKS = { serif: 'Georgia, serif', sans: 'system-ui, sans-serif', mono: 'ui-monospace, monospace' };
+
+// A site's own fonts, beside the list above (brand.customFonts): any Google
+// Fonts family the studio checked exists (`source: 'google'`, with the axis
+// Google answered for), or a file the site uploaded and holds the licence
+// for (`source: 'file'`, served by the studio at /media/fonts/…). A name is
+// letters, digits and spaces, so it can sit in a CSS string and a URL.
+export const BRAND_FONT_LIMITS = { custom: 12, name: 60, bytes: 2 * 1024 * 1024 };
+export const BRAND_FONT_FORMATS = { woff2: 'woff2', woff: 'woff', ttf: 'truetype', otf: 'opentype' };
+const FONT_NAME = /^[A-Za-z0-9][A-Za-z0-9 ]{0,59}$/;
+const FONT_AXIS = /^wght@(?:\d{3,4}\.\.\d{3,4}|\d{3}(?:;\d{3}){0,8})$/;
+// shortcut: http only for a studio on localhost (development), https anywhere else.
+const FONT_SRC = /^(?:https:\/\/[a-z0-9.-]{1,253}(?::\d{1,5})?|http:\/\/(?:localhost|127\.0\.0\.1)(?::\d{1,5})?)\/media\/fonts\/[A-Za-z0-9_-]{16}\.(woff2|woff|ttf|otf)$/;
+
+export function brandFontName(value) {
+ const name = String(value ?? '').replace(/\s+/g, ' ').trim();
+ return FONT_NAME.test(name) ? name : '';
+}
+
+function customFonts(value) {
+ const out = [];
+ for (const entry of Array.isArray(value) ? value : []) {
+  const name = brandFontName(entry?.name);
+  if (!name || out.some((font) => font.name === name) || BRAND_FONTS.some((font) => font.name === name)) continue;
+  const kind = STACKS[entry.kind] ? entry.kind : 'sans';
+  if (entry.source === 'google') {
+   const axis = FONT_AXIS.test(String(entry.axis ?? '')) ? entry.axis : '';
+   out.push({ name, kind, source: 'google', ...(axis ? { axis } : {}) });
+  } else if (entry.source === 'file' && FONT_SRC.test(String(entry.src ?? ''))) {
+   out.push({ name, kind, source: 'file', src: entry.src });
+  }
+  if (out.length >= BRAND_FONT_LIMITS.custom) break;
+ }
+ return out;
+}
+
+// Every font a brand can use: the list, then its own.
+export function brandFontList(input) {
+ return [...BRAND_FONTS.map((font) => ({ ...font, source: 'google' })), ...customFonts(input?.customFonts)];
+}
 
 export const BRAND_FONT_ROLES = [
  { key: 'display', variable: '--site-font-display', label: 'Headings', fallback: 'Bitter' },
@@ -116,10 +156,12 @@ export function normalizeBrand(input) {
   if (HEX.test(value)) colors[key] = value;
  }
  if (Object.keys(colors).length) out.colors = colors;
+ const custom = customFonts(raw.customFonts);
+ if (custom.length) out.customFonts = custom;
  const fonts = {};
  for (const { key } of BRAND_FONT_ROLES) {
   const name = raw.fonts?.[key];
-  if (BRAND_FONTS.some((font) => font.name === name)) fonts[key] = name;
+  if (BRAND_FONTS.some((font) => font.name === name) || custom.some((font) => font.name === name)) fonts[key] = name;
  }
  if (Object.keys(fonts).length) out.fonts = fonts;
  for (const spec of BRAND_NUMBERS) {
@@ -134,8 +176,8 @@ export function normalizeBrand(input) {
  return out;
 }
 
-function stackOf(name, fallback) {
- const font = BRAND_FONTS.find((entry) => entry.name === name) ?? BRAND_FONTS.find((entry) => entry.name === fallback);
+function stackOf(name, fallback, list = BRAND_FONTS) {
+ const font = list.find((entry) => entry.name === name) ?? BRAND_FONTS.find((entry) => entry.name === fallback);
  return `'${font.name}', ${STACKS[font.kind]}`;
 }
 
@@ -148,7 +190,7 @@ export function brandVars(input) {
   if (brand.colors?.[key]) vars[variable] = brand.colors[key];
  }
  for (const { key, variable, fallback } of BRAND_FONT_ROLES) {
-  if (brand.fonts?.[key]) vars[variable] = stackOf(brand.fonts[key], fallback);
+  if (brand.fonts?.[key]) vars[variable] = stackOf(brand.fonts[key], fallback, brandFontList(brand));
  }
  for (const spec of BRAND_NUMBERS) {
   if (brand[spec.key] !== undefined) vars[spec.variable] = spec.css(brand[spec.key]);
@@ -165,13 +207,27 @@ export function brandCss(input) {
 }
 
 // The Google Fonts stylesheet for the brand's own fonts, or '' when it uses
-// the defaults (which the site's code already loads).
+// the defaults (which the site's code already loads) or only uploaded files.
 export function brandFontsHref(input) {
  const brand = normalizeBrand(input);
- const names = [...new Set(BRAND_FONT_ROLES.map(({ key, fallback }) => brand.fonts?.[key]).filter((name, index) => name && name !== BRAND_FONT_ROLES[index].fallback))];
- if (!names.length) return '';
- const families = names.map((name) => `family=${encodeURIComponent(name).replace(/%20/g, '+')}:${BRAND_FONTS.find((font) => font.name === name).axis}`);
- return `https://fonts.googleapis.com/css2?${families.join('&')}&display=swap`;
+ const list = brandFontList(brand);
+ const names = [...new Set(BRAND_FONT_ROLES.map(({ key, fallback }) => (brand.fonts?.[key] !== fallback ? brand.fonts?.[key] : '')).filter(Boolean))];
+ const families = names
+  .map((name) => list.find((font) => font.name === name))
+  .filter((font) => font?.source === 'google')
+  .map((font) => `family=${encodeURIComponent(font.name).replace(/%20/g, '+')}${font.axis ? `:${font.axis}` : ''}`);
+ return families.length ? `https://fonts.googleapis.com/css2?${families.join('&')}&display=swap` : '';
+}
+
+// @font-face rules for the uploaded fonts the brand uses, or ''. One file
+// serves every weight, so the browser never fakes a bold over it.
+export function brandFontFaces(input) {
+ const brand = normalizeBrand(input);
+ const used = new Set(Object.values(brand.fonts ?? {}));
+ return (brand.customFonts ?? [])
+  .filter((font) => font.source === 'file' && used.has(font.name))
+  .map((font) => `@font-face{font-family:'${font.name}';src:url('${font.src}') format('${BRAND_FONT_FORMATS[font.src.split('.').pop()]}');font-weight:100 900;font-display:swap}`)
+  .join('');
 }
 
 // Relative luminance contrast of two #rrggbb colors, 1 to 21.

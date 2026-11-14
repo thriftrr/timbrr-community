@@ -179,7 +179,8 @@ export function useBrandHead(style, brand) {
    const css = Object.entries(toValue(style))
     .map(([name, value]) => `${name}:${value}`)
     .join(';');
-   return css ? [{ key: 'timbrr-brand', innerHTML: `:root{${css}}` }] : [];
+   const faces = brandFontFaces(toValue(brand));
+   return [...(css ? [{ key: 'timbrr-brand', innerHTML: `:root{${css}}` }] : []), ...(faces ? [{ key: 'timbrr-brand-faces', innerHTML: faces }] : [])];
   },
   link: () => {
    const value = normalizeBrand(toValue(brand));
