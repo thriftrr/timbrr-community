@@ -463,3 +463,17 @@ own, so change them together.
 
 A block's old `purpose` and words stay in its schema until a later release, for
 pages not yet converted, and draw through `TbFormLegacy`.
+
+## Since manifest version 1: the header
+
+`headerSchema` gained `mark` (`logo` or `wordmark`) and `wordmark` (the
+words, the site's name when empty). A menu item of layout `mega` may carry
+`feature` (`{ image, heading, text, to }`) and `button` (`{ label, to }`). A
+dropdown's own `to` is no longer drawn: its label opens the list. Search,
+Sign in, Cart and Language arrive switched off unless the studio's feature
+flag for each is on for the site.
+
+The site's copies of what it reads from the studio are keyed by the site's
+cache epoch (`server/utils/studio.js`), asked for at most every five
+seconds, so a page or a site taken down in the studio is gone from the site
+within seconds.

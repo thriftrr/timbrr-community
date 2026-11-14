@@ -21,6 +21,11 @@ const iconShape = z.object({ on, to: address }).default({ on: false, to: '' });
 
 export const headerSchema = z.object({
  layout: z.enum(['left', 'center', 'button']).default('left'),
+ // What stands for the site at the start of the bar: its logo (a picture,
+ // or the site's name where there is none), or a wordmark (the site's name,
+ // or `wordmark` when it's set, in the heading font).
+ mark: z.enum(['logo', 'wordmark']).default('logo'),
+ wordmark: z.string().max(60).default(''),
  logo: imageSchema.default({ src: '', alt: '' }),
  announce: z
   .object({
@@ -125,6 +130,21 @@ const text = (value, max) => (typeof value === 'string' ? value.slice(0, max) : 
 // default. The canvas keeps the site's menu through these too. A `layout` of
 // 'link' stays, and so do the children under it, so switching a dropdown to a
 // link and back loses nothing.
+// A big menu's feature card and button, or undefined when there's nothing
+// in them to draw.
+function navFeature(value) {
+ if (!isObject(value)) return undefined;
+ const image = isObject(value.image) && typeof value.image.src === 'string' ? { src: text(value.image.src, 2000), alt: text(value.image.alt, 300), width: value.image.width, height: value.image.height } : { src: '', alt: '' };
+ const feature = { image, heading: text(value.heading, 80), text: text(value.text, 200), to: text(value.to, 2000) };
+ return feature.heading.trim() || feature.image.src ? feature : undefined;
+}
+
+function navButton(value) {
+ if (!isObject(value)) return undefined;
+ const button = { label: text(value.label, 60), to: text(value.to, 2000) };
+ return button.label.trim() ? button : undefined;
+}
+
 export function navItem(item, depth) {
  return {
   label: text(item.label, 120),
@@ -134,6 +154,7 @@ export function navItem(item, depth) {
   desc: text(item.desc, 200),
   group: text(item.group, 60),
   children: depth > 0 ? navList(item.children, depth - 1) : [],
+  ...(depth > 0 ? { feature: navFeature(item.feature), button: navButton(item.button) } : {}),
  };
 }
 

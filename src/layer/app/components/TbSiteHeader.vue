@@ -47,7 +47,10 @@
  });
  const layout = computed(() => header.value?.layout);
  const name = computed(() => String(props.site.name || props.site.domain || ''));
+ // A wordmark: the site's name, or the words the header gives, as text.
+ const wordmark = computed(() => (header.value?.mark === 'wordmark' ? header.value.wordmark.trim() || name.value : ''));
  const logo = computed(() => {
+  if (wordmark.value) return null;
   // The header's own logo, else the brand's (utils/brand.js).
   const own = header.value?.logo;
   const image = safeSrc(own?.src) ? own : props.site.brand?.logo;
@@ -60,7 +63,10 @@
   named(header.value?.menu).map((item) => {
    const children = item.layout === 'link' ? [] : named(item.children).map(linked);
    const kind = !children.length ? 'link' : item.layout === 'mega' ? 'mega' : 'dropdown';
-   return { ...linked(item), kind, children, columns: kind === 'mega' ? megaColumns(children) : [] };
+   // What a big menu holds beside its links (schema/frames.js, navItem).
+   const feature = kind === 'mega' && item.feature ? { ...item.feature, link: linkTo(item.feature), src: safeSrc(item.feature.image?.src) } : null;
+   const button = kind === 'mega' && item.button ? { ...item.button, link: linkTo(item.button) } : null;
+   return { ...linked(item), kind, children, columns: kind === 'mega' ? megaColumns(children) : [], feature, button };
   }),
  );
  const announce = computed(() => {
@@ -321,7 +327,7 @@
    <div class="tb-wrap tb-site-header__bar">
     <NuxtLink to="/" class="tb-site-header__name">
      <img v-if="logo" class="tb-site-header__logo" :src="logo.src" :alt="logo.alt" :width="logo.width" :height="logo.height" :srcset="logo.srcset || undefined" :sizes="logo.srcset ? '200px' : undefined" />
-     <template v-else>{{ name }}</template>
+     <template v-else>{{ wordmark || name }}</template>
     </NuxtLink>
 
     <nav v-if="layout !== 'button' && items.length" class="tb-site-header__nav" aria-label="Main">
@@ -342,9 +348,6 @@
        </button>
 
        <ul v-if="item.kind === 'dropdown'" :id="`${uid}-${index}`" class="tb-site-header__panel">
-        <li v-if="item.link.is !== 'span'">
-         <component :is="item.link.is" :to="item.link.to" :href="item.link.href" class="tb-site-header__sublink tb-site-header__sublink--all">All {{ item.label }}</component>
-        </li>
         <li v-for="(child, at) in item.children" :key="at">
          <component :is="child.link.is" :to="child.link.to" :href="child.link.href" class="tb-site-header__sublink">
           <span class="tb-site-header__sublabel">{{ child.label }}</span>
@@ -355,7 +358,8 @@
        <div v-else-if="item.kind === 'mega'" :id="`${uid}-${index}`" class="tb-site-header__panel tb-site-header__panel--mega">
         <div class="tb-wrap">
          <component :is="item.link.is" :to="item.link.to" :href="item.link.href" class="tb-site-header__mega-title">{{ item.label }}</component>
-         <div class="tb-site-header__mega-columns" :style="{ '--tb-mega-columns': item.columns[0].title ? Math.min(4, item.columns.length) : 3 }">
+         <div class="tb-site-header__mega-body" :class="{ 'has-feature': item.feature }">
+         <div class="tb-site-header__mega-columns" :style="{ '--tb-mega-columns': item.columns[0].title ? Math.min(item.feature ? 3 : 4, item.columns.length) : item.feature ? 2 : 3 }">
           <div v-for="(column, at) in item.columns" :key="at">
            <p v-if="column.title" class="tb-site-header__mega-heading">{{ column.title }}</p>
            <ul class="tb-site-header__mega-links">
@@ -368,6 +372,15 @@
            </ul>
           </div>
          </div>
+         <component :is="item.feature.link.is" v-if="item.feature" :to="item.feature.link.to" :href="item.feature.link.href" class="tb-site-header__feature">
+          <img v-if="item.feature.src" class="tb-site-header__feature-image" :src="item.feature.src" :alt="item.feature.image.alt" loading="lazy" />
+          <span v-if="item.feature.heading" class="tb-site-header__feature-heading">{{ item.feature.heading }}</span>
+          <span v-if="item.feature.text" class="tb-site-header__desc">{{ item.feature.text }}</span>
+         </component>
+         </div>
+         <p v-if="item.button" class="tb-site-header__mega-foot">
+          <component :is="item.button.link.is" :to="item.button.link.to" :href="item.button.link.href" class="tb-site-header__cta tb-site-header__cta--outline">{{ item.button.label }}</component>
+         </p>
         </div>
        </div>
       </li>
@@ -440,7 +453,7 @@
              </button>
              <p class="tb-site-header__drawer-title">{{ item.label }}</p>
              <ul class="tb-site-header__substack">
-              <li v-if="item.link.is !== 'span'">
+              <li v-if="item.kind === 'mega' && item.link.is !== 'span'">
                <component :is="item.link.is" :to="item.link.to" :href="item.link.href" class="tb-site-header__subrow tb-site-header__subrow--all">All {{ item.label }}</component>
               </li>
               <li v-for="(child, at) in item.children" :key="at">
@@ -448,6 +461,15 @@
                 {{ child.label }}
                 <span v-if="item.kind === 'mega' && child.desc" class="tb-site-header__desc">{{ child.desc }}</span>
                </component>
+              </li>
+              <li v-if="item.feature">
+               <component :is="item.feature.link.is" :to="item.feature.link.to" :href="item.feature.link.href" class="tb-site-header__subrow">
+                {{ item.feature.heading || item.feature.image.alt }}
+                <span v-if="item.feature.text" class="tb-site-header__desc">{{ item.feature.text }}</span>
+               </component>
+              </li>
+              <li v-if="item.button">
+               <component :is="item.button.link.is" :to="item.button.link.to" :href="item.button.link.href" class="tb-site-header__subrow tb-site-header__subrow--all">{{ item.button.label }}</component>
               </li>
              </ul>
             </div>
@@ -889,6 +911,44 @@
   display: grid;
   grid-template-columns: repeat(var(--tb-mega-columns, 3), minmax(0, 1fr));
   gap: 18px;
+ }
+
+ /* A big menu's feature card sits beside the columns; its button under them. */
+ .tb-site-header__mega-body.has-feature {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(200px, 280px);
+  gap: 24px;
+ }
+
+ .tb-site-header__feature {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid var(--site-border);
+  border-radius: var(--site-radius);
+  padding: 12px;
+  background: var(--site-surface);
+  color: var(--site-ink);
+  text-decoration: none;
+ }
+
+ .tb-site-header__feature-image {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  border-radius: calc(var(--site-radius) - 4px);
+  object-fit: cover;
+ }
+
+ .tb-site-header__feature-heading {
+  font-family: var(--site-font-display);
+  font-size: 16px;
+  font-weight: var(--site-heading-weight);
+  color: var(--site-heading);
+ }
+
+ .tb-site-header__mega-foot {
+  margin: 16px 0 0;
+  padding-inline: 12px;
  }
 
  .tb-site-header__mega-heading {

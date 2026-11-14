@@ -146,7 +146,20 @@ export const navEntrySchema = z.object({
  desc: z.string().max(200).optional(),
  group: z.string().max(60).optional(),
 });
-export const navItemSchema = navEntrySchema.extend({ children: z.array(navEntrySchema).max(40).optional() });
+// A big menu can hold more than links: one feature card beside its columns
+// (a picture, a heading, a line, somewhere to go) and a button under them.
+export const navFeatureSchema = z.object({
+ image: imageSchema.default({ src: '', alt: '' }),
+ heading: z.string().max(80).default(''),
+ text: z.string().max(200).default(''),
+ to: z.string().max(2000).default(''),
+});
+export const navButtonSchema = z.object({ label: z.string().max(60).default(''), to: z.string().max(2000).default('') });
+export const navItemSchema = navEntrySchema.extend({
+ children: z.array(navEntrySchema).max(40).optional(),
+ feature: navFeatureSchema.optional(),
+ button: navButtonSchema.optional(),
+});
 export const navListSchema = z.array(navItemSchema).max(40).default([]);
 
 // Fields more than one block uses.
