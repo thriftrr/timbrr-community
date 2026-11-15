@@ -243,3 +243,122 @@ export function contrastRatio(a, b) {
  const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
  return (hi + 0.05) / (lo + 0.05);
 }
+
+// ── One color in, the whole palette out (docs/sites.md, "Branding") ───
+// The owner picks the brand color; everything else in BRAND_COLORS is a tone
+// of its hue, worked out in OKLCH so lightness means the same thing for every
+// hue, then checked with contrastRatio() and darkened until it passes WCAG
+// 2.2 AA: 4.5:1 for text (7:1 for headings and strong text), 3:1 for a
+// button against the page.
+
+const toLinear = (c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+const toGamma = (c) => (c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055);
+
+function hexToOklch(hex) {
+ const [r, g, b] = [1, 3, 5].map((i) => toLinear(parseInt(hex.slice(i, i + 2), 16) / 255));
+ const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+ const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+ const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+ const a = 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s;
+ const bb = 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s;
+ return { l: 0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s, c: Math.hypot(a, bb), h: Math.atan2(bb, a) };
+}
+
+function oklchToRgb(L, C, h) {
+ const a = C * Math.cos(h);
+ const b = C * Math.sin(h);
+ const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+ const m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+ const s = (L - 0.0894841775 * a - 1.291485548 * b) ** 3;
+ return [
+  4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+  -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+  -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s,
+ ];
+}
+
+// Chroma is pulled in until the color fits sRGB, so the hue never shifts.
+function oklchToHex(L, C, h) {
+ let rgb = oklchToRgb(L, C, h);
+ while (C > 0 && rgb.some((v) => v < -0.0005 || v > 1.0005)) {
+  C = Math.max(0, C - 0.004);
+  rgb = oklchToRgb(L, C, h);
+ }
+ return `#${rgb.map((v) => Math.round(Math.min(1, Math.max(0, toGamma(v))) * 255).toString(16).padStart(2, '0')).join('')}`;
+}
+
+const cleanAccent = (value) => {
+ const hex = String(value || '').trim().toLowerCase();
+ return HEX.test(hex) ? hex : BRAND_COLORS[0].fallback;
+};
+
+// A brand color too pale for a button to show against the page comes back as
+// the nearest darker one that does (3:1). Anything else comes back unchanged.
+export function nudgeAccent(value, page = '#ffffff') {
+ const accent = cleanAccent(value);
+ let { l, c, h } = hexToOklch(accent);
+ let hex = accent;
+ while (l > 0.1 && contrastRatio(hex, page) < 3) {
+  l -= 0.01;
+  hex = oklchToHex(l, c, h);
+ }
+ return hex;
+}
+
+// Every BRAND_COLORS key, from the brand color and one other choice: a white
+// page or a softly tinted one.
+export function deriveBrandColors(value, page = 'white') {
+ const accent = cleanAccent(value);
+ const { l, c, h } = hexToOklch(accent);
+ const tone = (L, C) => oklchToHex(L, Math.min(C, c), h);
+ // A text color, darkened until it reads on everything it sits on.
+ const readable = (L, C, on, min = 4.5) => {
+  let hex = tone(L, C);
+  while (L > 0.1 && on.some((bg) => contrastRatio(hex, bg) < min)) {
+   L -= 0.02;
+   hex = tone(L, C);
+  }
+  return hex;
+ };
+
+ const bg = page === 'tinted' ? tone(0.985, 0.008) : '#ffffff';
+ const surface = tone(0.965, 0.014);
+ const light = [bg, surface];
+ const heading = readable(0.25, 0.045, light, 7);
+
+ return {
+  accent,
+  accentInk: ['#ffffff', heading, '#000000'].find((ink) => contrastRatio(ink, accent) >= 4.5) || '#000000',
+  heading,
+  ink: readable(0.33, 0.04, light, 7),
+  body: readable(0.45, 0.035, light),
+  muted: readable(0.56, 0.03, light),
+  eyebrow: readable(Math.min(l, 0.52), 0.12, light),
+  bg,
+  surface,
+  border: tone(0.915, 0.018),
+  dark: heading,
+  darkInk: tone(0.96, 0.012),
+ };
+}
+
+// The colors in a list that could be a brand color, best first as given:
+// greys and near-blacks dropped, each made dark enough for a button
+// (nudgeAccent), look-alikes collapsed. Takes hexes or { hex } entries: a
+// logo's measured palette, or the colors a web page's CSS uses most.
+export function accentChoices(list, max = 4) {
+ const out = [];
+ for (const item of Array.isArray(list) ? list : []) {
+  const hex = String(item?.hex ?? item ?? '').trim().toLowerCase();
+  if (!HEX.test(hex)) continue;
+  const { l, c } = hexToOklch(hex);
+  if (c < 0.04 || l < 0.18) continue;
+  const choice = nudgeAccent(hex);
+  const o = hexToOklch(choice);
+  const point = [o.l, o.c * Math.cos(o.h), o.c * Math.sin(o.h)];
+  if (out.some((other) => Math.hypot(...other.point.map((v, i) => v - point[i])) < 0.07)) continue;
+  out.push({ hex: choice, point });
+  if (out.length === max) break;
+ }
+ return out.map((entry) => entry.hex);
+}
