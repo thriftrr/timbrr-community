@@ -14,6 +14,11 @@
  // the crop keeps the subject by anchoring on the focal point. A pasted
  // address has none of these and draws as it always did.
  //
+ // A placement can also be zoomed in (`zoom`, 1 to 4, about the focal
+ // point). Only then, and while the studio's canvas is cropping this picture
+ // (canvas.crop, pages/__timbrr/canvas.vue), the photo sits in a box that
+ // clips it; every other picture is the one <img> it always was.
+ //
  // `field` is the image's path in its block's data, as TbText's is. It's for
  // the studio's canvas alone: there a click says which image it was, and the
  // inspector opens on it. Anywhere else, and in a block that can't be edited,
@@ -29,6 +34,7 @@
  });
 
  const canvas = useCanvas();
+ const scope = useBlockScope();
  const src = computed(() => safeSrc(props.image?.src));
  const clickable = computed(() => (canvas?.editable.value && props.field ? props.field : undefined));
 
@@ -41,8 +47,21 @@
 
  // Where the subject is, as the crop's anchor. Anything that isn't a pair
  // of numbers leaves the crop centred, which is what object-fit does alone.
+ // The crop being made on the canvas, when it's this picture's.
+ const cropping = computed(() => {
+  const crop = canvas?.crop?.value;
+  return crop && scope && crop.id === scope.id && crop.field === props.field ? crop : null;
+ });
+ const zoom = computed(() => {
+  const z = Number(cropping.value ? cropping.value.zoom : props.image?.zoom);
+  return Number.isFinite(z) ? Math.min(4, Math.max(1, z)) : 1;
+ });
+ const boxed = computed(() => Boolean(cropping.value) || zoom.value > 1);
+ // Only a picture its box crops can be cropped by hand.
+ const croppable = computed(() => (clickable.value && props.ratio !== 'auto' ? '' : undefined));
+
  const position = computed(() => {
-  const focal = props.image?.focal;
+  const focal = cropping.value ?? props.image?.focal;
   const x = Number(focal?.x);
   const y = Number(focal?.y);
   if (!focal || !Number.isFinite(x) || !Number.isFinite(y)) return undefined;
@@ -82,14 +101,34 @@
 
  const style = computed(() => ({
   aspectRatio: props.ratio,
-  objectPosition: position.value,
+  objectPosition: boxed.value ? undefined : position.value,
   backgroundImage: placeholder.value && !loaded.value ? `url(${placeholder.value})` : undefined,
+ }));
+ const zoomStyle = computed(() => ({
+  objectPosition: position.value,
+  transformOrigin: position.value ?? '50% 50%',
+  transform: `scale(${zoom.value})`,
  }));
 </script>
 
 <template>
+ <span v-if="src && boxed" class="tb-image tb-image--boxed" :class="{ 'tb-image--placeholder': placeholder && !loaded, 'is-cropping': cropping }" :style="style" :data-image-field="clickable" :data-image-crop="croppable">
+  <img
+   ref="img"
+   :src="src"
+   :srcset="srcset || undefined"
+   :sizes="srcset ? sizes : undefined"
+   :alt="image.alt"
+   class="tb-image__zoom"
+   :style="zoomStyle"
+   draggable="false"
+   :loading="eager ? 'eager' : 'lazy'"
+   :fetchpriority="eager ? 'high' : undefined"
+   @load="loaded = true"
+  />
+ </span>
  <img
-  v-if="src"
+  v-else-if="src"
   ref="img"
   :src="src"
   :srcset="srcset || undefined"
@@ -101,6 +140,7 @@
   :class="{ 'tb-image--placeholder': placeholder && !loaded }"
   :style="style"
   :data-image-field="clickable"
+  :data-image-crop="croppable"
   :loading="eager ? 'eager' : 'lazy'"
   :fetchpriority="eager ? 'high' : undefined"
   @load="loaded = true"
@@ -114,6 +154,29 @@
  /* The placeholder fills the box the photo will: a 32-pixel picture
     stretched over the element is blur enough, with nothing to repaint
     when the photo lands. */
+ /* A zoomed picture: the box keeps the block's shape and clips the photo,
+    which fills it and is scaled about its focal point. */
+ .tb-image--boxed {
+  position: relative;
+  overflow: hidden;
+ }
+
+ .tb-image__zoom {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+ }
+
+ .tb-image--boxed.is-cropping {
+  outline: calc(2px * var(--tb-ui, 1)) solid var(--site-accent);
+  outline-offset: calc(2px * var(--tb-ui, 1));
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+ }
+
  .tb-image--placeholder {
   background-position: center;
   background-size: cover;

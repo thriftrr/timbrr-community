@@ -49,7 +49,7 @@ export default defineBlock({
     { key: 'title', label: 'Title', widget: 'text', inline: true },
     { key: 'eyebrow', label: 'Eyebrow', widget: 'text', inline: true, help: 'With Steps it fills the badge; leave it empty for the step number.' },
     { key: 'body', label: 'Body', widget: 'html', inline: true },
-    { key: 'to', label: 'Links to', widget: 'text', link: true, placeholder: '/services or https://…', help: 'Used when the style is Links.' },
+    { key: 'to', label: 'Links to', widget: 'text', link: true, placeholder: '/services or https://…', when: { style: 'links' } },
    ],
   },
  ],

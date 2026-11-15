@@ -54,7 +54,9 @@ const lookFields = [
 //  icon        a name in the studio's icon set; Timbrr's own blocks use
 //              their type (unknown names draw as a square)
 //  fields      [{ key, label, widget, inline?, link?, ai?, options?, subfields?,
-//              itemLabel?, max?, help?, placeholder? }]; `link` marks a text
+//              itemLabel?, max?, help?, placeholder?, when? }]; `when` is
+//              { otherKey: value | [values] } of the block's own data: the
+//              studio shows the field only while it holds; `link` marks a text
 //              field holding an address (the studio offers a page picker)
 //  wys         per-field formatting tools on the canvas; unlisted → bold, italic
 //  owner       the brand that commissioned it (community and private tiers)
@@ -113,7 +115,7 @@ export function richText(...paragraphs) {
 // a picture picked from the studio's media library also carries what the
 // library knows about it (docs/manifest.md § Widgets): its id, the size of
 // the file the address points at, a ThumbHash placeholder and where the
-// subject is. Every one of those is optional, so pages saved before the
+// subject is, and a placement may be zoomed in. Every one of those is optional, so pages saved before the
 // library existed validate as they are, and <TbImage> simply draws more
 // with each key it finds.
 export const imageSchema = z.object({
@@ -124,6 +126,9 @@ export const imageSchema = z.object({
  height: z.int().min(1).max(12000).optional(),
  placeholder: z.string().max(64).optional(),
  focal: z.object({ x: z.number().min(0).max(1), y: z.number().min(0).max(1) }).optional(),
+ // How far this placement is zoomed in about its focal point (the studio's
+ // crop). Missing is 1: the picture just covers its box.
+ zoom: z.number().min(1).max(4).optional(),
 });
 
 export const buttonSchema = z.object({
