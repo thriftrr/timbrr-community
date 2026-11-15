@@ -2,7 +2,7 @@
 # src/layer is the Nuxt layer sites extend; src/starter is the plain site
 # built on it, which is also the canvas a studio edits through in dev.
 
-.PHONY: up install dev build deploy deploy-timbrr deploy-preview deploy-hosted manifest check
+.PHONY: up install dev build deploy deploy-timbrr deploy-preview deploy-hosted deploy-all manifest check
 
 # One command from a clean checkout to the starter on :3001.
 up: install dev
@@ -42,6 +42,16 @@ deploy-preview:
 # environment in src/starter/wrangler.jsonc.
 deploy-hosted:
 	cd src && npm run build
+	cd src/starter && npx wrangler deploy --config .output/server/wrangler.json --env hosted
+
+# Ship one build everywhere the four targets above go: the canvas, the
+# Timbrr site, every site's dev and staging addresses, and launch domains.
+# It stops at the first one that fails.
+deploy-all:
+	cd src && npm run build
+	cd src/starter && npx wrangler deploy --config .output/server/wrangler.json
+	cd src/starter && npx wrangler deploy --config .output/server/wrangler.json --env timbrr
+	cd src/starter && npx wrangler deploy --config .output/server/wrangler.json --env preview
 	cd src/starter && npx wrangler deploy --config .output/server/wrangler.json --env hosted
 
 # Print the block manifest the starter serves (needs `make dev` running).
