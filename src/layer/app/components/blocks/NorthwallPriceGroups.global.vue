@@ -1,5 +1,5 @@
 <script setup>
- // Prices under group names that open and close. Each name is a line to
+ // Prices in groups that open and close. Each group's name is a line to
  // press, with a plus that becomes a minus while its prices show. Prices
  // with no group come first, always showing. With "first open", one group
  // shows at a time; on the canvas they're all open, so every price can be
@@ -9,7 +9,16 @@
  const canvas = useCanvas();
  const fold = useId();
 
- const groups = computed(() => groupRows(props.data.prices, 'group'));
+ // Each group with its rows, and where each row's words live in the data
+ // (TbText edits by that path). A block from before groups were their own
+ // thing has none: its prices are grouped by the name each one carried.
+ const groups = computed(() => {
+  const own = props.data.groups ?? [];
+  if (own.length) {
+   return own.map((group, g) => ({ name: String(group.name ?? '').trim(), at: `groups.${g}.name`, rows: (group.prices ?? []).map((row, index) => ({ row, at: `groups.${g}.prices.${index}` })) }));
+  }
+  return groupRows(props.data.prices ?? [], 'group').map((group) => ({ name: group.name, at: '', rows: group.rows.map(({ row, index }) => ({ row, at: `prices.${index}` })) }));
+ });
  const firstNamed = computed(() => groups.value.findIndex((group) => group.name));
  const all = computed(() => Boolean(canvas) || props.data.opens === 'all');
 </script>
@@ -21,18 +30,21 @@
     <TbText v-if="shows('tagline', data.tagline)" :data="data" field="tagline" tag="p" class="tb-eyebrow" />
     <TbText v-if="shows('headline', data.headline)" :data="data" field="headline" tag="h2" class="tb-heading" />
    </header>
-   <div v-if="data.prices.length" class="nw-prices__groups">
-    <component :is="group.name ? 'details' : 'div'" v-for="(group, at) in groups" :key="group.name" class="nw-prices__group" :name="group.name && !all ? fold : undefined" :open="group.name ? all || at === firstNamed : undefined">
-     <summary v-if="group.name" class="nw-prices__group-name">{{ group.name }}</summary>
+   <div v-if="groups.length" class="nw-prices__groups">
+    <component :is="group.name ? 'details' : 'div'" v-for="(group, at) in groups" :key="at" class="nw-prices__group" :name="group.name && !all ? fold : undefined" :open="group.name ? all || at === firstNamed : undefined">
+     <summary v-if="group.name" class="nw-prices__group-name">
+      <TbText v-if="group.at" :data="data" :field="group.at" />
+      <template v-else>{{ group.name }}</template>
+     </summary>
      <ul class="nw-prices__list" role="list">
-      <li v-for="{ row, index } in group.rows" :key="index" class="nw-prices__row">
+      <li v-for="entry in group.rows" :key="entry.at" class="nw-prices__row">
        <div class="nw-prices__text">
-        <TbText :data="data" :field="`prices.${index}.name`" tag="h3" class="nw-prices__name" />
-        <TbText v-if="shows(`prices.${index}.detail`, row.detail)" :data="data" :field="`prices.${index}.detail`" tag="p" class="nw-prices__detail" />
+        <TbText :data="data" :field="`${entry.at}.name`" tag="h3" class="nw-prices__name" />
+        <TbText v-if="shows(`${entry.at}.detail`, entry.row.detail)" :data="data" :field="`${entry.at}.detail`" tag="p" class="nw-prices__detail" />
        </div>
        <p class="nw-prices__price">
-        <TbText :data="data" :field="`prices.${index}.price`" class="nw-prices__amount" />
-        <TbText v-if="shows(`prices.${index}.period`, row.period)" :data="data" :field="`prices.${index}.period`" class="nw-prices__period" />
+        <TbText :data="data" :field="`${entry.at}.price`" class="nw-prices__amount" />
+        <TbText v-if="shows(`${entry.at}.period`, entry.row.period)" :data="data" :field="`${entry.at}.period`" class="nw-prices__period" />
        </p>
       </li>
      </ul>

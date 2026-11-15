@@ -32,13 +32,9 @@ export default defineBlock({
   {
    key: 'columns',
    label: 'Columns',
-   widget: 'buttons',
-   options: [
-    { label: '2', value: '2' },
-    { label: '3', value: '3' },
-    { label: '4', value: '4' },
-    { label: '5', value: '5' },
-   ],
+   widget: 'stepper',
+   min: 2,
+   max: 5,
   },
   { key: 'header', label: 'First row is the headings', widget: 'switch' },
   {
@@ -47,7 +43,8 @@ export default defineBlock({
    widget: 'items',
    itemLabel: 'c1',
    max: 40,
-   subfields: CELLS.map((key, index) => ({ key, label: `Column ${index + 1}`, widget: 'text', inline: true })),
+   // A row only asks for the columns the table shows.
+   subfields: CELLS.map((key, index) => ({ key, label: `Column ${index + 1}`, widget: 'text', inline: true, ...(index > 1 ? { when: { columns: ['3', '4', '5'].slice(index - 2) } } : {}) })),
   },
   { key: 'note', label: 'Note', widget: 'text', inline: true, help: 'Small print under the table. Leave it empty for none.' },
  ],
