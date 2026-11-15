@@ -55,6 +55,7 @@
  const dropTop = ref(0);
  const active = shallowRef(null); // { id, field, kind } being typed into
  const editor = shallowRef(null); // the open rich-text editor, if any
+ const crop = ref(null); // the picture being cropped by hand: { id, field, x, y, zoom }
  let parentOrigin = null;
  let focused = null; // { id, field, key } the studio last heard has the caret
 
@@ -173,7 +174,11 @@
  // The caret is in a field: say which, what it allows and what's on there
  // (only when that changed), and select its block.
  function focus({ id, field, kind, label, tools = [], active: on = [], href = null }) {
-  const message = { type: 'timbrr:focus', id, field, kind, label, tools, active: on, href };
+  // Where the field is in this document, so the studio can fly its
+  // format bar out above it.
+  const box = document.activeElement?.isContentEditable ? document.activeElement.getBoundingClientRect() : null;
+  const rect = box ? { top: Math.round(box.top + window.scrollY), left: Math.round(box.left + window.scrollX), width: Math.round(box.width) } : null;
+  const message = { type: 'timbrr:focus', id, field, kind, label, tools, active: on, href, rect };
   const key = JSON.stringify(message);
   if (focused?.key === key) return;
   focused = { id, field, key };
@@ -201,6 +206,7 @@
    library,
    active,
    editor,
+   crop,
    activate,
    release,
    edit: (id, field, value) => post({ type: 'timbrr:edit', id, field, value }),
@@ -219,7 +225,120 @@
  // Someone who can only look: nothing stays open for typing.
  watch(editable, (value) => {
   if (!value && active.value) release(active.value.id, active.value.field);
+  if (!value) crop.value = null;
  });
+
+ // ── Cropping a picture by hand ──
+ // A double-click on a picture its box crops (TbImage, data-image-crop) opens
+ // it: drag moves the photo in its box, the wheel, a pinch or the slider
+ // zooms, the arrow keys nudge it. Enter or a press anywhere else keeps it,
+ // Escape puts it back, Reset asks the studio for the library's own. What's
+ // kept goes to the studio as timbrr:crop (the placement's focal point and
+ // zoom); the studio owns the page and sends it back. A locked block's
+ // pictures are the Library's, and a double-click there opens that instead.
+
+ const clamp = (n, low, high) => Math.min(high, Math.max(low, n));
+ const cropEl = () => (crop.value ? document.querySelector(`[data-block-id="${CSS.escape(crop.value.id)}"] [data-image-field="${CSS.escape(crop.value.field)}"]`) : null);
+ const cropBar = ref({});
+ let cropDrag = null;
+
+ function cropImage(id, field) {
+  const image = valueAt(blocks.value.find((block) => block.id === id)?.data, field);
+  return image && typeof image === 'object' && image.src ? image : null;
+ }
+
+ function onDblClick(event) {
+  if (preview || !editable.value || staged.value || crop.value) return;
+  const el = event.target.closest?.('[data-image-crop]');
+  const id = el?.closest('[data-block-id]')?.dataset.blockId;
+  const field = el?.dataset.imageField;
+  if (!id || !field || id.includes('.')) return;
+  const image = cropImage(id, field);
+  if (!image) return;
+  const num = (value) => (Number.isFinite(Number(value)) ? clamp(Number(value), 0, 1) : 0.5);
+  const rect = el.getBoundingClientRect();
+  const page = document.querySelector('.tb-canvas__page').getBoundingClientRect();
+  cropBar.value = { top: `${rect.bottom - page.top}px`, left: `${rect.left - page.left + rect.width / 2}px` };
+  crop.value = { id, field, x: num(image.focal?.x), y: num(image.focal?.y), zoom: clamp(Number(image.zoom) || 1, 1, 4) };
+  window.getSelection()?.removeAllRanges();
+ }
+
+ // The photo moves with the pointer: by how far there is to move at this
+ // zoom (the drawn photo less the part of it the box shows).
+ function cropMove(dx, dy) {
+  const el = cropEl();
+  const img = el?.querySelector('img');
+  if (!img?.naturalWidth || !el.clientWidth || !el.clientHeight) return;
+  const { x, y, zoom } = crop.value;
+  const fit = Math.max(el.clientWidth / img.naturalWidth, el.clientHeight / img.naturalHeight);
+  const slackX = img.naturalWidth * fit - el.clientWidth / zoom;
+  const slackY = img.naturalHeight * fit - el.clientHeight / zoom;
+  crop.value = {
+   ...crop.value,
+   x: slackX > 0.5 ? clamp(x - dx / zoom / slackX, 0, 1) : x,
+   y: slackY > 0.5 ? clamp(y - dy / zoom / slackY, 0, 1) : y,
+  };
+ }
+
+ function cropZoom(zoom) {
+  if (crop.value && Number.isFinite(zoom)) crop.value = { ...crop.value, zoom: clamp(zoom, 1, 4) };
+ }
+
+ function cropKeep() {
+  if (!crop.value) return;
+  const { id, field, x, y, zoom } = crop.value;
+  const round = (n, by) => Math.round(n * by) / by;
+  const focal = { x: round(x, 1000), y: round(y, 1000) };
+  // Drawn here at once; the studio's copy follows.
+  const image = cropImage(id, field);
+  if (image) Object.assign(image, { focal, zoom: round(zoom, 100) });
+  crop.value = null;
+  post({ type: 'timbrr:crop', id, field, focal, zoom: round(zoom, 100) });
+ }
+
+ function cropReset() {
+  if (!crop.value) return;
+  const { id, field } = crop.value;
+  crop.value = null;
+  post({ type: 'timbrr:crop', id, field, reset: true });
+ }
+
+ // True when the key was the crop's.
+ function cropKey(event) {
+  if (!crop.value) return false;
+  if (event.key === 'Escape') crop.value = null;
+  else if (event.key === 'Enter' && !event.target.closest?.('button')) cropKeep();
+  else if (event.target.closest?.('.tb-canvas__crop')) return true; // the slider's and the buttons' own keys
+  else if (event.key.startsWith('Arrow')) {
+   const step = event.shiftKey ? 0.1 : 0.01;
+   const { x, y } = crop.value;
+   crop.value = {
+    ...crop.value,
+    x: clamp(x + (event.key === 'ArrowRight' ? step : event.key === 'ArrowLeft' ? -step : 0), 0, 1),
+    y: clamp(y + (event.key === 'ArrowDown' ? step : event.key === 'ArrowUp' ? -step : 0), 0, 1),
+   };
+  } else if (event.key === '+' || event.key === '=') cropZoom(crop.value.zoom + 0.1);
+  else if (event.key === '-') cropZoom(crop.value.zoom - 0.1);
+  else return true;
+  event.preventDefault();
+  return true;
+ }
+
+ function onPointerMove(event) {
+  if (!cropDrag || !crop.value) return;
+  cropMove(event.clientX - cropDrag.x, event.clientY - cropDrag.y);
+  cropDrag = { x: event.clientX, y: event.clientY };
+ }
+
+ function onPointerUp() {
+  cropDrag = null;
+ }
+
+ function onWheel(event) {
+  if (!crop.value || !cropEl()?.contains(event.target)) return;
+  event.preventDefault();
+  cropZoom(crop.value.zoom * Math.exp(-event.deltaY * 0.0025));
+ }
 
  // The studio records its sessions with rrweb and can't see into this frame,
  // so when it asks, rrweb here passes what happens on the canvas up to the
@@ -341,6 +460,7 @@
  // A key pressed while a locked block is selected goes nowhere, so the
  // studio says why. One that's going into an open field isn't that.
  function onKeyDown(event) {
+  if (cropKey(event)) return;
   if (event.repeat) return;
   if (flagKey(event)) {
    post({ type: 'timbrr:flag' });
@@ -378,6 +498,12 @@
  // A press anywhere outside the open rich-text editor closes it, even
  // when the caret had gone out to the studio.
  function onPointerDown(event) {
+  if (crop.value) {
+   if (cropEl()?.contains(event.target)) {
+    event.preventDefault();
+    cropDrag = { x: event.clientX, y: event.clientY };
+   } else if (!event.target.closest?.('.tb-canvas__crop')) cropKeep();
+  }
   const open = editor.value;
   if (open && !open.el.contains(event.target)) release(open.id, open.field);
  }
@@ -517,6 +643,11 @@
   document.addEventListener('auxclick', onAuxClick, true);
   document.addEventListener('submit', onSubmit, true);
   document.addEventListener('pointerdown', onPointerDown, true);
+  document.addEventListener('pointermove', onPointerMove);
+  document.addEventListener('pointerup', onPointerUp);
+  document.addEventListener('pointercancel', onPointerUp);
+  document.addEventListener('dblclick', onDblClick, true);
+  document.addEventListener('wheel', onWheel, { passive: false });
   document.addEventListener('focusin', onFocusIn, true);
   document.addEventListener('keydown', onKeyDown);
   document.addEventListener('dragend', onDragEnd);
@@ -534,6 +665,11 @@
   document.removeEventListener('auxclick', onAuxClick, true);
   document.removeEventListener('submit', onSubmit, true);
   document.removeEventListener('pointerdown', onPointerDown, true);
+  document.removeEventListener('pointermove', onPointerMove);
+  document.removeEventListener('pointerup', onPointerUp);
+  document.removeEventListener('pointercancel', onPointerUp);
+  document.removeEventListener('dblclick', onDblClick, true);
+  document.removeEventListener('wheel', onWheel);
   document.removeEventListener('focusin', onFocusIn, true);
   document.removeEventListener('keydown', onKeyDown);
   document.removeEventListener('dragend', onDragEnd);
@@ -576,6 +712,16 @@
      </div>
      <p v-else-if="!blocks.length" class="tb-canvas__nothing">Nothing on this page yet.</p>
      <span v-if="dropIndex !== null && blocks.length" class="tb-canvas__drop" :style="{ top: `${dropTop}px` }" aria-hidden="true" />
+     <div v-if="crop" class="tb-canvas__crop" :style="cropBar" role="toolbar" aria-label="Crop this picture">
+      <span class="tb-canvas__crop-hint">Drag the picture to move it</span>
+      <label class="tb-canvas__crop-zoom">
+       <span>Zoom</span>
+       <input type="range" min="1" max="4" step="0.01" :value="crop.zoom" @input="cropZoom(Number($event.target.value))" />
+      </label>
+      <button type="button" @click="cropReset">Reset</button>
+      <button type="button" @click="crop = null">Cancel</button>
+      <button type="button" class="is-primary" @click="cropKeep">Done</button>
+     </div>
     </template>
    </main>
 

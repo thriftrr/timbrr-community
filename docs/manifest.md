@@ -64,6 +64,10 @@ drawn behind the photo until it's in; and `focal` becomes
 none of them and draws as before, and a site on a layer older than these
 keys parses them away and ignores them.
 
+`zoom` (1 to 4, optional) is one placement's own: the photo is scaled about
+its focal point inside a box that keeps the block's shape. Without it, or at
+1, the picture is the single `<img>` it always was (`scripts/check-image.mjs`).
+
 **Field flags:** `inline` (drawn through `<TbText>` or `<TbRich>`, so it's
 typed into on the canvas), `link` (a text field that holds an address, like
 a button's `to`: the studio offers this site's pages or an outside
@@ -216,6 +220,7 @@ Canvas → studio
 | `timbrr:locked` | `id` — the placement: a printable key (no Ctrl or Meta, not held down) other than those `timbrr:flag` and `timbrr:key` carry was pressed while it was selected, on an editable canvas, with no field open. The studio says why nothing happened. A studio too old for `timbrr:key` says nothing for those; the studio deploys first, so no site should meet one |
 | `timbrr:flag` | Nothing else: F was pressed in the frame (no Ctrl, Meta, Alt or Shift) with no field open. Keys pressed here never reach the studio, so this is how it opens its Flag something panel. Goes first: such a key doesn't also send `timbrr:locked` |
 | `timbrr:key` | `key` (`Delete`, `Backspace`, `n`, `d` or `h`; `ArrowUp` or `ArrowDown`, bare with a block selected to select its neighbour, or with `alt: true` to move it), `alt` — a key for the selected block was pressed in the frame on an editable canvas, with no field open, not on the stage and not held down, with no other modifier. The studio decides what it does, and may ignore it; a studio that doesn't know the message drops it, and a canvas that doesn't send it just has no keys. Such a key doesn't also send `timbrr:locked`. With `mod: true` the key is `z` or `y` pressed with ⌘ or Ctrl (`ctrl: true` for Ctrl, `shift` for Shift), no field open: undo or redo, for the studio's History |
+| `timbrr:crop` | `id`, `field` (an image's path) and either `focal` (`{ x, y }`, 0..1) and `zoom` (1..4), or `reset: true` — a picture was cropped by hand: a double-click on one its box crops (not `ratio="auto"`, not in a locked block) on an editable canvas opens the crop; drag moves the photo, the wheel or the bar's slider zooms, arrows nudge, Enter or a press elsewhere keeps it, Escape cancels, Reset asks for the library's own. The canvas draws it at once; the studio writes it into the image value and sends the page back. A studio that doesn't know the message drops it |
 
 In the canvas each block sits in a frame (`.tb-frame`): a quiet outline
 under the pointer, and when it's selected a pine outline and a tab in the

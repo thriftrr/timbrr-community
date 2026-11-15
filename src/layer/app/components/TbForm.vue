@@ -34,6 +34,8 @@
  const last = computed(() => current.value >= steps.value.length - 1);
  const shown = computed(() => steps.value[current.value].fields.filter((field) => field.type !== 'hidden' && formFieldVisible(props.form, field, values)));
  const title = computed(() => props.heading.trim() || props.form.title);
+ // The form's own switch (Build > Form) or the block's hides both heading and intro; the block's alone keeps the intro.
+ const noHeading = computed(() => props.hideTitle || props.form.hideHeader === true);
  const span = (field) => (props.form.advanced && !props.compact ? { half: 6, third: 4 }[field.width] ?? 12 : 12);
  const fieldId = (field) => `${uid}-${field.id}`;
  const priced = (field, option) => props.form.advanced && Number(option.v) > 0;
@@ -165,12 +167,12 @@
 </script>
 
 <template>
- <div ref="root" class="tb-form__body" :class="{ 'tb-form__body--compact': compact, 'tb-form__body--untitled': hideTitle }" :inert="locked">
+ <div ref="root" class="tb-form__body" :class="{ 'tb-form__body--compact': compact, 'tb-form__body--untitled': noHeading }" :inert="locked">
   <div v-if="sent" class="tb-form__sent" role="status"><TbRich :doc="sent" /></div>
-  <form v-else novalidate :aria-label="hideTitle ? title : undefined" @submit.prevent="last ? submit() : next()">
+  <form v-else novalidate :aria-label="noHeading ? title : undefined" @submit.prevent="last ? submit() : next()">
    <template v-if="!compact">
-    <h2 v-if="title && !hideTitle" class="tb-heading tb-form__title">{{ title }}</h2>
-    <p v-if="form.intro" class="tb-form__lede">{{ form.intro }}</p>
+    <h2 v-if="title && !noHeading" class="tb-heading tb-form__title">{{ title }}</h2>
+    <p v-if="form.intro && !form.hideHeader" class="tb-form__lede">{{ form.intro }}</p>
    </template>
 
    <div v-if="steps.length > 1" class="tb-form__progress">

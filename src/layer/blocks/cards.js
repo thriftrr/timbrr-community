@@ -145,12 +145,12 @@ export default defineBlock({
     { key: 'eyebrow', label: 'Eyebrow', widget: 'text', inline: true, help: 'A small label over the title. With Number or Steps it replaces the number.' },
     { key: 'body', label: 'Body', widget: 'html', inline: true },
     { key: 'price', label: 'Price', widget: 'text', inline: true, placeholder: 'from $90', help: 'Leave it empty to show no price.' },
-    { key: 'image', label: 'Image', widget: 'image', help: 'Shown when the style is Image.' },
+    { key: 'image', label: 'Image', widget: 'image', when: { style: 'image' } },
     {
      key: 'icon',
      label: 'Icon',
      widget: 'select',
-     help: 'Shown when the style is Icon.',
+     when: { style: 'icon' },
      options: [
       { label: 'Check', value: 'check' },
       { label: 'Star', value: 'star' },
