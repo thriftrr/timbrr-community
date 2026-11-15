@@ -4,7 +4,10 @@ import { z } from 'zod';
 // `fields`, so the widget set is fixed: a manifest can't invent a widget the
 // studio doesn't ship.
 export const CATEGORIES = ['content', 'common', 'layout', 'dynamic', 'cta'];
-export const WIDGETS = ['text', 'textarea', 'html', 'select', 'buttons', 'items', 'image', 'nav', 'switch', 'group', 'form'];
+// `stepper` is a whole number between the field's `min` and `max`, with a
+// minus and a plus beside it; it saves a number, or its text where the
+// schema is text.
+export const WIDGETS = ['text', 'textarea', 'html', 'select', 'buttons', 'items', 'image', 'nav', 'switch', 'group', 'form', 'stepper'];
 export const WYS_TOOLS = ['bold', 'italic', 'underline', 'link', 'h2', 'h3', 'ul', 'ol', 'clear'];
 
 // What every block can set about how it sits on the page: its background,
