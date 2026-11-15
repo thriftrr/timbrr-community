@@ -94,6 +94,27 @@ it, so searching the tray still finds it. Why, and how pages move over:
 - `instagram` Instagram feed: the handle, a Follow button and tiles you pick,
   not a live feed.
 
+**Community** (`owner` set: commissioned by one brand, on every site's
+Community shelf; the type carries the brand's prefix)
+
+North Wall, a climbing gym:
+
+- `northwall_video_hero` Video hero: a headline over a silent, looping
+  background video. Words centered, left or bottom left; full screen or tall;
+  three shades; a straight bottom edge or a mountain ridge. The picture stands
+  in until the video plays, for anyone who's asked for less motion, and on the
+  canvas. There's a pause button.
+- `northwall_embed` Embed: another service's page (a booking calendar, a
+  schedule, a shop) in a sandboxed frame. Only the address is kept from what's
+  pasted, so a pasted script never runs on the site.
+- `northwall_calculator` Price calculator: how many, tick-box extras, and the
+  price they come to. Nothing is charged; its button goes wherever signing up
+  happens.
+- `northwall_price_groups` Folding price list: prices under group names that
+  open and close.
+- `northwall_table` Table: two to five columns, the first row as headings if
+  you like.
+
 **Retired** (`retired: true`; never in the tray, and they still draw and save
 until pages are converted)
 
@@ -108,7 +129,8 @@ until pages are converted)
   menu of links, dropdowns and big menus, buttons, icons, and how it behaves
   on a scroll and on a phone.
 - `site_footer` Footer: columns, centered or slim, with a newsletter link,
-  contact details, social links and small print.
+  contact details, social links, small print, and one floating button that
+  stays in the corner of every page.
 
 A Form block shows a form from the studio's Forms, and sends for real
 (`docs/manifest.md` § Forms). The retired `request_quote` and `text_club` draw

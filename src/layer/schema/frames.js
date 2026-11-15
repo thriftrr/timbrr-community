@@ -113,6 +113,16 @@ export const footerSchema = z.object({
   .default([]),
  legal: z.string().max(300).default(''),
  legal_links: z.array(navEntrySchema).max(4).default([]),
+ // One button that stays in the corner of every page as it scrolls: gift
+ // cards, book now. It lives with the footer because it's the site's, not a
+ // page's, and a site with no footer has none.
+ floating: z
+  .object({
+   on,
+   label: z.string().max(40).default(''),
+   to: address,
+  })
+  .default({ on: false, label: '', to: '' }),
 });
 
 export const HEADER_DEFAULTS = headerSchema.parse({});
