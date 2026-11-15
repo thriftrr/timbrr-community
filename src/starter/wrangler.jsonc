@@ -37,10 +37,16 @@
   // (src/layer/server/middleware/hosted.js). `make deploy-hosted` ships it.
   // Needs Cloudflare for SaaS on the zone with sites.timbrr.app as its
   // fallback origin, a proxied DNS record for that name, and this route
-  // (the studio's docs/sites.md, "Launch domain").
+  // (the studio's docs/sites.md, "Launch domain"). The route is the
+  // catch-all: a launch domain keeps its own host name, so no route naming
+  // a timbrr.app host ever matches it, and a route made by hand is removed
+  // by the next deploy. It also catches every proxied timbrr.app host with
+  // no route of its own, so those need a route with no Worker, made once
+  // on the zone (media.timbrr.app/*, canvas.timbrr.app/*): this file can't
+  // hold them.
   "hosted": {
    "name": "timbrr-sites",
-   "routes": [{ "pattern": "sites.timbrr.app/*", "zone_name": "timbrr.app" }],
+   "routes": [{ "pattern": "*/*", "zone_name": "timbrr.app" }],
    "observability": { "enabled": true, "redact_query_string": true },
    "vars": {
     "NUXT_PUBLIC_STUDIO_ORIGIN": "https://timbrr.app",
