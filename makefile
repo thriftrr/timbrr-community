@@ -51,3 +51,4 @@ manifest:
 # Check every block definition the way the build does, without building.
 check:
 	cd src && node layer/scripts/check-blocks.mjs
+	cd src && node layer/scripts/check-embed.mjs

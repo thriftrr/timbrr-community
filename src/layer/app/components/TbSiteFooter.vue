@@ -98,6 +98,14 @@
  const legalLinks = computed(() => named(footer.value?.legal_links).map(linked));
  const legal = computed(() => footer.value?.legal.trim() || `© ${year} ${name.value}`);
 
+ // The floating button, when it's on and has both words and somewhere to go.
+ const floating = computed(() => {
+  const row = footer.value?.floating;
+  if (!row?.on || !row.label.trim()) return null;
+  const link = linkTo(row);
+  return link.is === 'span' ? null : { label: row.label, link };
+ });
+
  // Items with a label to show; anything else is left out.
  function named(list) {
   return Array.isArray(list) ? list.filter((item) => typeof item?.label === 'string' && item.label.trim()) : [];
@@ -117,7 +125,8 @@
 </script>
 
 <template>
- <footer v-if="footer" class="tb-site-footer" :class="`tb-site-footer--${footer.layout}`">
+ <footer v-if="footer" class="tb-site-footer" :class="[`tb-site-footer--${footer.layout}`, { 'tb-site-footer--floating': floating }]">
+  <component :is="floating.link.is" v-if="floating" :to="floating.link.to" :href="floating.link.href" class="tb-site-float">{{ floating.label }}</component>
   <div v-if="newsletter" class="tb-site-footer__newsletter">
    <div class="tb-wrap tb-site-footer__newsletter-row">
     <p v-if="newsletter.headline.trim()" class="tb-site-footer__newsletter-words">{{ newsletter.headline }}</p>
@@ -196,6 +205,63 @@
  .tb-site-footer {
   background: var(--site-dark);
   color: color-mix(in srgb, var(--site-dark-ink) 70%, var(--site-muted));
+ }
+
+ /* The floating button: the brand color in the bottom corner of the screen,
+    over the page as it scrolls and clear of a phone's home bar. It sits
+    under the header's menus (30 and up). The footer leaves room below its
+    small print, so at the end of the page the button covers nothing. */
+ .tb-site-float {
+  position: fixed;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: max(16px, env(safe-area-inset-bottom));
+  z-index: 20;
+  display: inline-flex;
+  align-items: center;
+  max-width: calc(100vw - 32px);
+  min-height: 48px;
+  border-radius: var(--site-control-radius);
+  padding: 12px 20px;
+  background: var(--site-accent);
+  box-shadow: 0 10px 24px -8px rgb(0 0 0 / 0.45);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--site-accent-ink);
+  text-decoration: none;
+  transition:
+   transform 200ms cubic-bezier(0.16, 1, 0.3, 1),
+   filter 120ms ease;
+ }
+
+ .tb-site-float:hover {
+  filter: brightness(1.08);
+  transform: translateY(-2px);
+ }
+
+ .tb-site-float:focus-visible {
+  outline: 2px solid var(--site-accent-ink);
+  outline-offset: -5px;
+ }
+
+ .tb-site-footer--floating {
+  padding-bottom: 72px;
+ }
+
+ @media (prefers-reduced-motion: reduce) {
+  .tb-site-float {
+   transition: none;
+  }
+
+  .tb-site-float:hover {
+   transform: none;
+  }
+ }
+
+ @media print {
+  .tb-site-float {
+   display: none;
+  }
  }
 
  /* The newsletter: its words and a form, or a button to wherever the sign-up
