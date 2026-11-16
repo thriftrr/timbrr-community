@@ -15,7 +15,9 @@
  //
  // With ?preview=1 it's the page exactly as the site draws it: no outlines,
  // tabs, typing or drop zones, and hidden blocks stay hidden (the tray's
- // previews and the builder's Preview use it). Either way it never fetches
+ // previews and the builder's Preview use it). With &window=1 as well (the
+ // builder's Preview) its frame is a fixed window and the page scrolls in
+ // it, as on a visitor's screen. Either way it never fetches
  // content, never holds a token, and its links go nowhere. Every message is
  // checked against one origin: the configured studio, or localhost in
  // development.
@@ -25,11 +27,12 @@
  definePageMeta({ layout: false });
 
  const preview = useRoute().query.preview === '1';
+ const windowed = preview && useRoute().query.window === '1';
 
  useHead({
   title: preview ? 'Preview' : 'Canvas',
   meta: [{ name: 'robots', content: 'noindex, nofollow' }],
-  htmlAttrs: { 'data-timbrr-canvas': '' },
+  htmlAttrs: { 'data-timbrr-canvas': '', 'data-timbrr-window': windowed ? '' : undefined },
  });
 
  const config = useRuntimeConfig();
@@ -554,7 +557,8 @@
    y,
   );
   dropIndex.value = index;
-  dropSlots.value = slots.map((slot) => ({ index: slot.index, top: slot.y - page.top }));
+  // `room` is the space above the line in this document, which never scrolls: the first edge often has none.
+  dropSlots.value = slots.map((slot) => ({ index: slot.index, top: slot.y - page.top, room: Math.max(0, slot.y) }));
  }
 
  function clearDrop() {
@@ -611,6 +615,8 @@
  // itself. It's the page that's measured, not the window, so the frame
  // shrinks again when the page does. The stage is the exception: its frame
  // has a fixed height and the page scrolls inside it, so it reports nothing.
+ // A window preview (&window=1) scrolls too, but still reports: the studio
+ // shows the page once it's drawn.
 
  let observer;
  let lastHeight = -1;
@@ -620,7 +626,9 @@
   const height = Math.ceil(Math.max(el.scrollHeight, el.getBoundingClientRect().height));
   if (height === lastHeight && !again) return;
   lastHeight = height;
-  post({ type: 'timbrr:size', height });
+  // `window`: this frame scrolls itself, so the studio keeps its size (an
+  // older canvas leaves it out, and the studio sizes the frame to the page).
+  post({ type: 'timbrr:size', height, ...(windowed ? { window: true } : {}) });
  }
 
  watch(connected, () => nextTick(() => reportSize()));
@@ -723,7 +731,7 @@
      </div>
      <p v-else-if="!blocks.length" class="tb-canvas__nothing">Nothing on this page yet.</p>
      <template v-if="blocks.length">
-      <span v-for="slot in dropSlots" :key="slot.index" class="tb-canvas__slot" :class="{ 'is-over': slot.index === dropIndex }" :style="{ top: `${slot.top}px` }" aria-hidden="true">
+      <span v-for="slot in dropSlots" :key="slot.index" class="tb-canvas__slot" :class="{ 'is-over': slot.index === dropIndex }" :style="{ top: `${slot.top}px`, '--tb-room': `${slot.room}px` }" aria-hidden="true">
        <span class="tb-canvas__slot-mark">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6" /></svg>
         <span class="tb-canvas__slot-text">Drop here</span>

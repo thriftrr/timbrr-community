@@ -25,7 +25,8 @@ export default defineBlock({
   height: z.enum(['full', 'tall']).default('full'),
   shade: z.enum(['light', 'medium', 'dark']).default('medium'),
   // Not offered any more: the ridge is a block of its own (northwall_edge).
-  // Kept so a hero saved with it still validates; convert-blocks moves it.
+  // Kept so a hero saved with it still validates and still draws its ridge
+  // until convert-blocks moves it (it never moves one kept as a global block).
   edge: z.enum(['straight', 'peaks']).default('straight'),
   buttons: z.array(buttonSchema).max(2).default([]),
  }),

@@ -41,7 +41,7 @@
 </script>
 
 <template>
- <section class="tb-section nw-vhero" :class="[`nw-vhero--${data.words}`, `nw-vhero--${data.height}`, `nw-vhero--shade-${data.shade}`]">
+ <section class="tb-section nw-vhero" :class="[`nw-vhero--${data.words}`, `nw-vhero--${data.height}`, `nw-vhero--shade-${data.shade}`, { 'nw-vhero--peaks': data.edge === 'peaks' }]">
   <TbImage :image="data.image" field="image" sizes="100vw" class="nw-vhero__picture" eager />
   <video
    v-if="src"
@@ -78,6 +78,9 @@
     <path v-else d="M4.5 2.3v11.4L13.5 8z" />
    </svg>
   </button>
+  <svg v-if="data.edge === 'peaks'" class="nw-vhero__peaks" viewBox="0 0 1440 140" preserveAspectRatio="none" aria-hidden="true">
+   <path d="M0 140V98l92-54 58 36 98-72 82 64 56-32 118 68 112-50 68 32 132-80 94 60 62-28 148 72 112-42 88 38 120-58v88z" />
+  </svg>
  </section>
 </template>
 
@@ -91,7 +94,7 @@
   display: flex;
   align-items: center;
   min-height: max(520px, 100svh);
-  padding-block: calc(var(--site-space) * 1.2 + var(--tb-header-height, 0px)) calc(var(--site-space) * 1.2);
+  padding-block: calc(var(--site-space) * 1.2 + var(--tb-header-height, 0px)) calc(var(--site-space) * 1.2 + var(--nw-vhero-ridge, 0px));
   overflow: hidden;
   background: var(--site-dark);
  }
@@ -215,7 +218,7 @@
  .nw-vhero__pause {
   position: absolute;
   right: max(16px, env(safe-area-inset-right));
-  bottom: 16px;
+  bottom: calc(var(--nw-vhero-ridge, 0px) + 16px);
   z-index: 2;
   display: grid;
   place-items: center;
@@ -240,7 +243,42 @@
  }
 
  /* Peaks: a ridge in the page's color across the bottom, so the video
-    ends in a skyline instead of a line. Everything else clears it. */
+    ends in a skyline instead of a line. Everything else clears it. No
+    longer offered (the ridge is its own block, northwall_edge), but a hero
+    saved with it keeps drawing it until convert-blocks moves it. */
+ .nw-vhero__peaks {
+  position: absolute;
+  inset: auto 0 -1px;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: clamp(44px, 9vw, 130px);
+  fill: var(--site-bg);
+  pointer-events: none;
+ }
+
+ .nw-vhero--peaks {
+  --nw-vhero-ridge: clamp(44px, 9vw, 130px);
+ }
+
+ /* A Ridge edge after the hero is pulled up over its bottom, so the words
+    and the pause button clear it the same way. Heights match the edge's
+    own; on the canvas each block sits in a .tb-frame. */
+ .nw-vhero:has(+ .nw-edge),
+ .tb-frame:has(+ .tb-frame > .nw-edge) > .nw-vhero {
+  --nw-vhero-ridge: clamp(40px, 9vw, 130px);
+ }
+
+ .nw-vhero:has(+ .nw-edge--low),
+ .tb-frame:has(+ .tb-frame > .nw-edge--low) > .nw-vhero {
+  --nw-vhero-ridge: clamp(28px, 6vw, 84px);
+ }
+
+ .nw-vhero:has(+ .nw-edge--tall),
+ .tb-frame:has(+ .tb-frame > .nw-edge--tall) > .nw-vhero {
+  --nw-vhero-ridge: clamp(56px, 13vw, 190px);
+ }
+
  /* On the canvas a click on the picture has to reach it, past the words'
     column. The words still take theirs. */
  .tb-frame .nw-vhero__inner {

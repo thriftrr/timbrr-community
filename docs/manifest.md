@@ -313,7 +313,7 @@ Canvas → studio
 | type | payload |
 |---|---|
 | `timbrr:ready` | `manifestVersion` — repeated every 250 ms until the first `timbrr:doc` |
-| `timbrr:size` | `height` — the page's height (the page's own, not the window's, so it goes down as well as up), measured again after every `timbrr:doc` and sent when it changed; the studio sizes the frame to it. Never sent from the stage, whose frame has a fixed height |
+| `timbrr:size` | `height` — the page's height (the page's own, not the window's, so it goes down as well as up), measured again after every `timbrr:doc` and sent when it changed; the studio sizes the frame to it. With `window: true` (a window preview, `&window=1`) the frame keeps its size and the page scrolls in it. Never sent from the stage, whose frame has a fixed height |
 | `timbrr:click` | `id` of the block clicked, or null (a locked block's own `<placement id>.<block id>`); also sent when the caret goes into a field of another block. A click on the site's header or footer in Render view has a null `id` and `side`, `header` or `footer`. A click on an image a block drew with `field`, on an editable canvas, adds `field`, its path (`items.0.image`), and the studio opens that field in its inspector. A studio that doesn't know it just selects the block, and a click without it always does |
 | `timbrr:edit` | `id`, `field` (a path: `items.0.title`), `value` — a string for a text field, a rich-text document (`{ type: 'doc', content: […] }`) for an `html` one. The studio takes nothing else |
 | `timbrr:focus` | `id`, `field`, `kind` (`text` or `rich`), `label` (the field's name from its definition: `Description`, or `Cards 2 · Title` in a list), `tools` (what the field allows: its `wys` for rich text, none for plain), `active` (the tools on at the caret), `href` (the link at the caret, or null) — when the caret arrives, and again whenever any of it changes |
@@ -498,7 +498,13 @@ with the block's defaults, and `mode: 'full'`, in one frame it keeps for
 the page view; before each new block it shrinks the frame to measure the
 next one, so blocks mustn't size themselves by the viewport (`vh`). The
 builder's Preview sends the page without its hidden blocks, the `site`
-(with the page's `frame`), `mode: 'render'` and `editable: false`.
+(with the page's `frame`), `mode: 'render'` and `editable: false`. It
+asks for `?preview=1&window=1`: its frame is a fixed window (the device's
+size, or the room there is), so the canvas marks `<html>` with
+`data-timbrr-window` and the page scrolls inside it, as on a visitor's
+screen, and `timbrr:size` adds `window: true`. A studio that gets a
+`timbrr:size` without it (an older canvas, which can't scroll) sizes the
+frame to the page instead. Plain `?preview=1` is unchanged.
 
 ## 5. Inline editing
 

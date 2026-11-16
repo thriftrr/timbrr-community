@@ -62,20 +62,44 @@ export async function useTimbrrPage(path) {
   if (!when) return;
   let stamp = null;
   let misses = 0;
+  let busy = false;
   const said = () => (when.textContent = ` · updated ${new Date().toLocaleTimeString()}`);
+  const missed = (status) => {
+   if (status === 401 || ++misses >= LIVE_GIVE_UP) clearInterval(timer);
+  };
+  // A failed read empties the page (Nuxt sets its data back to the default),
+  // so the copy on screen is put back and the stamp isn't taken: the next
+  // tick tries again. Access gone: the reload lands on the studio's gate.
+  const reread = async () => {
+   const before = fetched.data.value;
+   await fetched.refresh();
+   const status = fetched.error.value ? (fetched.error.value.statusCode ?? 0) : null;
+   if (status === null) return true;
+   fetched.data.value = before;
+   fetched.error.value = undefined;
+   fetched.status.value = 'success';
+   missed(status);
+   if (status === 401) window.location.reload();
+   return false;
+  };
   const check = async () => {
-   if (document.hidden) return;
-   const answer = await $fetch('/__timbrr/stamp', { query: { path: address.value }, retry: false }).catch((error) => ({ failed: error?.statusCode ?? error?.response?.status ?? 0 }));
-   if (answer.failed !== undefined) {
-    if (answer.failed === 401 || ++misses >= LIVE_GIVE_UP) clearInterval(timer);
-    return;
+   if (document.hidden || busy) return;
+   busy = true;
+   try {
+    const answer = await $fetch('/__timbrr/stamp', { query: { path: address.value }, retry: false }).catch((error) => ({ failed: error?.statusCode ?? error?.response?.status ?? 0 }));
+    if (answer.failed !== undefined) return missed(answer.failed);
+    // The first answer isn't known to match what was read (a save can land
+    // while the page loads, or while the tab is hidden), so it's read once
+    // more; after that, only when the stamp moves.
+    if (answer.stamp !== stamp) {
+     if (!(await reread())) return;
+     if (stamp !== null) said();
+    }
+    misses = 0;
+    stamp = answer.stamp;
+   } finally {
+    busy = false;
    }
-   misses = 0;
-   if (stamp !== null && answer.stamp !== stamp) {
-    await fetched.refresh();
-    said();
-   }
-   stamp = answer.stamp;
   };
   const timer = setInterval(check, LIVE_MS);
   // Back on this tab: don't wait for the next tick.

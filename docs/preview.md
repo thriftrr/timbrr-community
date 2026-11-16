@@ -22,8 +22,11 @@ addresses"); this is what the layer does.
   `useTimbrrPage` asks `/__timbrr/stamp?path=` every two seconds while the tab
   is showing (`server/routes/__timbrr/stamp.get.js`, which asks the studio
   with the visitor's token) and reads the page again only when the stamp
-  changed, then writes the time into the note. It stops at a 401 or after 15
-  failures in a row. Off these addresses the route is a 404 and nothing asks.
+  changed, then writes the time into the note. The first answer is followed
+  by one more read, since a save can land while the page loads or its tab is
+  hidden. A read that fails keeps the page on screen and isn't counted as
+  seen, so the next tick tries again (a 401 reloads, onto the studio's
+  gate). It stops at a 401 or after 15 failures in a row. Off these addresses the route is a 404 and nothing asks.
 
 The layer holds no secret and decides nothing: the studio checks the token on
 every read.

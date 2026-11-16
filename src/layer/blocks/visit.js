@@ -139,10 +139,12 @@ export default defineBlock({
    subfields: [
     { key: 'phone', label: 'Phone', widget: 'text', format: 'tel', when: { '^show': 'phone' } },
     { key: 'email', label: 'Email', widget: 'text', format: 'email', when: { '^show': 'phone' } },
-    { key: 'address', label: 'Address', widget: 'textarea', when: { '^show': 'address' } },
+    // The map links to the address, and Open now is off for typed hours,
+    // so each stays while a part that reads it is on.
+    { key: 'address', label: 'Address', widget: 'textarea', when: { '^show': ['address', 'map'] } },
     {
      key: 'hours',
-     when: { '^show': 'hours' },
+     when: { '^show': ['hours', 'open_now'] },
      label: 'Hours',
      widget: 'items',
      itemLabel: 'title',

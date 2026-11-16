@@ -457,6 +457,17 @@ html[data-timbrr-canvas] body {
  overflow: hidden;
 }
 
+/* The studio sizes the canvas frame to the page, so it never scrolls. The
+   builder's Preview (&window=1) is a fixed window instead, and the page
+   scrolls in it, as on a visitor's screen. */
+html[data-timbrr-canvas][data-timbrr-window] {
+ overflow: hidden auto;
+}
+
+html[data-timbrr-canvas][data-timbrr-window] body {
+ overflow: visible;
+}
+
 /* The page as the studio measures it: a box of its own, so nothing's
    margins slip out of the count. */
 .tb-canvas {
@@ -980,7 +991,10 @@ html[data-timbrr-canvas] body {
  align-items: center;
  gap: 5px;
  height: 22px;
- margin-top: -12px;
+ /* Centered on the line, but never above the top of the frame, where it
+    would be cut off: --tb-room is the space above the line (canvas.vue),
+    divided by the zoom since this margin is drawn zoomed. */
+ margin-top: max(-12px, calc(var(--tb-room, 100px) / var(--tb-ui, 1) * -1));
  border: 1.5px solid #2f6b4f;
  border-radius: 999px;
  padding: 0 5px;
@@ -1003,7 +1017,7 @@ html[data-timbrr-canvas] body {
 
 .tb-canvas__slot.is-over .tb-canvas__slot-mark {
  height: 28px;
- margin-top: -16px;
+ margin-top: max(-16px, calc(var(--tb-room, 100px) / var(--tb-ui, 1) * -1));
  padding: 0 12px 0 9px;
  background: #2f6b4f;
  color: #f7f5ec;

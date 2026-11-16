@@ -26,6 +26,13 @@
   pointer-events: none;
  }
 
+ /* First on the page there's nothing above to cut into: pulled up, it would
+    hide under the site's header but cover the header on the canvas. */
+ .tb-page__main > .nw-edge:first-child,
+ .tb-canvas__page > .tb-frame:first-child > .nw-edge {
+  margin-top: 0;
+ }
+
  /* Over the look's own background (site.css): the ridge is the only paint. */
  .nw-edge[class*='tb-look--'] {
   background: none;

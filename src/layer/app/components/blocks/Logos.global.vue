@@ -21,7 +21,13 @@
   props.data.items.map((item) => (safeSrc(item.image.src) ? { ...item.image, alt: item.image.alt.trim() || item.title } : null)),
  );
  const hrefs = computed(() => props.data.items.map((item) => safeHref(item.to)));
- const groups = computed(() => (moving.value ? [] : groupRows(props.data.items, 'tier')));
+ // A scrolling strip has no tiers, standing still on the canvas too: the
+ // inspector hides Tier then, so a heading drawn here couldn't be edited.
+ const groups = computed(() => {
+  if (moving.value) return [];
+  if (props.data.scrolling) return [{ name: '', rows: props.data.items.map((row, index) => ({ row, index })) }];
+  return groupRows(props.data.items, 'tier');
+ });
  const hasHead = computed(() => shows('tagline', props.data.tagline) || shows('headline', props.data.headline));
 </script>
 

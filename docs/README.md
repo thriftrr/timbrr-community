@@ -115,7 +115,10 @@ North Wall, a climbing gym:
   asked for less motion, and on the canvas. There's a pause button.
 - `northwall_edge` Ridge edge: the gym's mountain ridge as a block of its
   own. It's pulled up by its own height, so it cuts into the bottom of the
-  block above without moving it. Background is the ridge's color (pick the
+  block above without moving it (not when it's first on the page; a video
+  hero above it pads its words and pause button clear). A hero saved with
+  the old "Bottom edge: Peaks" still draws that ridge itself until
+  `convert-blocks` moves it. Background is the ridge's color (pick the
   block below's), Spacing the room under it; three heights, and the peaks on
   either side. `without: ['divider']` keeps "Line above" out of its inspector.
 - `northwall_embed` Embed: another service's page (a booking calendar, a
