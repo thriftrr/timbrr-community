@@ -65,7 +65,11 @@ it, so searching the tray still finds it. Why, and how pages move over:
 - `hero` Hero: the page's opener, with its photo beside the words, centered or
   full-bleed behind them.
 - `text_image` Text & image: words with a photo on either side, or none.
-- `media` Media: one image, video or embed link.
+- `media` Media: one image, video or embed link. Its Video address is a
+  text field flagged `media: 'video'`, which asks the studio for Choose
+  from media beside the box (the studio's media library holds video); a
+  pasted link still works, and a studio that doesn't know the flag draws
+  the plain box.
 - `cards` Cards: 2 to 4 across, as a grid or slider; plain, icon, image, number,
   steps, badge or price.
 - `gallery` Gallery: photos in a grid, masonry or slider.

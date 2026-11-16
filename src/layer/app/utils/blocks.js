@@ -1,7 +1,7 @@
 // Helpers more than one block uses. (Nuxt auto-imports app/utils.)
 
 // The number to dial: its digits (and a leading +), less any extension. A
-// number with words in it (1-800-FLOWERS, "or text us") isn't dialled at
+// number with words in it (1-800-FLOWERS, "or text us") isn't dialed at
 // all, rather than dial the wrong number.
 export function telHref(phone) {
  const number = String(phone ?? '').replace(/\s*(?:ext\.?|extension|x)\s*\d+\s*$/i, '');

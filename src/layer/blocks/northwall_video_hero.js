@@ -31,7 +31,7 @@ export default defineBlock({
   taglineField,
   headlineField,
   { key: 'description', label: 'Description', widget: 'html', inline: true, ai: 'improve' },
-  { key: 'video_url', label: 'Video address', widget: 'text', placeholder: 'https://…/clip.mp4', help: 'A link to an .mp4 or .webm file. It plays silently, on a loop. Keep it short: 10 to 20 seconds, a few MB.' },
+  { key: 'video_url', label: 'Video address', widget: 'text', media: 'video', placeholder: 'https://…/clip.mp4', help: 'A video from Media, or a link to an .mp4 or .webm file. It plays silently, on a loop. Keep it short: 10 to 20 seconds, a few MB.' },
   { key: 'image', label: 'Picture', widget: 'image', help: 'Shown until the video plays, and in its place for anyone who has asked for less motion.' },
   {
    key: 'words',

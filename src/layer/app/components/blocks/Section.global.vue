@@ -14,7 +14,7 @@
 
  // No label, no label line: except on the canvas while it's being typed
  // into, so clearing it to start over doesn't lose the caret.
- const labelled = computed(() => {
+ const labeled = computed(() => {
   if (String(props.data.tagline ?? '').trim()) return true;
   const active = canvas?.active.value;
   return Boolean(active && active.id === scope?.id && active.field === 'tagline');
@@ -23,10 +23,10 @@
 
 <template>
  <section class="tb-section tb-section-block" :class="[`tb-section-block--${data.bg}`, `tb-section-block--${data.padding}`]">
-  <div v-if="labelled" class="tb-wrap">
+  <div v-if="labeled" class="tb-wrap">
    <TbText :data="data" field="tagline" tag="p" class="tb-eyebrow tb-section-block__label" />
   </div>
-  <span v-if="editing && !labelled && data.bg === 'white'" class="tb-section-block__guides" aria-hidden="true" />
+  <span v-if="editing && !labeled && data.bg === 'white'" class="tb-section-block__guides" aria-hidden="true" />
  </section>
 </template>
 

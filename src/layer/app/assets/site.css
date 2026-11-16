@@ -253,6 +253,8 @@ body {
  line-height: 1.2;
  text-decoration: none;
  transition: filter 120ms ease;
+ position: relative;
+ gap: 8px;
 }
 
 .tb-button--solid {
@@ -264,6 +266,50 @@ body {
  border-color: color-mix(in srgb, var(--site-accent) 30%, transparent);
  background: transparent;
  color: var(--site-accent);
+}
+
+.tb-button__icon {
+ flex: none;
+ width: 1.1em;
+ height: 1.1em;
+}
+
+/* The words alone, with an arrow unless it carries its own icon. */
+.tb-button--text {
+ border-color: transparent;
+ padding-inline: 2px;
+ background: transparent;
+ color: var(--site-accent);
+}
+
+.tb-button--text:not(:has(.tb-button__icon))::after {
+ content: '→';
+ margin-left: 6px;
+ transition: transform 120ms ease;
+}
+
+.tb-button--text:hover::after {
+ transform: translateX(3px);
+}
+
+/* Just the icon, in a round button. Its label is still read out. */
+.tb-button--icon {
+ justify-content: center;
+ width: 44px;
+ height: 44px;
+ border-radius: 50%;
+ padding: 0;
+ background: var(--site-accent);
+ color: var(--site-accent-ink);
+}
+
+.tb-button--icon .tb-button__label {
+ position: absolute;
+ width: 1px;
+ height: 1px;
+ overflow: hidden;
+ clip-path: inset(50%);
+ white-space: nowrap;
 }
 
 .tb-button:hover {
@@ -595,6 +641,80 @@ html[data-timbrr-canvas] body {
  background: #2f6b4f;
  box-shadow: 0 0 0 1px rgb(247 245 236 / 0.85);
  color: #f7f5ec;
+}
+
+/* The tab's Style button and the menu it opens: the block's own choices,
+   on the page. Studio chrome, so it keeps the studio's colors. */
+.tb-frame__style {
+ margin-left: 4px;
+ border: 0;
+ border-radius: 20px;
+ padding: 2px 8px;
+ background: #f7f5ec;
+ font: 700 10px/1.3 'Public Sans', system-ui, sans-serif;
+ letter-spacing: 0;
+ text-transform: none;
+ white-space: nowrap;
+ color: #254832;
+ cursor: pointer;
+}
+
+.tb-frame__menu {
+ position: absolute;
+ top: 26px;
+ left: 6px;
+ z-index: 6;
+ display: grid;
+ gap: 10px;
+ max-width: min(420px, calc(100% - 12px));
+ border: 1px solid #d9d5c3;
+ border-radius: 10px;
+ padding: 12px;
+ background: #fffdf6;
+ font: 13px/1.3 'Public Sans', system-ui, sans-serif;
+ color: #1f2a22;
+ box-shadow: 0 10px 30px rgb(20 30 22 / 0.18);
+ zoom: var(--tb-ui, 1);
+}
+
+.tb-frame__choice {
+ display: flex;
+ flex-wrap: wrap;
+ align-items: center;
+ gap: 4px;
+}
+
+.tb-frame__choice-name {
+ flex: 0 0 100%;
+ font-size: 11px;
+ font-weight: 700;
+ color: #5c6b5f;
+}
+
+.tb-frame__pill {
+ border: 1px solid #d9d5c3;
+ border-radius: 6px;
+ padding: 5px 9px;
+ background: #f3f0e4;
+ font: 600 12px/1.25 'Public Sans', system-ui, sans-serif;
+ color: #3d4a40;
+ cursor: pointer;
+}
+
+.tb-frame__pill:hover {
+ color: #14201a;
+}
+
+.tb-frame__pill[aria-checked='true'] {
+ border-color: #2f6b4f;
+ background: #2f6b4f;
+ color: #f7f5ec;
+}
+
+.tb-frame__pill:focus-visible,
+.tb-frame__style:focus-visible {
+ outline: 2px solid #2f6b4f;
+ outline-offset: 2px;
 }
 
 .tb-frame__missing {

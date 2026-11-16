@@ -129,6 +129,16 @@
   color: var(--site-accent-ink);
  }
 
+ .tb-cta--deep .tb-button--text {
+  color: var(--site-accent-ink);
+ }
+
+ .tb-cta--deep .tb-button--icon {
+  border-color: var(--site-accent-ink);
+  background: var(--site-accent-ink);
+  color: var(--site-accent);
+ }
+
  .tb-cta--deep .tb-button--outline:hover {
   background: color-mix(in srgb, var(--site-accent-ink) 10%, transparent);
  }

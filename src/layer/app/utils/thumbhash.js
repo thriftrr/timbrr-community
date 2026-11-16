@@ -2,7 +2,7 @@
 // draws behind a photo from the studio's media library until the photo is
 // in. The studio makes the hashes on upload with the thumbhash package;
 // only the decoder is needed here, and it's copied from
-// node_modules/thumbhash/thumbhash.js (Evan Wallace, MIT licence, below)
+// node_modules/thumbhash/thumbhash.js (Evan Wallace, MIT license, below)
 // rather than installed, so a site's bundle carries these few lines and
 // not a dependency. The algorithm is as published; only the formatting is
 // the layer's.
