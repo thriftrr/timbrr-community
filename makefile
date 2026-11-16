@@ -2,7 +2,7 @@
 # src/layer is the Nuxt layer sites extend; src/starter is the plain site
 # built on it, which is also the canvas a studio edits through in dev.
 
-.PHONY: up install dev build deploy deploy-timbrr deploy-preview deploy-hosted deploy-all manifest check
+.PHONY: up install dev build deploy deploy-timbrr deploy-preview deploy-hosted deploy-all secrets manifest check
 
 # One command from a clean checkout to the starter on :3001.
 up: install dev
@@ -15,6 +15,11 @@ dev:
 
 build:
 	cd src && npm run build
+
+# The relay secret, from the studio's .env, to every site Worker. Before the
+# studio's own `make secrets`: make secrets [studio_env=../timbrr/src/app/.env]
+secrets:
+	cd src/starter && bash scripts/secrets.sh $(if $(studio_env),$(abspath $(studio_env)))
 
 # Ship the starter as the studio's canvas, https://canvas.timbrr.app. The
 # studio's origin, the only page allowed to frame the canvas, is a var in
