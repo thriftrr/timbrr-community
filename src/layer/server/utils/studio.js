@@ -60,6 +60,25 @@ export function siteOrigin(event, domain) {
  return LOCAL.test(url.hostname) ? url.origin : `https://${url.host}`;
 }
 
+// What a dev or staging address shows of the page at `path`, as a short
+// string that changes when the page does (the studio's draftStamp), for the
+// live preview's two-second check. { status, stamp? }: 401 once the token no
+// longer opens the site, 404 off those addresses.
+export async function fetchStamp(event, path) {
+ const preview = event.context.timbrrPreview;
+ if (!preview) return { status: 404 };
+ try {
+  const res = await fetch(`${studioApi(event)}/api/preview/sites/${encodeURIComponent(preview.slug)}/stamp?path=${encodeURIComponent(path)}`, {
+   headers: { accept: 'application/json', authorization: `Bearer ${previewToken(event)}` },
+   signal: AbortSignal.timeout(WAIT),
+  });
+  if (res.status !== 200) return { status: [401, 404, 429].includes(res.status) ? res.status : 502 };
+  return { status: 200, stamp: String((await res.json()).stamp ?? '') };
+ } catch {
+  return { status: 502 };
+ }
+}
+
 // A draft for a dev or staging address, from the studio's token-checked
 // reads. Never kept: every read is checked, and what it says can change on
 // the next keystroke. { status: 401 } when the token no longer opens the

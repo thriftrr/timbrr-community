@@ -86,6 +86,12 @@ it, so searching the tray still finds it. Why, and how pages move over:
   Open now, plus a service area and details of its own.
 - `cta` Call to action: a banner or band with one or two buttons.
 - `form` Form: a form from the site's Forms in the studio.
+- `table` Table: rows and columns under an optional heading, as real table
+  markup. Cells merge across and down, each column lines up left, center or
+  right, the first row and the first column can be headings, and it draws
+  plain, striped, bordered or compact. Wider than the screen, it scrolls
+  sideways in its own box with the row names kept in view. One field holds
+  the grid (`widget: 'table'`, docs/manifest.md § Widgets).
 
 **Advanced** (`advanced: true`; staff turn each on per site)
 
@@ -105,9 +111,13 @@ North Wall, a climbing gym:
 
 - `northwall_video_hero` Video hero: a headline over a silent, looping
   background video. Words centered, left or bottom left; full screen or tall;
-  three shades; a straight bottom edge or a mountain ridge. The picture stands
-  in until the video plays, for anyone who's asked for less motion, and on the
-  canvas. There's a pause button.
+  three shades. The picture stands in until the video plays, for anyone who's
+  asked for less motion, and on the canvas. There's a pause button.
+- `northwall_edge` Ridge edge: the gym's mountain ridge as a block of its
+  own. It's pulled up by its own height, so it cuts into the bottom of the
+  block above without moving it. Background is the ridge's color (pick the
+  block below's), Spacing the room under it; three heights, and the peaks on
+  either side. `without: ['divider']` keeps "Line above" out of its inspector.
 - `northwall_embed` Embed: another service's page (a booking calendar, a
   schedule, a shop) in a sandboxed frame. Only the address is kept from what's
   pasted, so a pasted script never runs on the site.
@@ -116,8 +126,6 @@ North Wall, a climbing gym:
   happens.
 - `northwall_price_groups` Folding price list: prices under group names that
   open and close.
-- `northwall_table` Table: two to five columns, the first row as headings if
-  you like.
 
 **Retired** (`retired: true`; never in the tray, and they still draw and save
 until pages are converted)
@@ -125,7 +133,9 @@ until pages are converted)
 `richtext`, `story`, `columns`, `grid`, `services`, `trust_badges`,
 `brands_carried`, `testimonials`, `team`, `news`, `events`, `jobs`, `hours`,
 `location`, `contact_details`, `service_area`, `call_now`, `gift_cards`,
-`announcement`, `request_quote`, `text_club`, `section`, `spacer`, `divider`.
+`announcement`, `request_quote`, `text_club`, `section`, `spacer`, `divider`,
+`northwall_table` (North Wall's two-to-five-column table; the Core Table
+replaces it).
 
 **Header and footer** (`frame: true`, so never in the tray; below)
 

@@ -41,7 +41,7 @@ export default defineBlock({
  }),
  fields: [
   { key: 'form', label: 'Which form', widget: 'form' },
-  { key: 'headline', label: 'Heading on this page', widget: 'text', help: "Leave empty to use the form's own heading." },
+  { key: 'headline', label: 'Heading on this page', widget: 'text', when: { hide_title: false }, help: "Leave empty to use the form's own heading." },
   { key: 'hide_title', label: 'Hide heading', widget: 'switch', help: "Starts at the form's first line, with no heading above it." },
   {
    key: 'layout',

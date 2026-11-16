@@ -41,7 +41,7 @@
 </script>
 
 <template>
- <section class="tb-section nw-vhero" :class="[`nw-vhero--${data.words}`, `nw-vhero--${data.height}`, `nw-vhero--shade-${data.shade}`, { 'nw-vhero--peaks': data.edge === 'peaks' }]">
+ <section class="tb-section nw-vhero" :class="[`nw-vhero--${data.words}`, `nw-vhero--${data.height}`, `nw-vhero--shade-${data.shade}`]">
   <TbImage :image="data.image" field="image" sizes="100vw" class="nw-vhero__picture" eager />
   <video
    v-if="src"
@@ -78,9 +78,6 @@
     <path v-else d="M4.5 2.3v11.4L13.5 8z" />
    </svg>
   </button>
-  <svg v-if="data.edge === 'peaks'" class="nw-vhero__peaks" viewBox="0 0 1440 140" preserveAspectRatio="none" aria-hidden="true">
-   <path d="M0 140V98l92-54 58 36 98-72 82 64 56-32 118 68 112-50 68 32 132-80 94 60 62-28 148 72 112-42 88 38 120-58v88z" />
-  </svg>
  </section>
 </template>
 
@@ -244,25 +241,6 @@
 
  /* Peaks: a ridge in the page's color across the bottom, so the video
     ends in a skyline instead of a line. Everything else clears it. */
- .nw-vhero__peaks {
-  position: absolute;
-  inset: auto 0 -1px;
-  z-index: 1;
-  display: block;
-  width: 100%;
-  height: clamp(44px, 9vw, 130px);
-  fill: var(--site-bg);
-  pointer-events: none;
- }
-
- .tb-section.nw-vhero--peaks {
-  padding-bottom: calc(var(--site-space) * 1.2 + clamp(44px, 9vw, 130px));
- }
-
- .nw-vhero--peaks .nw-vhero__pause {
-  bottom: calc(clamp(44px, 9vw, 130px) + 8px);
- }
-
  /* On the canvas a click on the picture has to reach it, past the words'
     column. The words still take theirs. */
  .tb-frame .nw-vhero__inner {

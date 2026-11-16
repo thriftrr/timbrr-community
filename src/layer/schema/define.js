@@ -7,7 +7,7 @@ import { BUTTON_ICONS } from '../app/utils/button-icons.js';
 export const CATEGORIES = ['content', 'common', 'layout', 'dynamic', 'cta'];
 // `stepper` is a whole number between the field's `min` and `max`, with a
 // minus and a plus beside it; it saves a number, or its text where the
-// schema is text. `number` and `range` save the same way. What each widget
+// schema is text. `table` is a grid of cells (`tableSchema`, below). `number` and `range` save the same way. What each widget
 // holds and reads is in docs/manifest.md § Widgets.
 export const WIDGETS = [
  'text',
@@ -32,6 +32,7 @@ export const WIDGETS = [
  'tags',
  'code',
  'hours',
+ 'table',
 ];
 // The widgets that pick from `options`.
 export const CHOICE_WIDGETS = ['select', 'buttons', 'checks', 'color', 'icon'];
@@ -86,9 +87,11 @@ const lookFields = [
 //              their type (unknown names draw as a square)
 //  fields      [{ key, label, widget, inline?, link?, format?, ai?, options?,
 //              subfields?, itemLabel?, min?, max?, step?, unit?, help?,
-//              placeholder?, when? }]; `when` is
-//              { otherKey: value | [values] } of the block's own data: the
-//              studio shows the field only while it holds; `link` marks a text
+//              placeholder?, when? }]; `when` says when the field applies
+//              ({ otherKey: value | [values] | { not } | { filled } }, an
+//              option can carry one too: app/utils/when.js, docs/manifest.md
+//              § Conditional fields): the studio shows it only then, and the
+//              block must not draw it otherwise; `link` marks a text
 //              field holding an address (the studio offers a page picker)
 //  wys         per-field formatting tools on the canvas; unlisted → bold, italic
 //  owner       the brand that commissioned it (community and private tiers)
@@ -100,14 +103,50 @@ const lookFields = [
 //  presets     [{ key, label, description?, data }]: ways to start this block,
 //              found by name in the tray's search; `data` goes over `defaults`
 //  keywords    more words the tray's search finds this block by
+//  without     look fields this block has no use for (['divider']); the
+//              key stays in its data, the inspector just doesn't offer it
 export function defineBlock(definition) {
  if (definition.frame || definition.retired) return definition;
  return {
   ...definition,
   schema: definition.schema.extend(lookShape),
-  fields: [...definition.fields, ...lookFields],
+  fields: [...definition.fields, ...lookFields.filter((field) => !definition.without?.includes(field.key))],
  };
 }
+
+// A table: rows of cells under column alignments, with the first row and the
+// first column as headings if it says so. Every row holds a cell for every
+// column. A merged cell is the top-left one of its box, carrying how far it
+// reaches (`colspan` across, `rowspan` down); the cells it covers stay in
+// their rows, empty and not drawn, so a cell is always found by its row and
+// column. `tableLayout` (app/utils/blocks.js) works out what to draw.
+export const TABLE_LIMITS = { columns: 12, rows: 60, cell: 500 };
+export const tableSchema = z
+ .object({
+  align: z
+   .array(z.enum(['left', 'center', 'right']))
+   .max(TABLE_LIMITS.columns)
+   .default([])
+   .describe('How each column lines up, left to right. A column left out is left.'),
+  rows: z
+   .array(
+    z
+     .array(
+      z.object({
+       text: z.string().max(TABLE_LIMITS.cell).default(''),
+       colspan: z.number().int().min(1).max(TABLE_LIMITS.columns).optional().describe('Columns this cell reaches across, itself included. The cells it covers stay in the row, empty.'),
+       rowspan: z.number().int().min(1).max(TABLE_LIMITS.rows).optional().describe('Rows this cell reaches down, itself included. The cells it covers stay in their rows, empty.'),
+      }),
+     )
+     .max(TABLE_LIMITS.columns),
+   )
+   .max(TABLE_LIMITS.rows)
+   .default([])
+   .describe('Top to bottom; each row is its cells left to right, one for every column.'),
+  header_row: z.boolean().default(true).describe('The first row is the column headings.'),
+  header_col: z.boolean().default(false).describe('The first column names each row.'),
+ })
+ .default({ align: [], rows: [], header_row: true, header_col: false });
 
 // Rich text is stored as a small document tree, never HTML, so nothing a
 // page holds can run as markup on the site (TbRich renders it). A plain
@@ -212,7 +251,10 @@ export const buttonsField = {
  widget: 'items',
  itemLabel: 'label',
  subfields: [
-  { key: 'label', label: 'Label', widget: 'text', inline: true },
+  // Two fields, one stored key: a round icon button shows no words, so its
+  // label is asked for as what it is there, the name a screen reader says.
+  { key: 'label', label: 'Label', widget: 'text', inline: true, when: { style: { not: 'icon' } } },
+  { key: 'label', label: 'Name, read aloud', widget: 'text', when: { style: 'icon' }, help: 'Not shown. Screen readers say it, so say where the button goes.' },
   { key: 'to', label: 'Links to', widget: 'text', link: true, placeholder: '/contact or https://…' },
   {
    key: 'style',
@@ -226,11 +268,14 @@ export const buttonsField = {
     { label: 'Icon', value: 'icon' },
    ],
   },
-  {
+  ...[
+   { when: { style: { not: 'icon' } }, help: 'Sits beside the label. Pick None for words alone.' },
+   { when: { style: 'icon' }, help: 'The whole button. With None it shows an arrow.' },
+  ].map((by) => ({
    key: 'icon',
    label: 'Icon',
    widget: 'icon',
-   help: 'Sits beside the label. The Icon style shows it alone.',
+   ...by,
    // `paths` is what the studio draws each choice with.
    options: [
     ['None', ''],
@@ -245,6 +290,6 @@ export const buttonsField = {
     ['Shopping bag', 'bag'],
     ['Speech bubble', 'chat'],
    ].map(([label, value]) => ({ label, value, ...(value ? { paths: BUTTON_ICONS[value] } : {}) })),
-  },
+  })),
  ],
 };

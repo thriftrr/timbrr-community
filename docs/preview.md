@@ -16,7 +16,14 @@ addresses"); this is what the layer does.
   keeps it in an HttpOnly cookie on that host.
 - **`server/utils/studio.js`** reads drafts instead of published pages on these
   addresses, with the token, and never keeps a copy.
-- **`server/plugins/preview-banner.js`** adds the note saying it's a draft.
+- **`server/plugins/preview-banner.js`** adds the note saying it's a draft
+  ("Preview, not live").
+- **Live.** On these addresses a page the studio serves follows its draft:
+  `useTimbrrPage` asks `/__timbrr/stamp?path=` every two seconds while the tab
+  is showing (`server/routes/__timbrr/stamp.get.js`, which asks the studio
+  with the visitor's token) and reads the page again only when the stamp
+  changed, then writes the time into the note. It stops at a 401 or after 15
+  failures in a row. Off these addresses the route is a 404 and nothing asks.
 
 The layer holds no secret and decides nothing: the studio checks the token on
 every read.

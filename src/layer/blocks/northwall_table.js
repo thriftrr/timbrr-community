@@ -4,10 +4,15 @@ import { defineBlock, headlineField, taglineField } from '../schema/define.js';
 // A small table: session dates, sizes, what's included. Every row holds
 // five cells and the block shows the first two to five, so changing the
 // number of columns never loses what was typed in the others.
+//
+// Retired: the Core Table (blocks/table.js) does this and more, and the
+// studio's convert-blocks moves a page's tables to it. It keeps the look
+// every block has (background, spacing, line above), which a retired
+// definition otherwise goes without, so a table saved with one still draws it.
 const cell = z.string().max(200).default('');
 const CELLS = ['c1', 'c2', 'c3', 'c4', 'c5'];
 
-export default defineBlock({
+const definition = defineBlock({
  type: 'northwall_table',
  label: 'Table',
  description: 'Dates, sizes or specs in rows and columns',
@@ -63,3 +68,5 @@ export default defineBlock({
  },
  wys: { tagline: [], headline: [], note: [], ...Object.fromEntries(CELLS.map((key) => [`rows.*.${key}`, []])) },
 });
+
+export default { ...definition, retired: true };

@@ -107,7 +107,7 @@ export default defineBlock({
     { key: 'title', label: 'Title', widget: 'text', inline: true },
     { key: 'meta', label: 'Details', widget: 'text', inline: true, placeholder: 'Time · place · price', help: 'One short line under the title.' },
     { key: 'body', label: 'Summary', widget: 'html', inline: true },
-    { key: 'image', label: 'Image', widget: 'image', help: "Shown in a grid or a slider, not in a list." },
+    { key: 'image', label: 'Image', widget: 'image', when: { '^display': ['grid', 'slider'] } },
     { key: 'to', label: 'Links to', widget: 'text', link: true, help: 'With a link, the whole item opens it. Leave it empty for no link.' },
    ],
   },

@@ -21,6 +21,9 @@ const iconShape = z.object({ on, to: address }).default({ on: false, to: '' });
 
 export const headerSchema = z.object({
  layout: z.enum(['left', 'center', 'button']).default('left'),
+ // Where the menu sits on the bar when the logo is on the left: straight
+ // after the logo, in the middle, or on the right beside the buttons.
+ menuAt: z.enum(['left', 'center', 'right']).default('left'),
  // What stands for the site at the start of the bar: its logo (a picture,
  // or the site's name where there is none), or a wordmark (the site's name,
  // or `wordmark` when it's set, in the heading font).
