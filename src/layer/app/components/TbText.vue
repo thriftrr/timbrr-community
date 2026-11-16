@@ -20,6 +20,12 @@
  const scope = useBlockScope();
  const editable = computed(() => Boolean(canvas?.editable.value && scope));
  const value = computed(() => String(valueAt(props.data, props.field) ?? ''));
+ // In a content type's template the studio draws `{{ tokens }}` filled with
+ // an entry's values, and sends the words as they're kept beside them
+ // (useKeptValue). What's typed into is always the kept words, so a token
+ // is never replaced by one entry's value.
+ const kept = useKeptValue(props);
+ const tokened = computed(() => String(kept.value ?? '') !== value.value);
  const limit = computed(() => (scope?.def ? textLimit(scope.def.schema, props.field) : null) ?? Infinity);
  const el = ref(null);
 
@@ -59,10 +65,16 @@
  function onFocus() {
   canvas.activate({ id: scope.id, field: props.field, kind: 'text' });
   canvas.focus({ id: scope.id, field: props.field, kind: 'text', label: canvas.labelFor(scope.def, props.field), tools: [], active: [] });
+  if (tokened.value) {
+   el.value.innerText = String(kept.value ?? '');
+   caretToEnd();
+  }
  }
 
+ // Back to the words as they're drawn, once the keyboard has really gone.
  function onBlur() {
   canvas.release(scope.id, props.field);
+  setTimeout(sync);
  }
 
  // Typing stops at the limit. Whatever is being typed over doesn't count,
