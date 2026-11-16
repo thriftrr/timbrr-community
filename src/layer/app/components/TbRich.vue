@@ -78,6 +78,9 @@
    const canvas = useCanvas();
    const scope = useBlockScope();
    const editable = computed(() => Boolean(canvas?.editable.value && scope && props.field));
+   // The document as it's kept, for the editor: in a content type's template
+   // what's drawn has `{{ tokens }}` filled in (composables/content.js).
+   const kept = useKeptValue(props);
    const editing = computed(() => {
     const active = canvas?.active.value;
     return editable.value && active?.kind === 'rich' && active.id === scope.id && active.field === props.field;
@@ -153,7 +156,7 @@
       {
        id: scope.id,
        field: props.field,
-       value,
+       value: kept.value ?? value,
        tools: canvas.toolsFor(scope.def, props.field),
        label,
        point: point.value,

@@ -323,3 +323,57 @@ same in a layout:
  <TbSiteFooter :site="site" />
 </template>
 ```
+
+## Content
+
+A site's content types and their entries live in the studio (its
+docs/content.md). The layer has what draws them:
+
+- `content_list`: a list of one type's published entries, as cards, a plain
+  list or a table. Its `source` (`{ type, sort, dir, limit, filter, show }`)
+  is picked in the studio with the `content` widget. It asks the site's own
+  `/__timbrr/content`, which asks the studio's public
+  `/api/public/sites/:slug/content` and keeps the answer a minute at the
+  edge (the working copies, never cached, on a dev or staging address).
+- `content_field`: one field of an entry. In the Library template a type's
+  entry pages are drawn with, it's the entry the page shows; on any other
+  page it names its own (`from: { type, entry }`). Either way the studio
+  sets `entry` (`{ key, label, kind, value, text }`) on the block as it
+  serves the page. Its field is picked in the studio with the
+  `content_field` widget, which also sets `kind` and `from`; `kind` only
+  decides which of the block's choices the inspector shows (`when`): a
+  date's style, a number's format, a picture's shape and size, a link's
+  words. The component goes by the kind the value really has.
+- `TbContentValue` draws a value by its kind, always as text or through
+  `TbImage` and `TbRich`: nothing an entry holds is ever markup.
+- An entry's page needs nothing here: the studio answers `/__timbrr/page`
+  for its address in a page's shape.
+- `content_search` ("Site search"): a search box over the published
+  entries of the types whose "Show in site search" is on in the studio.
+  It asks the site's own `/__timbrr/search?q=…&limit=…&p=…`, which tidies
+  what was typed, asks the studio's public
+  `/api/public/sites/:slug/search` and keeps the answer a minute at the
+  edge; each result is a title, an address, its type's name and a few
+  plain words. What was searched is in the address (`?q=`), so the first
+  results come with the page and the form works without scripts. With a
+  `to` (a page of this site) the box sends the visitor there, and the
+  block on that page shows what's found. One visitor gets 30 searches a
+  minute, counted in the Worker's memory (a ceiling for each isolate).
+
+On the canvas the studio sends the entries with the page, since the canvas
+never asks for anything: `timbrr:doc`'s `content` is `{ lists, raw }`
+(`useTimbrrContent`, `app/composables/content.js`).
+
+- `lists[<block id>]` is a Content list's answer, exactly as
+  `/__timbrr/content` gives it, read by the studio with the editor's own
+  access. The block draws it; until one arrives it draws stand-ins.
+- An Entry field block arrives with `entry` already set.
+- In a type's template the studio fills `{{ tokens }}` in each block's words
+  before it sends the page, and `raw[<block id>]` is that block's data as
+  it's kept. `TbText` and `TbRich` draw the filled words and type into the
+  kept ones (`useKeptValue`), so a token is never replaced by one entry's
+  value.
+
+A studio that sends no `content` gets the stand-ins for a Content list and
+an Entry field. Site search still draws its stand-in: it has no site to ask.
+
