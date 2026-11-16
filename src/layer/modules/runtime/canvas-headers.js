@@ -20,5 +20,5 @@ export default defineEventHandler((event) => {
  setHeader(event, 'X-Content-Type-Options', 'nosniff');
  setHeader(event, 'Referrer-Policy', 'strict-origin-when-cross-origin');
  const studio = String(config.public.studioOrigin ?? '').replace(/\/$/, '');
- setHeader(event, 'Content-Security-Policy', `frame-ancestors 'self' ${studio || 'http://localhost:* http://127.0.0.1:*'}`);
+ setHeader(event, 'Content-Security-Policy', `frame-ancestors 'self' ${studio || 'http://localhost:* http://127.0.0.1:*'}; base-uri 'self'; object-src 'none'`);
 });
