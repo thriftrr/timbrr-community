@@ -5,7 +5,8 @@
 // Its scripts/check-forms.mjs holds the two to the same answers, so change them
 // together.
 
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// One address, and nothing a mail program could read as a list of them.
+const EMAIL = /^[^\s@,;<>"()[\]\\]+@[^\s@,;<>"()[\]\\]+\.[^\s@,;<>"()[\]\\]+$/;
 const NO_ANSWER = ['page', 'calc', 'hidden'];
 const has = (value) => value !== undefined && value !== null && value !== '';
 const list = (value) => (Array.isArray(value) ? value : []);

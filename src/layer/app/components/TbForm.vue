@@ -114,7 +114,10 @@
    if (['page', 'calc', 'file'].includes(field.type)) continue;
    if (values[field.id] !== undefined) answers[field.id] = values[field.id];
   }
-  const payload = JSON.stringify({ answers, page: window.location.pathname, elapsed: Date.now() - opened, trap: trap.value, token });
+  // `ticket` came with the form and goes back as it came: the studio signed it,
+  // and reads how long this took from it. `elapsed` is for a studio from before
+  // tickets.
+  const payload = JSON.stringify({ answers, page: window.location.pathname, ticket: props.form.ticket, elapsed: Date.now() - opened, trap: trap.value, token });
   if (!files.size) return { body: payload, headers: { 'content-type': 'application/json' } };
   const data = new FormData();
   data.set('payload', payload);

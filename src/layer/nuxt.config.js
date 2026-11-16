@@ -20,6 +20,10 @@ export default defineNuxtConfig({
    // domain, asking the studio which site each hostname belongs to
    // (server/utils/hosted.js). Off for a site with its own Worker.
    hosted: false,
+   // NUXT_TIMBRR_RELAY_SECRET: the studio's NUXT_RELAY_SECRET, sent with a
+   // relayed form send so the studio knows the visitor's address came from a
+   // site's Worker. Unset, the studio takes any Worker's word (docs/forms.md).
+   relaySecret: '',
   },
   public: {
    // NUXT_PUBLIC_SITE: this site's slug in the studio.
