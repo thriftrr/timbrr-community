@@ -61,9 +61,8 @@
 
  // ── What the tab says, and its Style menu ──
  const MENU_MAX = 4;
- const applies = (field) => Object.entries(field.when ?? {}).every(([key, value]) => String(data.value?.[key]) === String(value));
  const choices = computed(() =>
-  props.block.lock || !data.value ? [] : (props.def?.fields ?? []).filter((field) => field.widget === 'buttons' && !field.draws && field.options?.length > 1 && applies(field)).slice(0, MENU_MAX),
+  props.block.lock || !data.value ? [] : fieldsThatApply(props.def?.fields, data.value).filter((field) => field.widget === 'buttons' && !field.draws && field.options.length > 1).slice(0, MENU_MAX),
  );
  const chosen = (field) => field.options.find((option) => option.value === data.value[field.key]);
  const summary = computed(() =>
@@ -128,11 +127,13 @@
    v-if="tabbed"
    class="tb-frame__tab"
    :draggable="canvas.editable.value ? 'true' : 'false'"
-   :title="canvas.editable.value ? 'Drag to reorder' : undefined"
+   :title="canvas.editable.value ? 'Drag to move. Alt with an up or down arrow moves the selected block.' : undefined"
    @dragstart="dragStart"
    @dragend="canvas.dragging.value = null"
   >
-   <span v-if="canvas.editable.value" class="tb-frame__grip" aria-hidden="true">⠿</span>
+   <span v-if="canvas.editable.value" class="tb-frame__grip" aria-hidden="true">
+    <svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="2" cy="2" r="1.5" /><circle cx="8" cy="2" r="1.5" /><circle cx="2" cy="7" r="1.5" /><circle cx="8" cy="7" r="1.5" /><circle cx="2" cy="12" r="1.5" /><circle cx="8" cy="12" r="1.5" /></svg>
+   </span>
    <svg v-if="block.lock" class="tb-frame__link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
     <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
     <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />

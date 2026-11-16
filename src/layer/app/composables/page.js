@@ -50,6 +50,67 @@ export async function useTimbrrPage(path) {
    overHero: isHeroBleed(blocks.value[0]),
   };
  });
+ // On a dev or staging address (the note the server writes says it is one),
+ // the page follows its draft: every two seconds, while the tab is showing,
+ // it asks whether the draft changed and reads it again only if so. The
+ // studio saves a moment after each change, so this is what "live" means.
+ // It stops once the visitor's access has gone, or after a run of failures.
+ const LIVE_MS = 2000;
+ const LIVE_GIVE_UP = 15;
+ onMounted(() => {
+  const when = document.getElementById('timbrr-preview-when');
+  if (!when) return;
+  let stamp = null;
+  let misses = 0;
+  let busy = false;
+  const said = () => (when.textContent = ` · updated ${new Date().toLocaleTimeString()}`);
+  const missed = (status) => {
+   if (status === 401 || ++misses >= LIVE_GIVE_UP) clearInterval(timer);
+  };
+  // A failed read empties the page (Nuxt sets its data back to the default),
+  // so the copy on screen is put back and the stamp isn't taken: the next
+  // tick tries again. Access gone: the reload lands on the studio's gate.
+  const reread = async () => {
+   const before = fetched.data.value;
+   await fetched.refresh();
+   const status = fetched.error.value ? (fetched.error.value.statusCode ?? 0) : null;
+   if (status === null) return true;
+   fetched.data.value = before;
+   fetched.error.value = undefined;
+   fetched.status.value = 'success';
+   missed(status);
+   if (status === 401) window.location.reload();
+   return false;
+  };
+  const check = async () => {
+   if (document.hidden || busy) return;
+   busy = true;
+   try {
+    const answer = await $fetch('/__timbrr/stamp', { query: { path: address.value }, retry: false }).catch((error) => ({ failed: error?.statusCode ?? error?.response?.status ?? 0 }));
+    if (answer.failed !== undefined) return missed(answer.failed);
+    // The first answer isn't known to match what was read (a save can land
+    // while the page loads, or while the tab is hidden), so it's read once
+    // more; after that, only when the stamp moves.
+    if (answer.stamp !== stamp) {
+     if (!(await reread())) return;
+     if (stamp !== null) said();
+    }
+    misses = 0;
+    stamp = answer.stamp;
+   } finally {
+    busy = false;
+   }
+  };
+  const timer = setInterval(check, LIVE_MS);
+  // Back on this tab: don't wait for the next tick.
+  const onShow = () => !document.hidden && check();
+  document.addEventListener('visibilitychange', onShow);
+  onBeforeUnmount(() => {
+   clearInterval(timer);
+   document.removeEventListener('visibilitychange', onShow);
+  });
+ });
+
  // Every block reads the site from here, on a live page as on the canvas.
  provide(TIMBRR_SITE_KEY, site);
 
@@ -147,8 +208,12 @@ function text(value) {
 
 // A page that opens on a full-bleed hero, the only thing a see-through
 // header can sit over. The canvas asks the same.
+// Blocks that fill the top of the page edge to edge with a picture or a
+// video, so a see-through header can sit over them: a Hero set to full
+// bleed, and North Wall's video hero in any of its layouts.
+const ALWAYS_BLEEDS = new Set(['northwall_video_hero']);
 export function isHeroBleed(block) {
- return block?.type === 'hero' && block.data?.layout === 'bleed';
+ return (block?.type === 'hero' && block.data?.layout === 'bleed') || ALWAYS_BLEEDS.has(block?.type);
 }
 
 // A share image's full address: an https one as it is, a path on the site

@@ -61,6 +61,23 @@ For a particular kind of value:
 | `tags` | a few short words: a list of text. With `of: 'title'`, rows that hold the word under that key (`[{ title }]`) | `max`, `placeholder`, `of` |
 | `code` | a pasted snippet, as text | `placeholder` |
 | `hours` | a week of opening hours, as the site's details keep them: seven rows, Monday first, each `{ closed, open, close }`; `[]` while unset | |
+| `table` | a grid of cells: `{ align, rows, header_row, header_col }` (`tableSchema` in `schema/define.js`; below) | |
+
+**A table** keeps `rows` top to bottom, each a list of cells left to right
+with one for every column: `{ text, colspan?, rowspan? }`. A merged cell is
+the top-left one of its box and says how far it reaches; the cells it covers
+stay in their rows, empty, so a cell is always found by its row and column
+(the canvas types into `table.rows.2.1.text`). `align` lines each column up
+`left`, `center` or `right`. `header_row` makes the first row the column
+headings and `header_col` makes the first column name the rows; a heading
+never merges into the body. At most 12 columns, 60 rows and 500 characters
+a cell (`TABLE_LIMITS`). Cells are plain text. `tableLayout`
+(`app/utils/blocks.js`) answers what to draw, and puts right whatever
+doesn't fit rather than draw it broken. The schema must be `tableSchema`.
+The studio's editor is a grid in the inspector; it reads those limits from
+the manifest's JSON Schema. **`table` is a new widget (2026-11-16): a studio
+that doesn't know it refuses the whole manifest, so the studio deploys
+first.**
 
 A `text` field may say what it holds with `format`: `email`, `tel` or `url`.
 The studio then checks it as it's typed (a warning only; what's typed is
@@ -104,6 +121,46 @@ address; the shared `buttonsField` has it), `ai` (`generate` | `improve` |
 the block's style choices: the studio's inspector puts them on its Style
 tab.
 
+### Conditional fields
+
+A field, a list row's field, or one option of a choice may carry `when`: the
+studio shows it only while the block's data matches, and the block must not
+draw what it hides. A hidden field keeps its data. The question is asked by
+one piece of code, `app/utils/when.js`, which is the same file as the
+studio's `shared/utils/when.js` (the studio's `scripts/check-when.mjs` fails
+when they differ): `fieldApplies(when, data, root)` and
+`fieldsThatApply(fields, data, root)`.
+
+```
+when  := { key: cond, …, any?: [when, …] }   every key must hold; `any` holds
+                                              when one of its whens does
+cond  := value | [value, …]                  equals; one of
+       | { not: cond }                       the opposite
+       | { filled: true | false }            has something in it, or nothing
+key   := 'layout'                            in a list row or a group: the row's
+                                              own key if it has one, else the block's
+       | '^layout'                           the block's, always
+```
+
+- Values compare as text: a stepper's `3` matches `'3'`, a switch's `true`
+  matches `'true'`. A key that holds a list (`checks`, `tags`) equals a value
+  when the list has it: `{ show: 'phone' }`.
+- `filled` reads rich text by its words, a picture by its address, a list by
+  its rows.
+- Two fields may share a key with opposite `when`s, to ask for the same value
+  under another name: a button's `label` is "Label", or "Name, read aloud"
+  with the icon style; Media's `image` is "Image", or "Poster" for a video.
+- An option's `when` takes it out of its list. The option chosen now always
+  stays.
+- The build (`schema/manifest.js`, and `scripts/check-blocks.mjs` without a
+  build) turns down a `when` it can't read, one about a key the block doesn't
+  have, and one that compares a choice or a switch to a value it never holds.
+  The studio turns the whole manifest down for the first two; its inspector,
+  given one anyway, shows the field.
+- A studio from before 2026-11-16 reads only `{ key: value | [values] }` and
+  reads a row's key from the block, so it hides a field with `not`, `filled`
+  or `^`. **The studio deploys first.**
+
 A `buttons` field may say `draws: 'button'` (the shared `buttonsField`'s
 `style` does): the studio then lists its options as the buttons they make,
 in the site's brand, instead of a row of segments. A studio that doesn't
@@ -114,6 +171,14 @@ words alone with an arrow) or `icon` (a round button that shows only its
 icon; the label is still read out), and an `icon`: a key of `BUTTON_ICONS`
 (`app/utils/button-icons.js`) or `''`. `TbButton` draws the icon beside the
 label, and alone for the icon style (an arrow when none is picked).
+
+A definition may list `without: [...]`: look fields (`background`,
+`spacing`, `divider`) the block has no use for. The key stays in its data;
+the inspector doesn't offer it.
+
+The header's `menuAt` (`left` | `center` | `right`) is where the menu sits on
+the bar when `layout` is `left`: after the logo, in the middle, or on the
+right beside the buttons.
 
 In the canvas, a block's tab names how it's set (its `layout`, and its
 `background` when that isn't the first option), and on the selected block a
@@ -170,7 +235,7 @@ same-site paths). Nothing a page holds becomes markup.
   { "name": "bur-oak-site", "version": "0.0.0", "tier": "private" },
   { "name": "@timbrr/community", "version": "0.1.0", "tier": "community" }
  ],
- "widgets": ["text", "textarea", "html", "select", "buttons", "items", "image", "nav", "switch", "group", "form", "stepper", "number", "range", "date", "time", "checks", "color", "icon", "tags", "code", "hours"],
+ "widgets": ["text", "textarea", "html", "select", "buttons", "items", "image", "nav", "switch", "group", "form", "stepper", "number", "range", "date", "time", "checks", "color", "icon", "tags", "code", "hours", "table"],
  "blocks": [
   {
    "type": "hours", "tier": "base", "owner": null, "layer": "@timbrr/community",
@@ -248,12 +313,13 @@ Canvas → studio
 | type | payload |
 |---|---|
 | `timbrr:ready` | `manifestVersion` — repeated every 250 ms until the first `timbrr:doc` |
-| `timbrr:size` | `height` — the page's height (the page's own, not the window's, so it goes down as well as up), measured again after every `timbrr:doc` and sent when it changed; the studio sizes the frame to it. Never sent from the stage, whose frame has a fixed height |
+| `timbrr:size` | `height` — the page's height (the page's own, not the window's, so it goes down as well as up), measured again after every `timbrr:doc` and sent when it changed; the studio sizes the frame to it. With `window: true` (a window preview, `&window=1`) the frame keeps its size and the page scrolls in it. Never sent from the stage, whose frame has a fixed height |
 | `timbrr:click` | `id` of the block clicked, or null (a locked block's own `<placement id>.<block id>`); also sent when the caret goes into a field of another block. A click on the site's header or footer in Render view has a null `id` and `side`, `header` or `footer`. A click on an image a block drew with `field`, on an editable canvas, adds `field`, its path (`items.0.image`), and the studio opens that field in its inspector. A studio that doesn't know it just selects the block, and a click without it always does |
 | `timbrr:edit` | `id`, `field` (a path: `items.0.title`), `value` — a string for a text field, a rich-text document (`{ type: 'doc', content: […] }`) for an `html` one. The studio takes nothing else |
 | `timbrr:focus` | `id`, `field`, `kind` (`text` or `rich`), `label` (the field's name from its definition: `Description`, or `Cards 2 · Title` in a list), `tools` (what the field allows: its `wys` for rich text, none for plain), `active` (the tools on at the caret), `href` (the link at the caret, or null) — when the caret arrives, and again whenever any of it changes |
 | `timbrr:blur` | nothing — the caret left the field |
 | `timbrr:drop` | `index`, `kind`: `add` (a block from the studio's tray: answering the studio's `timbrr:drop`, or, on a canvas at the studio's own origin, dropped natively as `application/x-timbrr-block`, then with `blockType`) or `move` (with `id`, dragged by the block's tab as `application/x-timbrr-move`). `index` counts the blocks as drawn, and is never inside a locked chunk |
+| `timbrr:dragat` | `y` — while a block is dragged by its tab inside the page, where the pointer is, in px from the page's top in the page's own pixels; `null` when the drag ends or leaves. The page never scrolls itself, so the studio scrolls its room when that's near the room's top or bottom. A studio that doesn't know it ignores it |
 | `timbrr:open` | `id` — the placement: Edit in Library was pressed on it, or it was double-clicked. Sent whether or not the canvas is editable |
 | `timbrr:locked` | `id` — the placement: a printable key (no Ctrl or Meta, not held down) other than those `timbrr:flag` and `timbrr:key` carry was pressed while it was selected, on an editable canvas, with no field open. The studio says why nothing happened. A studio too old for `timbrr:key` says nothing for those; the studio deploys first, so no site should meet one |
 | `timbrr:flag` | Nothing else: F was pressed in the frame (no Ctrl, Meta, Alt or Shift) with no field open. Keys pressed here never reach the studio, so this is how it opens its Flag something panel. Goes first: such a key doesn't also send `timbrr:locked` |
@@ -403,8 +469,15 @@ Adding `lock` doesn't change the manifest version.
   Edit in Library pill on hover, with the pointer anywhere over the chunk.
   It stays up, and it's what the whole chunk is dragged by, sending the
   first block's id as `move`, unless the canvas isn't editable.
-- The drop line never goes inside a chunk: an edge there moves to the
+- No drop slot goes inside a chunk: an edge there moves to the
   chunk's nearer end, and that's the `index` sent.
+
+**Drop slots.** While a drag is on (either kind), the canvas draws a slot on
+every edge the block could land on and lights the one it would land on now
+(`dropTargets` in `app/utils/blocks.js`): the top half of a block picks the
+edge above it, the bottom half the one below. The edges beside the block
+being moved are no slot, and letting go there sends nothing. The studio's
+`timbrr:drop` over such an edge is answered with nothing too.
 - A preview draws locked blocks like any others.
 
 **Preview.** `/__timbrr/canvas?preview=1` draws the page exactly as the
@@ -425,7 +498,13 @@ with the block's defaults, and `mode: 'full'`, in one frame it keeps for
 the page view; before each new block it shrinks the frame to measure the
 next one, so blocks mustn't size themselves by the viewport (`vh`). The
 builder's Preview sends the page without its hidden blocks, the `site`
-(with the page's `frame`), `mode: 'render'` and `editable: false`.
+(with the page's `frame`), `mode: 'render'` and `editable: false`. It
+asks for `?preview=1&window=1`: its frame is a fixed window (the device's
+size, or the room there is), so the canvas marks `<html>` with
+`data-timbrr-window` and the page scrolls inside it, as on a visitor's
+screen, and `timbrr:size` adds `window: true`. A studio that gets a
+`timbrr:size` without it (an older canvas, which can't scroll) sizes the
+frame to the page instead. Plain `?preview=1` is unchanged.
 
 ## 5. Inline editing
 

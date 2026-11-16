@@ -24,6 +24,9 @@ export default defineBlock({
   words: z.enum(['center', 'left', 'bottom']).default('center'),
   height: z.enum(['full', 'tall']).default('full'),
   shade: z.enum(['light', 'medium', 'dark']).default('medium'),
+  // Not offered any more: the ridge is a block of its own (northwall_edge).
+  // Kept so a hero saved with it still validates and still draws its ridge
+  // until convert-blocks moves it (it never moves one kept as a global block).
   edge: z.enum(['straight', 'peaks']).default('straight'),
   buttons: z.array(buttonSchema).max(2).default([]),
  }),
@@ -63,16 +66,6 @@ export default defineBlock({
    ],
    help: 'Darker makes the words easier to read over a busy video.',
   },
-  {
-   key: 'edge',
-   label: 'Bottom edge',
-   widget: 'buttons',
-   options: [
-    { label: 'Straight', value: 'straight' },
-    { label: 'Peaks', value: 'peaks' },
-   ],
-   help: 'Peaks cuts a mountain ridge into the bottom, in the page color.',
-  },
   { ...buttonsField, max: 2 },
  ],
  defaults: {
@@ -83,7 +76,6 @@ export default defineBlock({
   words: 'center',
   height: 'full',
   shade: 'medium',
-  edge: 'straight',
   buttons: [{ label: 'Plan your visit', to: '/contact', style: 'solid' }],
  },
  wys: { tagline: [], headline: [], description: ['bold', 'italic', 'link'], 'buttons.*.label': [] },

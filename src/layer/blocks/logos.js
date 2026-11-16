@@ -62,7 +62,7 @@ export default defineBlock({
    subfields: [
     { key: 'title', label: 'Name', widget: 'text', inline: true },
     { key: 'image', label: 'Logo', widget: 'image', help: "Optional. Without one, the name shows instead." },
-    { key: 'tier', label: 'Tier', widget: 'text', placeholder: 'Gold sponsors', help: 'Logos with the same tier sit together under it. Leave it empty for none.' },
+    { key: 'tier', label: 'Tier', widget: 'text', when: { '^scrolling': false }, placeholder: 'Gold sponsors', help: 'Logos with the same tier sit together under it. Leave it empty for none.' },
     { key: 'to', label: 'Links to', widget: 'text', link: true, placeholder: 'https://…' },
    ],
   },

@@ -457,6 +457,17 @@ html[data-timbrr-canvas] body {
  overflow: hidden;
 }
 
+/* The studio sizes the canvas frame to the page, so it never scrolls. The
+   builder's Preview (&window=1) is a fixed window instead, and the page
+   scrolls in it, as on a visitor's screen. */
+html[data-timbrr-canvas][data-timbrr-window] {
+ overflow: hidden auto;
+}
+
+html[data-timbrr-canvas][data-timbrr-window] body {
+ overflow: visible;
+}
+
 /* The page as the studio measures it: a box of its own, so nothing's
    margins slip out of the count. */
 .tb-canvas {
@@ -606,7 +617,8 @@ html[data-timbrr-canvas] body {
  align-items: center;
  gap: 6px;
  border-radius: 2px 0 8px;
- padding: 3px 9px 3px 7px;
+ padding: 0 9px 0 7px;
+ min-height: 24px;
  background: #2f6b4f;
  font: 400 10px/1.3 'IBM Plex Mono', ui-monospace, monospace;
  letter-spacing: 0.08em;
@@ -622,9 +634,25 @@ html[data-timbrr-canvas] body {
  cursor: default;
 }
 
+/* What the tab is dragged by: six dots in a 24px square of their own, at
+   the tab's start, a shade apart so it reads as a handle. */
 .tb-frame__grip {
- font-size: 12px;
- opacity: 0.85;
+ display: inline-grid;
+ flex: none;
+ place-items: center;
+ width: 24px;
+ height: 24px;
+ margin-left: -7px;
+ border-radius: 2px 0 0;
+ background: rgb(0 0 0 / 0.16);
+}
+
+.tb-frame__tab:hover > .tb-frame__grip {
+ background: rgb(0 0 0 / 0.3);
+}
+
+.tb-frame__tab:active {
+ cursor: grabbing;
 }
 
 /* Under the pointer, and on a hidden block all the time (so the fade
@@ -941,18 +969,62 @@ html[data-timbrr-canvas] body {
  zoom: var(--tb-ui, 1);
 }
 
-/* Where a dragged block will land: a pine line on the edge between two
-   blocks, or under the last one. */
-.tb-canvas__drop {
+/* Where a dragged block can land: while a drag is on, a slot on every edge
+   it could go to (a dashed line with an arrow), and the one it would land
+   on now lit, thick, saying "Drop here". The pointer never has to be on
+   the slot itself: the half of a block it's over picks the edge. */
+.tb-canvas__slot {
  position: absolute;
  right: calc(8px * var(--tb-ui, 1));
  left: calc(8px * var(--tb-ui, 1));
  z-index: 6;
- height: calc(3px * var(--tb-ui, 1));
- margin-top: calc(-1.5px * var(--tb-ui, 1));
- border-radius: 999px;
- background: #2f6b4f;
+ display: flex;
+ justify-content: center;
+ height: 0;
+ border-top: calc(2px * var(--tb-ui, 1)) dashed color-mix(in srgb, #2f6b4f 55%, transparent);
+ margin-top: calc(-1px * var(--tb-ui, 1));
  pointer-events: none;
+}
+
+.tb-canvas__slot-mark {
+ display: inline-flex;
+ align-items: center;
+ gap: 5px;
+ height: 22px;
+ /* Centered on the line, but never above the top of the frame, where it
+    would be cut off: --tb-room is the space above the line (canvas.vue),
+    divided by the zoom since this margin is drawn zoomed. */
+ margin-top: max(-12px, calc(var(--tb-room, 100px) / var(--tb-ui, 1) * -1));
+ border: 1.5px solid #2f6b4f;
+ border-radius: 999px;
+ padding: 0 5px;
+ background: #f7f5ec;
+ font: 700 11px/1 'Public Sans', system-ui, sans-serif;
+ color: #2f6b4f;
+ box-shadow: 0 2px 8px rgb(20 30 22 / 0.18);
+ /* Drawn up by as much as the studio scales the frame down, like the tabs. */
+ zoom: var(--tb-ui, 1);
+}
+
+.tb-canvas__slot-text {
+ display: none;
+}
+
+.tb-canvas__slot.is-over {
+ border-top: calc(4px * var(--tb-ui, 1)) solid #2f6b4f;
+ margin-top: calc(-2px * var(--tb-ui, 1));
+}
+
+.tb-canvas__slot.is-over .tb-canvas__slot-mark {
+ height: 28px;
+ margin-top: max(-16px, calc(var(--tb-room, 100px) / var(--tb-ui, 1) * -1));
+ padding: 0 12px 0 9px;
+ background: #2f6b4f;
+ color: #f7f5ec;
+}
+
+.tb-canvas__slot.is-over .tb-canvas__slot-text {
+ display: inline;
 }
 
 /* ── Canvas: cropping a picture by hand (pages/__timbrr/canvas.vue) ── */

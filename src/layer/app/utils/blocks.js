@@ -121,3 +121,65 @@ export function profileHref(item) {
  if (build && name) return safeHref(build(name));
  return /^https:\/\//i.test(handle) ? safeHref(handle) : undefined;
 }
+
+// What a table draws (schema/define.js, tableSchema): each row as the cells
+// that show, with their place and reach. A cell another one covers is left
+// out. Whatever doesn't fit is put right here rather than drawn broken: a
+// short row is filled out, a reach past the edge stops at it, a merge that
+// would run over another is undone, and a heading never merges into the body.
+export function tableLayout(table) {
+ const rows = Array.isArray(table?.rows) ? table.rows : [];
+ const columns = Math.max(0, ...rows.map((row) => row.length));
+ const taken = new Set();
+ const out = rows.map((row, r) => {
+  const cells = [];
+  for (let c = 0; c < columns; c += 1) {
+   if (taken.has(`${r},${c}`)) continue;
+   const cell = row[c] ?? {};
+   const down = table.header_row && r === 0 ? 1 : Math.min(cell.rowspan ?? 1, rows.length - r);
+   let across = table.header_col && c === 0 ? 1 : Math.min(cell.colspan ?? 1, columns - c);
+   let rowspan = down;
+   const clear = () => {
+    for (let y = r; y < r + rowspan; y += 1) for (let x = c; x < c + across; x += 1) if ((y !== r || x !== c) && taken.has(`${y},${x}`)) return false;
+    return true;
+   };
+   if (!clear()) across = rowspan = 1;
+   for (let y = r; y < r + rowspan; y += 1) for (let x = c; x < c + across; x += 1) taken.add(`${y},${x}`);
+   cells.push({ r, c, colspan: across, rowspan });
+  }
+  return cells;
+ });
+ return { columns, rows: out };
+}
+
+// Where a dragged block can land on the canvas (pages/__timbrr/canvas.vue).
+// `blocks` are the drawn blocks top to bottom: { top, bottom, lock, moved },
+// `lock` naming the locked placement a block belongs to ('' for none) and
+// `moved` marking the ones being dragged. `y` is the pointer, in the same
+// pixels. Answers `slots`, every edge that takes a drop ({ index, y }: the
+// index to insert at and where the edge is), and `index`, the one the
+// pointer picks, or null. The top half of a block picks the edge above it
+// and the bottom half the one below. An edge inside a locked chunk is no
+// slot (the pointer there goes to the nearer end of the chunk), nor is one
+// beside what's being moved: dropping there would change nothing.
+export function dropTargets(blocks, y) {
+ const count = blocks.length;
+ const edgeY = (index) => (index < count ? blocks[index].top : (blocks[count - 1]?.bottom ?? 0));
+ const inChunk = (index) => index > 0 && index < count && blocks[index].lock !== '' && blocks[index - 1].lock === blocks[index].lock;
+ const first = blocks.findIndex((block) => block.moved);
+ const last = blocks.findLastIndex((block) => block.moved);
+ const still = (index) => first >= 0 && index >= first && index <= last + 1;
+ const slots = [];
+ for (let index = 0; index <= count; index++) if (!inChunk(index) && !still(index)) slots.push({ index, y: edgeY(index) });
+
+ let index = blocks.findIndex((block) => y < (block.top + block.bottom) / 2);
+ if (index < 0) index = count;
+ if (inChunk(index)) {
+  let start = index - 1;
+  let end = index;
+  while (inChunk(start)) start -= 1;
+  while (inChunk(end + 1)) end += 1;
+  index = y < (blocks[start].top + blocks[end].bottom) / 2 ? start : end + 1;
+ }
+ return { index: still(index) ? null : index, slots };
+}

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { CATEGORIES, CHOICE_WIDGETS, WIDGETS, WYS_TOOLS } from './define.js';
+import { whenProblem, whenTerms } from '../app/utils/when.js';
 
 // The manifest: everything a studio needs to edit this site's blocks without
 // holding any of their code. Contract: docs/manifest.md. `version` changes
@@ -17,23 +18,45 @@ export function componentName(type) {
   .join('')}`;
 }
 
+// A `when` (app/utils/when.js) has to be one the studio can read, about keys
+// the block has, compared to values those keys can hold: a mistyped one
+// would hide a field for good. A key reads the row it's in, or the block.
+function checkWhen(when, shape, root, where) {
+ if (when === undefined) return;
+ const problem = whenProblem(when);
+ if (problem) throw new Error(`${where}: when: ${problem}`);
+ for (const { key, values } of whenTerms(when)) {
+  const name = key.replace(/^\^/, '');
+  const from = key.startsWith('^') || !Object.hasOwn(shape, name) ? root : shape;
+  if (!Object.hasOwn(from, name)) throw new Error(`${where}: when reads "${key}", which isn't in the schema`);
+  // A list (checks) is asked about what it can hold.
+  const outer = bare(from[name]);
+  const holds = outer?.type === 'array' ? bare(outer.element) : outer;
+  const allowed = holds?.type === 'enum' ? holds.options.map(String) : holds?.type === 'boolean' ? ['true', 'false'] : null;
+  const stray = allowed && values.map(String).find((value) => !allowed.includes(value));
+  if (stray !== undefined && stray !== null) throw new Error(`${where}: when compares "${key}" to "${stray}", which it never is`);
+ }
+}
+
 // Every field, a list's row fields included, has to be in the schema: a
 // mistyped key would save where the block never reads it.
-function checkFields(fields, shape, where) {
+function checkFields(fields, shape, where, root = shape) {
  if (!Array.isArray(fields)) throw new Error(`${where}: fields must be a list`);
  for (const field of fields) {
   if (!WIDGETS.includes(field.widget)) throw new Error(`${where}.${field.key}: unknown widget "${field.widget}"`);
   if (!Object.hasOwn(shape, field.key)) throw new Error(`${where}.${field.key}: not in the schema`);
+  checkWhen(field.when, shape, root, `${where}.${field.key}`);
+  for (const option of field.options ?? []) checkWhen(option.when, shape, root, `${where}.${field.key}`);
   if (field.widget === 'items') {
    const list = bare(shape[field.key]);
    const row = list?.type === 'array' ? bare(list.element) : null;
    if (row?.type !== 'object') throw new Error(`${where}.${field.key}: the schema must be a list of objects`);
-   checkFields(field.subfields ?? [], row.shape, `${where}.${field.key}`);
+   checkFields(field.subfields ?? [], row.shape, `${where}.${field.key}`, root);
   }
   if (field.widget === 'group') {
    const group = bare(shape[field.key]);
    if (group?.type !== 'object') throw new Error(`${where}.${field.key}: the schema must be an object`);
-   checkFields(field.subfields ?? [], group.shape, `${where}.${field.key}`);
+   checkFields(field.subfields ?? [], group.shape, `${where}.${field.key}`, root);
   }
   if (field.widget === 'nav') {
    const value = bare(shape[field.key]);
@@ -54,6 +77,11 @@ function checkFields(fields, shape, where) {
    const each = list?.type === 'array' ? bare(list.element) : null;
    const fits = field.of ? each?.type === 'object' && bare(each.shape[field.of])?.type === 'string' : each?.type === 'string';
    if (!fits) throw new Error(`${where}.${field.key}: the schema must list ${field.of ? `objects with a text "${field.of}"` : 'text'}`);
+  }
+  // A table is `tableSchema`: an object that holds its rows.
+  if (field.widget === 'table') {
+   const table = bare(shape[field.key]);
+   if (table?.type !== 'object' || bare(table.shape.rows)?.type !== 'array') throw new Error(`${where}.${field.key}: the schema must be tableSchema`);
   }
   if (field.format !== undefined && !(field.widget === 'text' && ['email', 'tel', 'url'].includes(field.format))) {
    throw new Error(`${where}.${field.key}: format is email, tel or url, on a text field`);

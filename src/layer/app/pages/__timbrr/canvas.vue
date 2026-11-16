@@ -15,7 +15,9 @@
  //
  // With ?preview=1 it's the page exactly as the site draws it: no outlines,
  // tabs, typing or drop zones, and hidden blocks stay hidden (the tray's
- // previews and the builder's Preview use it). Either way it never fetches
+ // previews and the builder's Preview use it). With &window=1 as well (the
+ // builder's Preview) its frame is a fixed window and the page scrolls in
+ // it, as on a visitor's screen. Either way it never fetches
  // content, never holds a token, and its links go nowhere. Every message is
  // checked against one origin: the configured studio, or localhost in
  // development.
@@ -25,11 +27,12 @@
  definePageMeta({ layout: false });
 
  const preview = useRoute().query.preview === '1';
+ const windowed = preview && useRoute().query.window === '1';
 
  useHead({
   title: preview ? 'Preview' : 'Canvas',
   meta: [{ name: 'robots', content: 'noindex, nofollow' }],
-  htmlAttrs: { 'data-timbrr-canvas': '' },
+  htmlAttrs: { 'data-timbrr-canvas': '', 'data-timbrr-window': windowed ? '' : undefined },
  });
 
  const config = useRuntimeConfig();
@@ -52,7 +55,7 @@
  const dragging = ref(null); // a block being moved inside the canvas
  const hovered = ref(null); // the locked placement under the pointer
  const dropIndex = ref(null);
- const dropTop = ref(0);
+ const dropSlots = ref([]); // every edge a drag could land on: [{ index, top }]
  const active = shallowRef(null); // { id, field, kind } being typed into
  const editor = shallowRef(null); // the open rich-text editor, if any
  const crop = ref(null); // the picture being cropped by hand: { id, field, x, y, zoom }
@@ -390,15 +393,15 @@
    return;
   }
   if (message.type === 'timbrr:dragleave') {
-   dropIndex.value = null;
+   clearDrop();
    return;
   }
   if (message.type === 'timbrr:drop') {
    if (takesDrops.value && Number.isFinite(message.y)) {
     placeDrop(message.y);
-    post({ type: 'timbrr:drop', kind: 'add', index: dropIndex.value });
+    if (dropIndex.value !== null) post({ type: 'timbrr:drop', kind: 'add', index: dropIndex.value });
    }
-   dropIndex.value = null;
+   clearDrop();
    return;
   }
   if (message.type === 'timbrr:select') {
@@ -535,45 +538,55 @@
   return [...document.querySelectorAll('[data-block-id]')];
  }
 
- // The blocks of one locked placement stay together: an edge inside them
- // moves out to whichever end of them is nearer.
- function outsideChunk(list, index, y) {
-  const lock = list[index]?.dataset.lockId;
-  if (!lock || list[index - 1]?.dataset.lockId !== lock) return index;
-  let first = index - 1;
-  let last = index;
-  while (list[first - 1]?.dataset.lockId === lock) first -= 1;
-  while (list[last + 1]?.dataset.lockId === lock) last += 1;
-  return y < (list[first].getBoundingClientRect().top + list[last].getBoundingClientRect().bottom) / 2 ? first : last + 1;
- }
-
- // The line goes on the edge between two blocks, or under the last one,
- // never inside a locked chunk. Over the header it's the top of the page,
- // over the footer the end. `y` is in this page's pixels; the page never
- // scrolls, so that's clientY.
+ // The target goes on the edge between two blocks, or under the last one,
+ // never inside a locked chunk: the top half of a block is the edge above
+ // it, the bottom half the one below. Over the header it's the top of the
+ // page, over the footer the end. While a drag is on, every edge it could
+ // land on shows a slot (`dropSlots`), and the one it would land on now
+ // is lit; an edge beside the block being moved shows none and takes no
+ // drop, since nothing would change. `y` is in this page's pixels; the
+ // page never scrolls, so that's clientY.
  function placeDrop(y) {
   const list = frames();
-  let index = list.findIndex((el) => {
-   const rect = el.getBoundingClientRect();
-   return y < rect.top + rect.height / 2;
-  });
-  if (index < 0) index = list.length;
-  index = outsideChunk(list, index, y);
-  dropIndex.value = index;
   const page = document.querySelector('.tb-canvas__page')?.getBoundingClientRect();
   if (!page) return;
-  const edge = list[index]?.getBoundingClientRect().top ?? list.at(-1)?.getBoundingClientRect().bottom ?? page.top;
-  dropTop.value = edge - page.top;
+  const rects = list.map((el) => el.getBoundingClientRect());
+  const moved = list.map((el) => el.classList.contains('is-dragging'));
+  const { index, slots } = dropTargets(
+   rects.map((rect, at) => ({ top: rect.top, bottom: rect.bottom, lock: list[at].dataset.lockId ?? '', moved: moved[at] })),
+   y,
+  );
+  dropIndex.value = index;
+  // `room` is the space above the line in this document, which never scrolls: the first edge often has none.
+  dropSlots.value = slots.map((slot) => ({ index: slot.index, top: slot.y - page.top, room: Math.max(0, slot.y) }));
+ }
+
+ function clearDrop() {
+  dropIndex.value = null;
+  dropSlots.value = [];
+ }
+
+ // A block moved by its tab is dragged inside this page, which the studio
+ // can't see: it's told where the pointer is, so it can scroll its room
+ // when that's near the top or bottom (the page itself never scrolls).
+ let saidAt = null;
+ function dragAt(y) {
+  if (y === saidAt) return;
+  saidAt = y;
+  post({ type: 'timbrr:dragat', y });
  }
 
  function onDragOver(event) {
   if (!accepts(event)) return;
   event.preventDefault();
   placeDrop(event.clientY);
+  dragAt(Math.round(event.clientY));
  }
 
  function onDragLeave(event) {
-  if (!event.relatedTarget) dropIndex.value = null;
+  if (event.relatedTarget) return;
+  clearDrop();
+  dragAt(null);
  }
 
  function onDrop(event) {
@@ -585,13 +598,15 @@
     ? { type: 'timbrr:drop', kind: 'move', id, index: dropIndex.value }
     : { type: 'timbrr:drop', kind: 'add', blockType: event.dataTransfer.getData('application/x-timbrr-block'), index: dropIndex.value },
   );
-  dropIndex.value = null;
+  clearDrop();
+  saidAt = null; // the drop itself stops the studio's scrolling
   dragging.value = null;
  }
 
  // A drag that ends anywhere else (Escape, outside the page) leaves no line.
  function onDragEnd() {
-  dropIndex.value = null;
+  clearDrop();
+  dragAt(null);
   dragging.value = null;
  }
 
@@ -600,6 +615,8 @@
  // itself. It's the page that's measured, not the window, so the frame
  // shrinks again when the page does. The stage is the exception: its frame
  // has a fixed height and the page scrolls inside it, so it reports nothing.
+ // A window preview (&window=1) scrolls too, but still reports: the studio
+ // shows the page once it's drawn.
 
  let observer;
  let lastHeight = -1;
@@ -609,7 +626,9 @@
   const height = Math.ceil(Math.max(el.scrollHeight, el.getBoundingClientRect().height));
   if (height === lastHeight && !again) return;
   lastHeight = height;
-  post({ type: 'timbrr:size', height });
+  // `window`: this frame scrolls itself, so the studio keeps its size (an
+  // older canvas leaves it out, and the studio sizes the frame to the page).
+  post({ type: 'timbrr:size', height, ...(windowed ? { window: true } : {}) });
  }
 
  watch(connected, () => nextTick(() => reportSize()));
@@ -711,7 +730,14 @@
       <span v-if="!blocks.length" class="tb-canvas__end-hint">or click one in the tray to add it</span>
      </div>
      <p v-else-if="!blocks.length" class="tb-canvas__nothing">Nothing on this page yet.</p>
-     <span v-if="dropIndex !== null && blocks.length" class="tb-canvas__drop" :style="{ top: `${dropTop}px` }" aria-hidden="true" />
+     <template v-if="blocks.length">
+      <span v-for="slot in dropSlots" :key="slot.index" class="tb-canvas__slot" :class="{ 'is-over': slot.index === dropIndex }" :style="{ top: `${slot.top}px`, '--tb-room': `${slot.room}px` }" aria-hidden="true">
+       <span class="tb-canvas__slot-mark">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6" /></svg>
+        <span class="tb-canvas__slot-text">Drop here</span>
+       </span>
+      </span>
+     </template>
      <div v-if="crop" class="tb-canvas__crop" :style="cropBar" role="toolbar" aria-label="Crop this picture">
       <span class="tb-canvas__crop-hint">Drag the picture to move it</span>
       <label class="tb-canvas__crop-zoom">

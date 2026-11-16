@@ -76,6 +76,7 @@ export default defineBlock({
   },
   {
    key: 'alignment',
+   when: { image_side: 'none' },
    label: 'Alignment',
    widget: 'buttons',
    options: [
@@ -84,7 +85,7 @@ export default defineBlock({
    ],
    help: 'For words with no image.',
   },
-  { key: 'image', label: 'Photo', widget: 'image' },
+  { key: 'image', label: 'Photo', widget: 'image', when: { image_side: { not: 'none' } } },
  ],
  defaults: {
   tagline: 'About us',

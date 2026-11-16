@@ -26,7 +26,7 @@ export default defineEventHandler(async (event) => {
  const url = getRequestURL(event);
  // The studio checks the token on every draft read, so a page read needs
  // no check of its own; built files are code, not content.
- if (OPEN.has(url.pathname) || url.pathname === '/__timbrr/page' || url.pathname.startsWith('/_nuxt/')) return;
+ if (OPEN.has(url.pathname) || url.pathname === '/__timbrr/page' || url.pathname === '/__timbrr/stamp' || url.pathname.startsWith('/_nuxt/')) return;
  const allowed = await previewAllowed(event, target.slug, previewToken(event));
  if (allowed === null) {
   throw createError({ statusCode: 502, statusMessage: 'Bad Gateway', message: "Couldn't reach the studio. Try again in a minute." });

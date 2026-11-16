@@ -308,7 +308,7 @@
   <header
    ref="bar"
    class="tb-site-header"
-   :class="[`tb-site-header--${layout}`, `tb-site-header--phone-${header.phone.style}`, { 'is-live': live, 'is-clear': clear, 'is-away': away, 'is-crowded': crowded }]"
+   :class="[`tb-site-header--${layout}`, `tb-site-header--menu-${header.menuAt ?? 'left'}`, `tb-site-header--phone-${header.phone.style}`, { 'is-live': live, 'is-clear': clear, 'is-away': away, 'is-crowded': crowded }]"
    @click="onClick"
    @focusin="hidden = false"
   >
@@ -965,6 +965,18 @@
   margin: 0;
   padding: 0;
   list-style: none;
+ }
+
+ /* Logo left, with the menu in the middle or on the right of the room
+    between the logo and the buttons, not straight after the logo. */
+ @media (min-width: 860px) {
+  .tb-site-header--left.tb-site-header--menu-center .tb-site-header__links {
+   justify-content: center;
+  }
+
+  .tb-site-header--left.tb-site-header--menu-right .tb-site-header__links {
+   justify-content: flex-end;
+  }
  }
 
  /* Logo centered: the icons, the name and the buttons on one row, and the

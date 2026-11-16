@@ -60,7 +60,7 @@ export default defineBlock({
    subfields: [
     { key: 'title', label: 'Name', widget: 'text', inline: true },
     { key: 'eyebrow', label: 'Role', widget: 'text', inline: true },
-    { key: 'body', label: 'Bio', widget: 'html', inline: true },
+    { key: 'body', label: 'Bio', widget: 'html', inline: true, when: { '^bio': true } },
     { key: 'image', label: 'Photo', widget: 'image', help: 'Shown in a circle, so a square photo works best. Until there is one, their initials stand in.' },
     { key: 'to', label: 'Booking link', widget: 'text', link: true, help: 'A booking page, or a phone or email link. Leave it empty for no link.' },
    ],

@@ -137,11 +137,14 @@ export default defineBlock({
    widget: 'group',
    help: 'Anything you fill in here wins over Site settings, for this block only.',
    subfields: [
-    { key: 'phone', label: 'Phone', widget: 'text', format: 'tel' },
-    { key: 'email', label: 'Email', widget: 'text', format: 'email' },
-    { key: 'address', label: 'Address', widget: 'textarea' },
+    { key: 'phone', label: 'Phone', widget: 'text', format: 'tel', when: { '^show': 'phone' } },
+    { key: 'email', label: 'Email', widget: 'text', format: 'email', when: { '^show': 'phone' } },
+    // The map links to the address, and Open now is off for typed hours,
+    // so each stays while a part that reads it is on.
+    { key: 'address', label: 'Address', widget: 'textarea', when: { '^show': ['address', 'map'] } },
     {
      key: 'hours',
+     when: { '^show': ['hours', 'open_now'] },
      label: 'Hours',
      widget: 'items',
      itemLabel: 'title',
@@ -152,7 +155,7 @@ export default defineBlock({
      ],
     },
     { key: 'note', label: 'Note', widget: 'textarea' },
-    { key: 'map_url', label: 'Map link', widget: 'text', link: true },
+    { key: 'map_url', label: 'Map link', widget: 'text', link: true, when: { '^show': ['address', 'map'] } },
    ],
   },
  ],
