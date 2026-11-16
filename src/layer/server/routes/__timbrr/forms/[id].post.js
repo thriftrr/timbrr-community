@@ -5,9 +5,9 @@ import { previewToken, studioApi } from '../../../utils/preview.js';
 // /__timbrr/forms/:id: someone sending a form. The browser only ever talks to
 // the site, so its request goes on to the studio from here, as it came, and the
 // answer comes back the same way (the studio's docs/forms.md). The studio
-// decides everything. This keeps no secret and says one thing of its own: who's
-// sending, which the studio takes from a Worker on the site's own domain and
-// nobody else. On a dev or staging address it goes with the visitor's token to
+// decides everything. This says one thing of its own: who's sending, which the
+// studio takes from a site's Worker and nobody else. With NUXT_TIMBRR_RELAY_SECRET
+// set (the studio's NUXT_RELAY_SECRET), that secret goes along to prove it's one. On a dev or staging address it goes with the visitor's token to
 // the draft's route, and lands as a test.
 const WAIT = 25000; // ms the studio gets, uploads and all
 const MAX = 26 * 1024 * 1024;
@@ -34,6 +34,7 @@ export default defineEventHandler(async (event) => {
   accept: 'application/json',
   'content-type': getHeader(event, 'content-type') ?? 'application/json',
   'x-timbrr-visitor': getHeader(event, 'cf-connecting-ip') ?? getRequestIP(event) ?? '',
+  ...(config.timbrr?.relaySecret ? { 'x-timbrr-relay': config.timbrr.relaySecret } : {}),
   ...(preview ? { authorization: `Bearer ${previewToken(event)}` } : {}),
  };
  const url = `${api}/api/${preview ? 'preview' : 'public'}/sites/${encodeURIComponent(site)}/forms/${encodeURIComponent(id)}`;

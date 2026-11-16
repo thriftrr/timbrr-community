@@ -14,18 +14,22 @@ export function placementOf(id) {
  return String(id).split('.')[0];
 }
 
-// Only links a visitor can safely follow: the web, mail, phone, this site.
+// Only links a visitor can safely follow: the web, mail, phone, this site. A
+// path can't start `//` or `/\`: a browser reads both as another host.
 export function safeHref(href) {
  const value = String(href ?? '').trim();
- return /^(https?:\/\/|mailto:|tel:|\/(?!\/)|#)/i.test(value) ? value : undefined;
+ return /^(https?:\/\/|mailto:|tel:|\/(?![/\\])|#)/i.test(value) ? value : undefined;
 }
 
 // Images from the web or this site; anything else isn't shown. A local
 // studio serves its library over plain http on localhost, so development
-// addresses of that one shape pass too: nothing on the web resolves there.
+// addresses of that one shape pass too, in development only: on a live site
+// they'd have each visitor's browser call the visitor's own machine.
+const WEB_SRC = /^(https:\/\/|\/(?![/\\]))/i;
+const LOCAL_SRC = /^http:\/\/(localhost|127\.0\.0\.1)(:\d{1,5})?\//i;
 export function safeSrc(src) {
  const value = String(src ?? '').trim();
- return /^(https:\/\/|\/(?!\/)|http:\/\/(localhost|127\.0\.0\.1)(:\d{1,5})?\/)/i.test(value) ? value : undefined;
+ return WEB_SRC.test(value) || (import.meta.dev && LOCAL_SRC.test(value)) ? value : undefined;
 }
 
 // Paper or near-black text on a brand color, by luminance.

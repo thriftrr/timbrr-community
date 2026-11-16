@@ -183,9 +183,12 @@ export default defineNuxtConfig({
 ```
 
 Set `NUXT_PUBLIC_SITE` to the site's slug in the studio,
-`NUXT_PUBLIC_STUDIO_ORIGIN` to the studio's origin (only that origin may
-frame the canvas) and, when it isn't `https://timbrr.app`,
-`NUXT_TIMBRR_API` to the studio its pages come from. Theme it by setting
+`NUXT_PUBLIC_STUDIO_ORIGIN` to the studio's origin (only that origin and
+the site itself may frame its pages) and, when it isn't `https://timbrr.app`,
+`NUXT_TIMBRR_API` to the studio its pages come from. When the studio has a
+relay secret (its `NUXT_RELAY_SECRET`), set the same value as the secret
+`NUXT_TIMBRR_RELAY_SECRET`, or the studio won't take this site's word for
+which visitor sent a form. Theme it by setting
 the `--site-*` variables in its own stylesheet. That's a whole site: the
 layer serves everything else from what's published in the studio, in the
 site's own Worker, so publishing is live within a minute with no rebuild:
