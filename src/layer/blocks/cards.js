@@ -1,12 +1,12 @@
 import { z } from 'zod';
 import { defineBlock, headlineField, imageSchema, richText, richTextSchema, taglineField } from '../schema/define.js';
+import { CARD_ICONS } from '../app/utils/card-icons.js';
 
 // Two to four across: features, services, steps, promises. It took over from
 // Columns, Grid, Services and Trust badges, so one row holds what any of
 // them held, and `style` says which parts show: an image only in Image, an
 // icon only in Icon, the eyebrow as a label or, in Number and Steps, as the
 // number itself. A card with an address links there whatever its style.
-const CARD_ICONS = ['check', 'star', 'shield', 'heart', 'leaf', 'clock', 'pin', 'phone', 'wrench', 'truck', 'calendar', 'chat'];
 
 export default defineBlock({
  type: 'cards',
@@ -90,7 +90,7 @@ export default defineBlock({
      body: richTextSchema.default(richText('')),
      price: z.string().max(40).default(''),
      image: imageSchema.default({ src: '', alt: '' }),
-     icon: z.enum(CARD_ICONS).default('check'),
+     icon: z.enum(Object.keys(CARD_ICONS)).default('check'),
      to: z.string().max(2000).default(''),
     }),
    )
@@ -149,22 +149,22 @@ export default defineBlock({
     {
      key: 'icon',
      label: 'Icon',
-     widget: 'select',
+     widget: 'icon',
      when: { style: 'icon' },
      options: [
-      { label: 'Check', value: 'check' },
-      { label: 'Star', value: 'star' },
-      { label: 'Shield', value: 'shield' },
-      { label: 'Heart', value: 'heart' },
-      { label: 'Leaf', value: 'leaf' },
-      { label: 'Clock', value: 'clock' },
-      { label: 'Pin', value: 'pin' },
-      { label: 'Phone', value: 'phone' },
-      { label: 'Wrench', value: 'wrench' },
-      { label: 'Truck', value: 'truck' },
-      { label: 'Calendar', value: 'calendar' },
-      { label: 'Chat', value: 'chat' },
-     ],
+      ['Check', 'check'],
+      ['Star', 'star'],
+      ['Shield', 'shield'],
+      ['Heart', 'heart'],
+      ['Leaf', 'leaf'],
+      ['Clock', 'clock'],
+      ['Pin', 'pin'],
+      ['Phone', 'phone'],
+      ['Wrench', 'wrench'],
+      ['Truck', 'truck'],
+      ['Calendar', 'calendar'],
+      ['Chat', 'chat'],
+     ].map(([label, value]) => ({ label, value, paths: CARD_ICONS[value] })),
     },
     { key: 'to', label: 'Links to', widget: 'text', link: true, placeholder: '/services or https://…', help: 'With a link, the whole card opens it.' },
    ],

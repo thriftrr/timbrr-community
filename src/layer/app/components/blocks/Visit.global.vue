@@ -45,11 +45,14 @@
   return place ? safeHref(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place)}`) : undefined;
  });
 
- const showHours = computed(() => props.data.show_hours && hours.value.length > 0);
- const showAddress = computed(() => props.data.show_address && Boolean(address.value));
- const showPhone = computed(() => props.data.show_phone && Boolean(phone.value));
- const showEmail = computed(() => props.data.show_phone && Boolean(email.value));
- const showMap = computed(() => props.data.show_map && Boolean(mapHref.value));
+ // Which parts are on: the block's `show` list, or, on a page saved before
+ // that list existed, its five old switches (on unless switched off).
+ const on = (part) => (props.data.show ? props.data.show.includes(part) : props.data[`show_${part}`] !== false);
+ const showHours = computed(() => on('hours') && hours.value.length > 0);
+ const showAddress = computed(() => on('address') && Boolean(address.value));
+ const showPhone = computed(() => on('phone') && Boolean(phone.value));
+ const showEmail = computed(() => on('phone') && Boolean(email.value));
+ const showMap = computed(() => on('map') && Boolean(mapHref.value));
  const links = computed(() =>
   props.data.links.flatMap((item, index) => {
    if (!shows(`links.${index}.title`, item.title) && !shows(`links.${index}.body`, item.body)) return [];
@@ -72,7 +75,7 @@
  let clock = null;
 
  function tell() {
-  const live = props.data.show_open_now && !typedHours.value.length;
+  const live = on('open_now') && !typedHours.value.length;
   status.value = live ? openNow(details.value?.hours, details.value?.timezone) : null;
  }
 
@@ -82,7 +85,7 @@
  });
  onBeforeUnmount(() => clearInterval(clock));
  // On the canvas the switch and the details change under a mounted block.
- watch([() => props.data.show_open_now, typedHours, details], tell);
+ watch([() => on('open_now'), typedHours, details], tell);
 </script>
 
 <template>

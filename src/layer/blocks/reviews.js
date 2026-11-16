@@ -30,7 +30,7 @@ export default defineBlock({
  fields: [
   taglineField,
   headlineField,
-  { key: 'rating', label: 'Rating', widget: 'text', inline: true, placeholder: '4.8', help: 'Out of 5, as Google shows it. The stars fill to match.' },
+  { key: 'rating', label: 'Rating', widget: 'number', min: 0, max: 5, step: 0.1, inline: true, placeholder: '4.8', help: 'Out of 5, as Google shows it. The stars fill to match.' },
   { key: 'count', label: 'Count', widget: 'text', inline: true, placeholder: '312 reviews' },
   {
    key: 'items',

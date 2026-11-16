@@ -45,7 +45,33 @@ NavItems, one level of children, `max` caps a level; `navListSchema` in
 button: an object, not a list, with no children) · `switch` (a boolean, on
 or off) · `form` (a form from the site's Forms, by id: the studio's own
 picker) · `group` (one object's keys, with `subfields`, folded away until
-they're wanted).
+they're wanted) · `stepper` (a small whole number between `min` and `max`).
+
+For a particular kind of value:
+
+| Widget | Holds | Reads |
+| --- | --- | --- |
+| `number` | a figure: a number, or its text where the schema is text | `min`, `max`, `step`, `unit` (shown beside it, not saved) |
+| `range` | the same, set with a slider | `min` (0), `max` (100), `step` (1), `unit` |
+| `date` | `YYYY-MM-DD`, or `''` | `min`, `max` |
+| `time` | `HH:MM`, 24-hour, or `''` | `step`, in minutes |
+| `checks` | any of a set: a list of the checked values, in the options' order | `options` (each may carry `help`) |
+| `color` | one of a set, drawn as swatches | `options`, each with `swatch`: the brand color it's filled with (`bg`, `surface`, `accent`, `dark`…, the studio's brand color keys). Never a free color |
+| `icon` | one of a set, drawn as icons | `options`, each with `paths`: the `d` of each path on a 24 × 24 grid, drawn as a 2px stroke. A `''` value is "none" and needs no paths |
+| `tags` | a few short words: a list of text. With `of: 'title'`, rows that hold the word under that key (`[{ title }]`) | `max`, `placeholder`, `of` |
+| `code` | a pasted snippet, as text | `placeholder` |
+| `hours` | a week of opening hours, as the site's details keep them: seven rows, Monday first, each `{ closed, open, close }`; `[]` while unset | |
+
+A `text` field may say what it holds with `format`: `email`, `tel` or `url`.
+The studio then checks it as it's typed (a warning only; what's typed is
+still saved) and phones show the right keyboard.
+
+The build checks that `checks`, `color`, `icon`, `select` and `buttons` have
+options, that every icon option but "none" has paths, and that a `tags`
+field's schema is a list of text (or, with `of`, of objects with that key).
+
+A new widget ships in the studio first: a studio refuses a manifest with a
+widget it doesn't have.
 
 **An image** is `{ src, alt }` at least: `src` is an https address or a
 path on the site, `alt` what it shows. One picked from the studio's media
@@ -144,7 +170,7 @@ same-site paths). Nothing a page holds becomes markup.
   { "name": "bur-oak-site", "version": "0.0.0", "tier": "private" },
   { "name": "@timbrr/community", "version": "0.1.0", "tier": "community" }
  ],
- "widgets": ["text", "textarea", "html", "select", "buttons", "items", "image", "nav", "switch", "group", "form", "stepper"],
+ "widgets": ["text", "textarea", "html", "select", "buttons", "items", "image", "nav", "switch", "group", "form", "stepper", "number", "range", "date", "time", "checks", "color", "icon", "tags", "code", "hours"],
  "blocks": [
   {
    "type": "hours", "tier": "base", "owner": null, "layer": "@timbrr/community",
