@@ -33,6 +33,13 @@ export const WIDGETS = [
  'code',
  'hours',
  'table',
+ // What a list of a site's content entries draws from (docs/README.md §
+ // Content): { type, sort, dir, limit, filter, show }, picked in the studio.
+ 'content',
+ // Which field of a content entry an Entry field block shows: a field's key,
+ // picked from the type's own list. The studio's picker also sets `kind` and
+ // `from` on the block beside it.
+ 'content_field',
 ];
 // The widgets that pick from `options`.
 export const CHOICE_WIDGETS = ['select', 'buttons', 'checks', 'color', 'icon'];
