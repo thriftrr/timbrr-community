@@ -34,7 +34,7 @@ export default defineBlock({
   { key: 'image', label: 'Image', widget: 'image', help: 'With a video, shown until it plays.' },
   // `media` asks the studio for Choose from media beside the box (docs/media.md there).
   { key: 'video_url', label: 'Video address', widget: 'text', media: 'video', placeholder: 'https://…/clip.mp4', help: 'A video from Media, or a link to an .mp4 or .webm file. For YouTube or Vimeo, use Embed link.' },
-  { key: 'embed_url', label: 'Embed link', widget: 'text', placeholder: 'https://youtu.be/…', help: 'A YouTube or Vimeo link. Anything else shows as a plain link.' },
+  { key: 'embed_url', label: 'Embed link', widget: 'text', format: 'url', placeholder: 'https://youtu.be/…', help: 'A YouTube or Vimeo link. Anything else shows as a plain link.' },
   { key: 'caption', label: 'Caption', widget: 'text', inline: true, ai: 'generate' },
   {
    key: 'width',

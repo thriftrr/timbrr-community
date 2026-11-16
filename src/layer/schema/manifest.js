@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CATEGORIES, WIDGETS, WYS_TOOLS } from './define.js';
+import { CATEGORIES, CHOICE_WIDGETS, WIDGETS, WYS_TOOLS } from './define.js';
 
 // The manifest: everything a studio needs to edit this site's blocks without
 // holding any of their code. Contract: docs/manifest.md. `version` changes
@@ -40,8 +40,23 @@ function checkFields(fields, shape, where) {
    const row = !field.single && value?.type === 'array' ? bare(value.element) : value;
    if (row?.type !== 'object') throw new Error(`${where}.${field.key}: the schema must be ${field.single ? 'an object' : 'a list of objects'}`);
   }
-  if ((field.widget === 'select' || field.widget === 'buttons') && !field.options?.length) {
+  if (CHOICE_WIDGETS.includes(field.widget) && !field.options?.length) {
    throw new Error(`${where}.${field.key}: needs options`);
+  }
+  // An icon the studio can't draw would be a blank tile: every choice but
+  // "none" brings its paths.
+  if (field.widget === 'icon' && field.options.some((option) => option.value !== '' && !option.paths?.length)) {
+   throw new Error(`${where}.${field.key}: an icon option has no paths`);
+  }
+  // Tags are a list of words, or, with `of`, rows that hold one under that key.
+  if (field.widget === 'tags') {
+   const list = bare(shape[field.key]);
+   const each = list?.type === 'array' ? bare(list.element) : null;
+   const fits = field.of ? each?.type === 'object' && bare(each.shape[field.of])?.type === 'string' : each?.type === 'string';
+   if (!fits) throw new Error(`${where}.${field.key}: the schema must list ${field.of ? `objects with a text "${field.of}"` : 'text'}`);
+  }
+  if (field.format !== undefined && !(field.widget === 'text' && ['email', 'tel', 'url'].includes(field.format))) {
+   throw new Error(`${where}.${field.key}: format is email, tel or url, on a text field`);
   }
  }
 }

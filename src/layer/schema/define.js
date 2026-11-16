@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { BUTTON_ICONS } from '../app/utils/button-icons.js';
 
 // What a block definition may say. A studio renders the inspector from
 // `fields`, so the widget set is fixed: a manifest can't invent a widget the
@@ -6,8 +7,34 @@ import { z } from 'zod';
 export const CATEGORIES = ['content', 'common', 'layout', 'dynamic', 'cta'];
 // `stepper` is a whole number between the field's `min` and `max`, with a
 // minus and a plus beside it; it saves a number, or its text where the
-// schema is text.
-export const WIDGETS = ['text', 'textarea', 'html', 'select', 'buttons', 'items', 'image', 'nav', 'switch', 'group', 'form', 'stepper'];
+// schema is text. `number` and `range` save the same way. What each widget
+// holds and reads is in docs/manifest.md § Widgets.
+export const WIDGETS = [
+ 'text',
+ 'textarea',
+ 'html',
+ 'select',
+ 'buttons',
+ 'items',
+ 'image',
+ 'nav',
+ 'switch',
+ 'group',
+ 'form',
+ 'stepper',
+ 'number',
+ 'range',
+ 'date',
+ 'time',
+ 'checks',
+ 'color',
+ 'icon',
+ 'tags',
+ 'code',
+ 'hours',
+];
+// The widgets that pick from `options`.
+export const CHOICE_WIDGETS = ['select', 'buttons', 'checks', 'color', 'icon'];
 export const WYS_TOOLS = ['bold', 'italic', 'underline', 'link', 'h2', 'h3', 'ul', 'ol', 'clear'];
 
 // What every block can set about how it sits on the page: its background,
@@ -25,12 +52,13 @@ const lookFields = [
  {
   key: 'background',
   label: 'Background',
-  widget: 'buttons',
+  widget: 'color',
+  // `swatch` names the brand color the studio fills each choice with.
   options: [
-   { label: 'Page', value: 'page' },
-   { label: 'Soft', value: 'soft' },
-   { label: 'Brand', value: 'brand' },
-   { label: 'Dark', value: 'dark' },
+   { label: 'Page', value: 'page', swatch: 'bg' },
+   { label: 'Soft', value: 'soft', swatch: 'surface' },
+   { label: 'Brand', value: 'brand', swatch: 'accent' },
+   { label: 'Dark', value: 'dark', swatch: 'dark' },
   ],
  },
  {
@@ -56,8 +84,9 @@ const lookFields = [
 //  category    content | common | layout | dynamic | cta
 //  icon        a name in the studio's icon set; Timbrr's own blocks use
 //              their type (unknown names draw as a square)
-//  fields      [{ key, label, widget, inline?, link?, ai?, options?, subfields?,
-//              itemLabel?, max?, help?, placeholder?, when? }]; `when` is
+//  fields      [{ key, label, widget, inline?, link?, format?, ai?, options?,
+//              subfields?, itemLabel?, min?, max?, step?, unit?, help?,
+//              placeholder?, when? }]; `when` is
 //              { otherKey: value | [values] } of the block's own data: the
 //              studio shows the field only while it holds; `link` marks a text
 //              field holding an address (the studio offers a page picker)
@@ -200,21 +229,22 @@ export const buttonsField = {
   {
    key: 'icon',
    label: 'Icon',
-   widget: 'select',
+   widget: 'icon',
    help: 'Sits beside the label. The Icon style shows it alone.',
+   // `paths` is what the studio draws each choice with.
    options: [
-    { label: 'None', value: '' },
-    { label: 'Arrow', value: 'arrow' },
-    { label: 'Phone', value: 'phone' },
-    { label: 'Envelope', value: 'mail' },
-    { label: 'Calendar', value: 'calendar' },
-    { label: 'Map pin', value: 'pin' },
-    { label: 'Download', value: 'download' },
-    { label: 'Play', value: 'play' },
-    { label: 'Opens elsewhere', value: 'external' },
-    { label: 'Shopping bag', value: 'bag' },
-    { label: 'Speech bubble', value: 'chat' },
-   ],
+    ['None', ''],
+    ['Arrow', 'arrow'],
+    ['Phone', 'phone'],
+    ['Envelope', 'mail'],
+    ['Calendar', 'calendar'],
+    ['Map pin', 'pin'],
+    ['Download', 'download'],
+    ['Play', 'play'],
+    ['Opens elsewhere', 'external'],
+    ['Shopping bag', 'bag'],
+    ['Speech bubble', 'chat'],
+   ].map(([label, value]) => ({ label, value, ...(value ? { paths: BUTTON_ICONS[value] } : {}) })),
   },
  ],
 };

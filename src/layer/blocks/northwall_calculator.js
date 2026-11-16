@@ -57,8 +57,8 @@ export default defineBlock({
     { label: '10', value: '10' },
    ],
   },
-  { key: 'price', label: 'Price for one', widget: 'text', placeholder: '59' },
-  { key: 'extra', label: 'Each one after that', widget: 'text', placeholder: '15' },
+  { key: 'price', label: 'Price for one', widget: 'number', min: 0, placeholder: '59' },
+  { key: 'extra', label: 'Each one after that', widget: 'number', min: 0, placeholder: '15' },
   {
    key: 'addons',
    label: 'Extras',
@@ -67,7 +67,7 @@ export default defineBlock({
    max: 4,
    subfields: [
     { key: 'label', label: 'Name', widget: 'text', inline: true },
-    { key: 'price', label: 'Price', widget: 'text', placeholder: '15' },
+    { key: 'price', label: 'Price', widget: 'number', min: 0, placeholder: '15' },
     {
      key: 'per',
      label: 'Charged',

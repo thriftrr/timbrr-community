@@ -28,7 +28,7 @@ export default defineBlock({
   {
    key: 'url',
    label: 'Address or embed code',
-   widget: 'textarea',
+   widget: 'code',
    placeholder: 'https://…',
    help: 'Paste the address the service gave you, or its whole embed code. Only the address is used.',
   },
