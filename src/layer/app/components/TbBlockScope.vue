@@ -5,6 +5,12 @@
  // block, never around it, so the layout is exactly the site's. Its fields
  // read their tools and names from `def` through the block scope.
  //
+ // The tab also says how the block is set (its layout, and its background
+ // when that isn't the plain one), and on the selected block it opens a
+ // small menu of the block's choices (its `buttons` fields: layout,
+ // background, spacing), so the look can be changed without leaving the page.
+ // A choice goes to the studio as an edit, like text typed in place.
+ //
  // A block of a global block or template carries `lock` (docs/manifest.md §
  // Locked blocks). It's one piece on the page, its placement: any block of
  // it selects all of it, and the first carries the ink tab, the handle for
@@ -53,6 +59,38 @@
   if (props.block.lock && canvas.library.value) canvas.open(placement.value);
  }
 
+ // ── What the tab says, and its Style menu ──
+ const MENU_MAX = 4;
+ const applies = (field) => Object.entries(field.when ?? {}).every(([key, value]) => String(data.value?.[key]) === String(value));
+ const choices = computed(() =>
+  props.block.lock || !data.value ? [] : (props.def?.fields ?? []).filter((field) => field.widget === 'buttons' && !field.draws && field.options?.length > 1 && applies(field)).slice(0, MENU_MAX),
+ );
+ const chosen = (field) => field.options.find((option) => option.value === data.value[field.key]);
+ const summary = computed(() =>
+  choices.value
+   .filter((field) => field.key === 'layout' || (field.key === 'background' && data.value[field.key] !== field.options[0].value))
+   .map((field) => chosen(field)?.label)
+   .filter(Boolean),
+ );
+ const styling = ref(false);
+ const menu = ref(null);
+ const menuId = useId();
+ const canStyle = computed(() => Boolean(canvas?.editable.value && selected.value && choices.value.length));
+ watch(canStyle, (value) => !value && (styling.value = false));
+ function onOutside(event) {
+  if (!menu.value?.contains(event.target) && !event.target.closest?.('.tb-frame__style')) styling.value = false;
+ }
+ function onMenuKey(event) {
+  if (event.key !== 'Escape') return;
+  event.stopPropagation();
+  styling.value = false;
+ }
+ watch(styling, (open) => {
+  if (open) document.addEventListener('pointerdown', onOutside, true);
+  else document.removeEventListener('pointerdown', onOutside, true);
+ });
+ onBeforeUnmount(() => document.removeEventListener('pointerdown', onOutside, true));
+
  function dragStart(event) {
   if (!canvas.editable.value) {
    event.preventDefault();
@@ -99,8 +137,25 @@
     <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
     <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
    </svg>
-   <span>{{ block.lock?.name ?? def?.label ?? block.type }}<template v-if="block.hidden"> · hidden</template></span>
+   <span>{{ block.lock?.name ?? def?.label ?? block.type }}<template v-for="part in summary" :key="part"> · {{ part }}</template><template v-if="block.hidden"> · hidden</template></span>
    <button v-if="block.lock && canvas.library.value" type="button" class="tb-frame__open" @click="open">Edit in Library</button>
+   <button v-if="canStyle" type="button" class="tb-frame__style" aria-haspopup="true" :aria-expanded="styling ? 'true' : 'false'" :aria-controls="styling ? menuId : undefined" @click.stop="styling = !styling">Style ▾</button>
   </span>
+  <div v-if="styling && canStyle" :id="menuId" ref="menu" class="tb-frame__menu" role="group" aria-label="Style of this block" @keydown="onMenuKey" @click.stop>
+   <div v-for="field in choices" :key="field.key" class="tb-frame__choice" role="radiogroup" :aria-label="field.label">
+    <span class="tb-frame__choice-name">{{ field.label }}</span>
+    <button
+     v-for="option in field.options"
+     :key="String(option.value)"
+     type="button"
+     role="radio"
+     class="tb-frame__pill"
+     :aria-checked="data[field.key] === option.value ? 'true' : 'false'"
+     @click="canvas.edit(block.id, field.key, option.value)"
+    >
+     {{ option.label }}
+    </button>
+   </div>
+  </div>
  </div>
 </template>

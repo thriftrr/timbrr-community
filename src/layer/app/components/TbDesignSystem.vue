@@ -94,6 +94,10 @@
     <div class="tb-buttons">
      <a href="#" class="tb-button tb-button--solid">Solid button</a>
      <a href="#" class="tb-button tb-button--outline">Outline button</a>
+     <a href="#" class="tb-button tb-button--text">Text button</a>
+     <a href="#" class="tb-button tb-button--icon" aria-label="Icon button">
+      <svg class="tb-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path v-for="d in BUTTON_ICONS.arrow" :key="d" :d="d" /></svg>
+     </a>
     </div>
     <div class="tb-ds__cards">
      <div v-for="n in 2" :key="n" class="tb-card tb-ds__card">

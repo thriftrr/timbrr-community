@@ -46,7 +46,7 @@
  const srcset = computed(() => (src.value && size.value ? mediaSrcset(src.value, size.value.width) : ''));
 
  // Where the subject is, as the crop's anchor. Anything that isn't a pair
- // of numbers leaves the crop centred, which is what object-fit does alone.
+ // of numbers leaves the crop centered, which is what object-fit does alone.
  // The crop being made on the canvas, when it's this picture's.
  const cropping = computed(() => {
   const crop = canvas?.crop?.value;
@@ -96,7 +96,7 @@
 
  onMounted(settle);
  // Another picture (on the studio's canvas, as someone picks one): the old
- // placeholder would be the wrong colours behind it.
+ // placeholder would be the wrong colors behind it.
  watch(src, () => nextTick(settle));
 
  const style = computed(() => ({

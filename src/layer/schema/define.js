@@ -137,7 +137,11 @@ export const imageSchema = z.object({
 export const buttonSchema = z.object({
  label: z.string().max(60).default(''),
  to: z.string().max(2000).default(''),
- style: z.enum(['solid', 'outline']).default('solid'),
+ // 'text' is the words alone with an arrow; 'icon' is a round button that
+ // shows only its icon (the label is still read out).
+ style: z.enum(['solid', 'outline', 'text', 'icon']).default('solid'),
+ // A key of BUTTON_ICONS (app/utils/button-icons.js), or '' for none.
+ icon: z.string().max(24).default(''),
 });
 
 // One menu item, the NavItem the site's header and footer draw
@@ -171,7 +175,7 @@ export const navItemSchema = navEntrySchema.extend({
 export const navListSchema = z.array(navItemSchema).max(40).default([]);
 
 // Fields more than one block uses.
-export const taglineField = { key: 'tagline', label: 'Tagline', widget: 'text', inline: true };
+export const taglineField = { key: 'tagline', label: 'Tagline', widget: 'text', inline: true, ai: 'generate' };
 export const headlineField = { key: 'headline', label: 'Headline', widget: 'text', inline: true, ai: 'generate' };
 export const buttonsField = {
  key: 'buttons',
@@ -189,6 +193,27 @@ export const buttonsField = {
    options: [
     { label: 'Solid', value: 'solid' },
     { label: 'Outline', value: 'outline' },
+    { label: 'Text', value: 'text' },
+    { label: 'Icon', value: 'icon' },
+   ],
+  },
+  {
+   key: 'icon',
+   label: 'Icon',
+   widget: 'select',
+   help: 'Sits beside the label. The Icon style shows it alone.',
+   options: [
+    { label: 'None', value: '' },
+    { label: 'Arrow', value: 'arrow' },
+    { label: 'Phone', value: 'phone' },
+    { label: 'Envelope', value: 'mail' },
+    { label: 'Calendar', value: 'calendar' },
+    { label: 'Map pin', value: 'pin' },
+    { label: 'Download', value: 'download' },
+    { label: 'Play', value: 'play' },
+    { label: 'Opens elsewhere', value: 'external' },
+    { label: 'Shopping bag', value: 'bag' },
+    { label: 'Speech bubble', value: 'chat' },
    ],
   },
  ],

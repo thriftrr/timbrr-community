@@ -83,6 +83,18 @@ A `buttons` field may say `draws: 'button'` (the shared `buttonsField`'s
 in the site's brand, instead of a row of segments. A studio that doesn't
 know it draws the segments.
 
+A button (`buttonSchema`) has a `style` of `solid`, `outline`, `text` (the
+words alone with an arrow) or `icon` (a round button that shows only its
+icon; the label is still read out), and an `icon`: a key of `BUTTON_ICONS`
+(`app/utils/button-icons.js`) or `''`. `TbButton` draws the icon beside the
+label, and alone for the icon style (an arrow when none is picked).
+
+In the canvas, a block's tab names how it's set (its `layout`, and its
+`background` when that isn't the first option), and on the selected block a
+Style button opens the block's top-level `buttons` fields (up to four) as
+pills on the page. A pick goes to the studio as `timbrr:edit` with the
+field's key and the option's value, so those values must be strings.
+
 **`frame: true`** on a definition marks a site's header or footer
 (`site_header`, `site_footer`; § 4, Header and footer). The studio keeps
 them in its Library, one block to an item, and never offers them in the
@@ -219,7 +231,7 @@ Canvas → studio
 | `timbrr:open` | `id` — the placement: Edit in Library was pressed on it, or it was double-clicked. Sent whether or not the canvas is editable |
 | `timbrr:locked` | `id` — the placement: a printable key (no Ctrl or Meta, not held down) other than those `timbrr:flag` and `timbrr:key` carry was pressed while it was selected, on an editable canvas, with no field open. The studio says why nothing happened. A studio too old for `timbrr:key` says nothing for those; the studio deploys first, so no site should meet one |
 | `timbrr:flag` | Nothing else: F was pressed in the frame (no Ctrl, Meta, Alt or Shift) with no field open. Keys pressed here never reach the studio, so this is how it opens its Flag something panel. Goes first: such a key doesn't also send `timbrr:locked` |
-| `timbrr:key` | `key` (`Delete`, `Backspace`, `n`, `d` or `h`; `ArrowUp` or `ArrowDown`, bare with a block selected to select its neighbour, or with `alt: true` to move it), `alt` — a key for the selected block was pressed in the frame on an editable canvas, with no field open, not on the stage and not held down, with no other modifier. The studio decides what it does, and may ignore it; a studio that doesn't know the message drops it, and a canvas that doesn't send it just has no keys. Such a key doesn't also send `timbrr:locked`. With `mod: true` the key is `z` or `y` pressed with ⌘ or Ctrl (`ctrl: true` for Ctrl, `shift` for Shift), no field open: undo or redo, for the studio's History |
+| `timbrr:key` | `key` (`Delete`, `Backspace`, `n`, `d` or `h`; `ArrowUp` or `ArrowDown`, bare with a block selected to select its neighbor, or with `alt: true` to move it), `alt` — a key for the selected block was pressed in the frame on an editable canvas, with no field open, not on the stage and not held down, with no other modifier. The studio decides what it does, and may ignore it; a studio that doesn't know the message drops it, and a canvas that doesn't send it just has no keys. Such a key doesn't also send `timbrr:locked`. With `mod: true` the key is `z` or `y` pressed with ⌘ or Ctrl (`ctrl: true` for Ctrl, `shift` for Shift), no field open: undo or redo, for the studio's History |
 | `timbrr:crop` | `id`, `field` (an image's path) and either `focal` (`{ x, y }`, 0..1) and `zoom` (1..4), or `reset: true` — a picture was cropped by hand: a double-click on one its box crops (not `ratio="auto"`, not in a locked block) on an editable canvas opens the crop; drag moves the photo, the wheel or the bar's slider zooms, arrows nudge, Enter or a press elsewhere keeps it, Escape cancels, Reset asks for the library's own. The canvas draws it at once; the studio writes it into the image value and sends the page back. A studio that doesn't know the message drops it |
 
 In the canvas each block sits in a frame (`.tb-frame`): a quiet outline

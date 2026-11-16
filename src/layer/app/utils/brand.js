@@ -59,7 +59,7 @@ const STACKS = { serif: 'Georgia, serif', sans: 'system-ui, sans-serif', mono: '
 
 // A site's own fonts, beside the list above (brand.customFonts): any Google
 // Fonts family the studio checked exists (`source: 'google'`, with the axis
-// Google answered for), or a file the site uploaded and holds the licence
+// Google answered for), or a file the site uploaded and holds the license
 // for (`source: 'file'`, served by the studio at /media/fonts/…). A name is
 // letters, digits and spaces, so it can sit in a CSS string and a URL.
 export const BRAND_FONT_LIMITS = { custom: 12, name: 60, bytes: 2 * 1024 * 1024 };
@@ -343,7 +343,7 @@ export function deriveBrandColors(value, page = 'white') {
 }
 
 // The colors in a list that could be a brand color, best first as given:
-// greys and near-blacks dropped, each made dark enough for a button
+// grays and near-blacks dropped, each made dark enough for a button
 // (nudgeAccent), look-alikes collapsed. Takes hexes or { hex } entries: a
 // logo's measured palette, or the colors a web page's CSS uses most.
 export function accentChoices(list, max = 4) {

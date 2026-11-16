@@ -124,6 +124,16 @@
   color: var(--site-dark-ink);
  }
 
+ .tb-order-online .tb-button--text {
+  color: var(--site-dark-ink);
+ }
+
+ .tb-order-online .tb-button--icon {
+  border-color: var(--site-dark-ink);
+  background: var(--site-dark-ink);
+  color: var(--site-dark);
+ }
+
  .tb-order-online .tb-button--outline:hover {
   background: color-mix(in srgb, var(--site-dark-ink) 10%, transparent);
  }
