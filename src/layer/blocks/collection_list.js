@@ -12,7 +12,7 @@ const PICTURED = ['cards', 'grid', 'carousel'];
 export default defineBlock({
  type: 'collection_list',
  label: 'Collection list',
- description: 'Entries of one of your collections',
+ description: 'Shows entries from a collection',
  category: 'dynamic',
  icon: 'feed',
  keywords: ['collections', 'entries', 'list', 'events', 'posts', 'blog', 'directory', 'collection', 'carousel', 'filter', 'related'],
@@ -33,7 +33,7 @@ export default defineBlock({
  fields: [
   taglineField,
   headlineField,
-  { key: 'source', label: 'What to list', widget: 'collection' },
+  { key: 'source', label: 'Show', widget: 'collection' },
   {
    key: 'layout',
    label: 'Layout',

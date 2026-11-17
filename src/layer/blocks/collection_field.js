@@ -23,8 +23,8 @@ const LINKS = ['link', 'email', 'phone', 'file'];
 
 export default defineBlock({
  type: 'collection_field',
- label: 'Entry field',
- description: 'One field of an entry: on its own page, or any page',
+ label: 'Collection field',
+ description: 'Shows one field of an entry',
  category: 'dynamic',
  icon: 'text',
  keywords: ['collections', 'entry', 'field', 'template', 'value'],
@@ -53,14 +53,14 @@ export default defineBlock({
  }),
  fields: [
   // Picks `field`, and sets `kind` and `from` beside it.
-  { key: 'field', label: 'Field', widget: 'collection_field' },
+  { key: 'field', label: 'Show', widget: 'collection_field' },
   {
    key: 'show',
    label: 'Show it as',
    widget: 'buttons',
    options: [
     { label: 'Value', value: 'value' },
-    { label: 'With its name', value: 'labeled' },
+    { label: 'With its name above', value: 'labeled' },
     { label: 'Heading', value: 'heading' },
    ],
   },
@@ -79,7 +79,7 @@ export default defineBlock({
   },
   {
    key: 'number_style',
-   label: 'Number format',
+   label: 'Show the number as',
    widget: 'select',
    when: { kind: NUMBERS },
    options: [
@@ -88,8 +88,8 @@ export default defineBlock({
     { label: 'With cents: 1,250.00', value: 'decimals' },
    ],
   },
-  { key: 'number_before', label: 'Before the number', widget: 'text', when: { kind: NUMBERS }, placeholder: '$' },
-  { key: 'number_after', label: 'After the number', widget: 'text', when: { kind: NUMBERS }, placeholder: ' a night' },
+  { key: 'number_before', label: 'Words before', widget: 'text', when: { kind: NUMBERS }, placeholder: 'From' },
+  { key: 'number_after', label: 'Words after', widget: 'text', when: { kind: NUMBERS }, placeholder: 'per person' },
   {
    key: 'image_shape',
    label: 'Picture shape',
@@ -114,7 +114,7 @@ export default defineBlock({
     { label: 'Full', value: 'full' },
    ],
   },
-  { key: 'empty', label: 'When it holds nothing', widget: 'text', placeholder: 'To be announced', help: 'Leave it empty to show nothing.' },
+  { key: 'empty', label: 'When it\'s empty', widget: 'text', placeholder: 'To be announced', help: 'Leave it empty to show nothing.' },
   { key: 'link_text', label: 'Link text', widget: 'text', when: { kind: LINKS }, placeholder: 'Visit the website', help: 'Shown in place of the address. Leave empty to show the address.' },
  ],
  defaults: { field: 'title', show: 'value', empty: '' },
