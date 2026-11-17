@@ -20,10 +20,10 @@
  const scope = useBlockScope();
  const editable = computed(() => Boolean(canvas?.editable.value && scope));
  const value = computed(() => String(valueAt(props.data, props.field) ?? ''));
- // In a content type's template the studio draws `{{ tokens }}` filled with
- // an entry's values, and sends the words as they're kept beside them
- // (useKeptValue). What's typed into is always the kept words, so a token
- // is never replaced by one entry's value.
+ // In a grove's template the studio draws `{tokens}` filled with a
+ // sapling's values, and sends the words as they're kept beside them
+ // (useKeptValue, composables/groves.js). What's typed into is always the
+ // kept words, so a token is never replaced by one sapling's value.
  const kept = useKeptValue(props);
  const tokened = computed(() => String(kept.value ?? '') !== value.value);
  const limit = computed(() => (scope?.def ? textLimit(scope.def.schema, props.field) : null) ?? Infinity);

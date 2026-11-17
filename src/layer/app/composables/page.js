@@ -23,6 +23,7 @@ export async function useTimbrrPage(path) {
  // never a page. Asking for one there could only ever loop back here.
  if (address.value.startsWith('/__timbrr/')) throw pageError(true, address.value);
  const here = useRequestURL();
+ const nuxtApp = useNuxtApp(); // navigateTo after an await needs the app it started in
  const forms = useTimbrrForms();
  // No second try: a 502 means the site's server already gave the studio
  // its chance (and its 8 seconds).
@@ -183,9 +184,22 @@ export async function useTimbrrPage(path) {
   window.location.reload();
   return new Promise(() => {});
  }
+ // An old address of a sapling's: the studio says where it lives now (a
+ // 301 on the server, a plain move in the browser). Only a path on this
+ // site is followed; anything else is the 404 it came with.
+ const moved = fetched.error.value?.statusCode === 404 ? fetched.error.value.data?.data?.redirect?.to : null;
+ if (sitePath(moved) && moved !== address.value) {
+  await nuxtApp.runWithContext(() => navigateTo(moved, { redirectCode: 301, replace: true }));
+  // The browser waits for the move; the server's answer is the 301 itself, whatever renders.
+  if (import.meta.client) return new Promise(() => {});
+  return { site, page, blocks, style };
+ }
  if (fetched.error.value || !fetched.data.value?.page) throw pageError(fetched.error.value?.statusCode === 404, address.value);
  return { site, page, blocks, style };
 }
+
+// A path on this site, never another site's address or a protocol.
+const sitePath = (value) => typeof value === 'string' && /^\/(?![/\\])[a-z0-9/_-]*$/i.test(value) && value.length <= 500;
 
 // The error page (error.vue) for an address: nothing published there (404)
 // or the studio failing (502). Fatal only in the browser, which is what

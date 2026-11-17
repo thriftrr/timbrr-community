@@ -1,28 +1,22 @@
 import { z } from 'zod';
 import { defineBlock } from '../schema/define.js';
 
-// One field of a content entry (docs/README.md § Content). In the Library
-// template a content type's entry pages are drawn with, it's a field of the
-// entry the page is showing; on any other page it names its entry itself
-// (`from`). Either way the studio binds the value in as `entry` when it
-// serves the page ({ key, label, kind, value, text }), and this draws it by
-// its kind. With no entry it draws nothing; the canvas shows which field it
-// stands for.
-//
-// `kind` is the picked field's kind, kept by the studio's picker so the
-// choices that only suit one kind (a date's style, a number's format, a
-// picture's shape, a link's words) show for it and no other. What's drawn
-// always goes by the kind the entry's value really has.
+// Retired: the Sapling ring (blocks/grove_ring.js) took its place, with the
+// same data under the Groves names (docs/README.md § Groves). Pages saved
+// with this one keep it until the studio's convert-blocks moves them, and
+// the studio serves it as a Sapling ring in the meantime, so on the canvas
+// it draws only a note to convert the page. Its shape stays as it was kept.
 const NUMBERS = ['number', 'range'];
 const LINKS = ['link', 'email', 'phone', 'file'];
 
 export default defineBlock({
  type: 'content_field',
- label: 'Entry field',
- description: 'One field of a content entry: on its own page, or any page',
+ label: 'Sapling ring (old)',
+ description: 'One ring of a sapling: on its own page, or any page',
  category: 'dynamic',
  icon: 'text',
- keywords: ['content', 'entry', 'field', 'template', 'value', 'custom field'],
+ retired: true,
+ keywords: ['groves', 'sapling', 'ring', 'template', 'value'],
  schema: z.object({
   field: z.string().max(40).default('title'),
   from: z.object({ type: z.string().max(40).default(''), entry: z.string().max(64).default('') }).default({ type: '', entry: '' }),
@@ -35,16 +29,13 @@ export default defineBlock({
   image_shape: z.enum(['wide', 'photo', 'square', 'tall', 'natural']).default('wide'),
   image_size: z.enum(['small', 'medium', 'full']).default('full'),
   link_text: z.string().max(120).default(''),
-  // Set by the studio as it serves the page; never by a person. A
-  // repeater comes with `rows` and a group with `fields`: what's inside,
-  // each read the same way, however deep.
+  // Set by the studio as it served the page; never by a person.
   entry: z
    .object({ key: z.string(), label: z.string(), kind: z.string(), value: z.any(), text: z.string(), rows: z.array(z.any()).optional(), fields: z.array(z.any()).optional() })
    .nullable()
    .optional(),
  }),
  fields: [
-  // Picks `field`, and sets `kind` and `from` beside it.
   { key: 'field', label: 'Field', widget: 'content_field' },
   {
    key: 'show',
