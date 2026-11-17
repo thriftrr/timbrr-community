@@ -1,19 +1,19 @@
 import { z } from 'zod';
 import { defineBlock, headlineField, taglineField } from '../schema/define.js';
 
-// A search box over a site's content entries (docs/README.md § Content).
-// The studio keeps the entries and their search index; this block asks for
-// the published ones that hold what a visitor typed, of the content types
-// whose "Show in site search" is on. With no results page it shows what it
-// finds under the box; with one, it sends the visitor there, and the Site
-// search block on that page shows them.
+// Retired: the Site search block under its Groves name
+// (blocks/grove_search.js) took its place, with the same data. Pages saved
+// with this one keep it until the studio's convert-blocks moves them, and
+// the studio serves it as the new one in the meantime, so on the canvas it
+// draws only a note to convert the page.
 export default defineBlock({
  type: 'content_search',
- label: 'Site search',
- description: 'A search box over your content entries',
+ label: 'Site search (old)',
+ description: 'A search box over your saplings',
  category: 'dynamic',
  icon: 'search',
- keywords: ['search', 'find', 'content', 'entries', 'results', 'look up', 'query'],
+ retired: true,
+ keywords: ['search', 'find', 'groves', 'saplings', 'results', 'look up', 'query'],
  schema: z.object({
   tagline: z.string().max(80).default(''),
   headline: z.string().max(160).default(''),

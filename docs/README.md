@@ -324,56 +324,157 @@ same in a layout:
 </template>
 ```
 
-## Content
+## Groves
 
-A site's content types and their entries live in the studio (its
-docs/content.md). The layer has what draws them:
+A site's groves and their saplings live in the studio (its
+docs/groves.md). The layer has what draws them:
 
-- `content_list`: a list of one type's published entries, as cards, a plain
-  list or a table. Its `source` (`{ type, sort, dir, limit, filter, show }`)
-  is picked in the studio with the `content` widget. It asks the site's own
-  `/__timbrr/content`, which asks the studio's public
-  `/api/public/sites/:slug/content` and keeps the answer a minute at the
-  edge (the working copies, never cached, on a dev or staging address).
-- `content_field`: one field of an entry. In the Library template a type's
-  entry pages are drawn with, it's the entry the page shows; on any other
-  page it names its own (`from: { type, entry }`). Either way the studio
-  sets `entry` (`{ key, label, kind, value, text }`) on the block as it
-  serves the page. Its field is picked in the studio with the
-  `content_field` widget, which also sets `kind` and `from`; `kind` only
+- `grove_list` ("Grove list"): a list of one grove's published saplings, as
+  cards, a plain list, a table, a grid of pictures or a row that scrolls
+  sideways (CSS scroll snap and two arrow buttons, no library). It can draw
+  the first one large (`featured`), say how many there are (`count`), page
+  by pages, by "Load more" or not at all (`paging`: `pages`, `more`,
+  `none`; `true` and `false` as kept before), and show words and a button
+  when there are none. Its `source` (`groveSourceSchema`, `schema/define.js`)
+  is picked in the studio with the `grove` widget: the grove, order (any
+  ring the grove sorts by, title, published, last changed), how many, up to
+  five fixed filters (`{ ring, op, value }`, op `eq`, `ne`, `gte`, `lte`,
+  `in`, `filled`), up to three `choices` a visitor narrows it by (a dropdown
+  or buttons above the list, each answer with how many have it, kept in the
+  address as `?<block id>.<ring>=value`), and `related`: `none`,
+  `points_here` (saplings whose relation ring names the sapling the page
+  shows), `same_branch` (sharing a branch of `relatedSet` with it) or
+  `linked` (the saplings its relation ring `relatedRing` names). It asks
+  the site's own `/__timbrr/groves` through `useSaplings`, which asks the
+  studio's public `/api/public/sites/:slug/groves` and keeps the answer a
+  minute at the edge (the working copies, never cached, on a dev or
+  staging address).
+- `grove_repeat` ("Repeat for each sapling"): the blocks after it, up to an
+  "End of the repeat" (the same block with `end` on, a preset), drawn once
+  for each sapling its `source` lists, in `columns` with a `gap`. The
+  studio does the repeating as it serves the page: the site gets this block
+  alone, its `items` one list of blocks for each sapling (at most 20 of 10
+  blocks), each bound to its sapling, and draws them as a grid of
+  `TbBlocks`. On the canvas the area is drawn once under a band. It's what
+  the studio's grove blocks (a Library kind) are made of.
+- `grove_ring` ("Sapling ring"): one ring of a sapling. In the Library
+  template a grove's sapling pages are drawn with, it's the sapling the page
+  shows; on any other page it names its own (`from: { grove, sapling }`).
+  Either way the studio sets `sapling` (`{ key, label, kind, value, text }`)
+  on the block as it serves the page. Its ring is picked in the studio with
+  the `grove_ring` widget, which also sets `kind` and `from`; `kind` only
   decides which of the block's choices the inspector shows (`when`): a
   date's style, a number's format, a picture's shape and size, a link's
-  words. The component goes by the kind the value really has.
-- `TbContentValue` draws a value by its kind, always as text or through
-  `TbImage` and `TbRich`: nothing an entry holds is ever markup.
-- An entry's page needs nothing here: the studio answers `/__timbrr/page`
+  words. The component goes by the kind the value really has. `empty` is
+  words for a sapling with nothing in the ring; `via` (in a grove's
+  template) is one of its relation rings: the studio shows that ring of the
+  first sapling it names instead.
+- `TbRingValue` draws a value by its kind, always as text or through
+  `TbImage` and `TbRich`: nothing a sapling holds is ever markup.
+- A sapling's page needs nothing here: the studio answers `/__timbrr/page`
   for its address in a page's shape.
-- `content_search` ("Site search"): a search box over the published
-  entries of the types whose "Show in site search" is on in the studio.
+- `grove_search` ("Site search"): a search box over the published
+  saplings of the groves whose "Show in site search" is on in the studio.
   It asks the site's own `/__timbrr/search?q=…&limit=…&p=…`, which tidies
   what was typed, asks the studio's public
   `/api/public/sites/:slug/search` and keeps the answer a minute at the
-  edge; each result is a title, an address, its type's name and a few
-  plain words. What was searched is in the address (`?q=`), so the first
+  edge; each result is a title, an address, its grove's name and a few
+  plain words (`results`: a list or cards, `show_grove`: the grove's name
+  on each). `within` (`{ groves: [keys] }`, the `grove` widget with
+  `pick: 'groves'`) keeps it to some of those groves. What was searched is in the address (`?q=`), so the first
   results come with the page and the form works without scripts. With a
   `to` (a page of this site) the box sends the visitor there, and the
   block on that page shows what's found. One visitor gets 30 searches a
   minute, counted in the Worker's memory (a ceiling for each isolate).
+- `content_list`, `content_field` and `content_search` are the same three
+  under the names they had before Groves, kept and marked retired so pages
+  saved with them still load. On the canvas each draws one line asking to
+  convert the page; a live page never gets one, since the studio serves
+  them as the new blocks. They go once the studio's convert-blocks has run
+  and every site is on this layer.
 
-On the canvas the studio sends the entries with the page, since the canvas
-never asks for anything: `timbrr:doc`'s `content` is `{ lists, raw }`
-(`useTimbrrContent`, `app/composables/content.js`).
+On the canvas the studio sends the saplings with the page, since the canvas
+never asks for anything: `timbrr:doc`'s `groves` is `{ lists, raw }`
+(`useTimbrrGroves`, `app/composables/groves.js`).
 
-- `lists[<block id>]` is a Content list's answer, exactly as
-  `/__timbrr/content` gives it, read by the studio with the editor's own
-  access. The block draws it; until one arrives it draws stand-ins.
-- An Entry field block arrives with `entry` already set.
-- In a type's template the studio fills `{{ tokens }}` in each block's words
-  before it sends the page, and `raw[<block id>]` is that block's data as
-  it's kept. `TbText` and `TbRich` draw the filled words and type into the
-  kept ones (`useKeptValue`), so a token is never replaced by one entry's
-  value.
+- `lists['<block id>:<field key>']` is the answer for each `grove` field
+  of a block (a Grove list's `source`, a repeat's, a site block's own),
+  exactly as `/__timbrr/groves` gives it, read by the studio with the
+  editor's own access; an older studio sends `lists[<block id>]`, which is
+  read too. The block draws it; until one arrives it draws stand-ins.
+- A Sapling ring block arrives with `sapling` already set.
+- In a grove's template the studio fills `{{ tokens }}` in each block's
+  words before it sends the page, and `raw[<block id>]` is that block's data
+  as it's kept. `TbText` and `TbRich` draw the filled words and type into
+  the kept ones (`useKeptValue`), so a token is never replaced by one
+  sapling's value.
 
-A studio that sends no `content` gets the stand-ins for a Content list and
-an Entry field. Site search still draws its stand-in: it has no site to ask.
+A studio that sends no `groves` gets the stand-ins for a Grove list and a
+Sapling ring. Site search still draws its stand-in: it has no site to ask.
+
+### Grove-aware blocks of a site's own
+
+A site's own block can list saplings its own way. It's an ordinary
+`defineBlock` with a field of the `grove` widget (the studio's picker
+comes with it) and any fields of its own, and a component that calls
+`useSaplings` (`app/composables/groves.js`):
+
+```js
+// blocks/acme_team.js
+import { z } from 'zod';
+import { defineBlock, groveSourceSchema, headlineField } from '@timbrr/community/schema/define.js';
+
+export default defineBlock({
+ type: 'acme_team',
+ label: 'Team cards',
+ category: 'dynamic',
+ schema: z.object({ headline: z.string().max(160).default(''), source: groveSourceSchema, round: z.boolean().default(true) }),
+ fields: [headlineField, { key: 'source', label: 'Who to show', widget: 'grove' }, { key: 'round', label: 'Round photos', widget: 'switch' }],
+ defaults: { headline: 'Our team', round: true },
+});
+```
+
+```vue
+<!-- app/components/blocks/AcmeTeam.global.vue -->
+<script setup>
+ const props = defineProps({ data: { type: Object, required: true } });
+ const { saplings, total, pending, more } = await useSaplings(() => props.data.source);
+ const photo = (sapling) => sapling.rings.find((ring) => ring.kind === 'image')?.value;
+</script>
+
+<template>
+ <section class="tb-section">
+  <div class="tb-wrap">
+   <h2>{{ data.headline }}</h2>
+   <ul :aria-busy="pending ? 'true' : undefined">
+    <li v-for="sapling in saplings" :key="sapling.id">
+     <TbImage v-if="photo(sapling)" :image="photo(sapling)" ratio="1 / 1" :class="{ round: data.round }" />
+     <NuxtLink v-if="sapling.path" :to="sapling.path">{{ sapling.title }}</NuxtLink>
+    </li>
+   </ul>
+   <button v-if="saplings.length < total" type="button" @click="more">Load more</button>
+  </div>
+ </section>
+</template>
+```
+
+- `useSaplings(source, { field, page, answers, meta })` → `{ saplings,
+  total, pages, page, facets, grove, rings, pending, refresh, more, standIn }`.
+  `source` is the field's value (a ref, a getter or a plain object);
+  `field` is its key when it isn't `source`; `page` a number or a ref;
+  `answers` a ref of `{ ring: value }` for the list's choices; `meta` asks
+  for the grove's rings too. On a live page it asks `/__timbrr/groves`; on
+  the canvas it reads what the studio sent for that block and field, and
+  `standIn` says nothing has arrived yet.
+- `useGrove(key)` → `{ grove, rings, pending }`: a grove's names and rings
+  (what each is, never a password), for a block that lays a grove out
+  itself.
+- `groveQuery(source, { page, answers, meta })` is the query either one
+  sends, for a site that asks `/__timbrr/groves` itself.
+- What a sapling carries is the list's answer: `{ id, title, slug, path,
+  publishedAt, rings: [{ key, label, kind, value, text, rows?, rings? }] }`.
+  Draw a ring with `TbRingValue`, or its `text`: never as markup.
+
+The same example, as files, is in `docs/examples/grove-cards/` (kept as an
+example, not loaded by the layer).
 

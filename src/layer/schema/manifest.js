@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { CATEGORIES, CHOICE_WIDGETS, WIDGETS, WYS_TOOLS } from './define.js';
 import { whenProblem, whenTerms } from '../app/utils/when.js';
+import { groveHookFlags } from './grove-hooks.js';
 
 // The manifest: everything a studio needs to edit this site's blocks without
 // holding any of their code. Contract: docs/manifest.md. `version` changes
@@ -113,7 +114,10 @@ export function tierOf(def, layer) {
 
 // Checks every definition and turns it into its manifest entry. A broken
 // definition is a build error that names the block, never a quiet skip.
-export function buildManifest(site, layers, definitions) {
+// `groveHooks` are the site's defineGroveHook files (#timbrr/grove-hooks):
+// the manifest says only which kinds it has, so the studio knows whether to
+// ask /__timbrr/grove-rings before its sapling editor draws.
+export function buildManifest(site, layers, definitions, groveHooks = []) {
  const seen = new Map();
  const blocks = definitions.map(({ def, layer }) => {
   const where = `block "${def?.type}" (${layer.name})`;
@@ -151,7 +155,7 @@ export function buildManifest(site, layers, definitions) {
    schema: z.toJSONSchema(def.schema, { io: 'input', unrepresentable: 'throw' }),
   };
  });
- return { version: MANIFEST_VERSION, generatedAt: new Date().toISOString(), site, layers, widgets: WIDGETS, blocks };
+ return { version: MANIFEST_VERSION, generatedAt: new Date().toISOString(), site, layers, widgets: WIDGETS, blocks, groveHooks: groveHookFlags(groveHooks) };
 }
 
 // What wraps a field's real shape (a default, a missing value allowed);

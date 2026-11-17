@@ -3,6 +3,11 @@
 //   node layer/scripts/check-embed.mjs
 import { equal } from 'node:assert/strict';
 import { calculatorTotal, embedFrame, priceNumber } from '../app/utils/blocks.js';
+import { safeHref } from '../app/utils/timbrr.js';
+
+// A link never leaves for another host by a back slash or a control character a browser drops.
+for (const bad of ['//evil.example', '/\\evil.example', '/\t/evil.example', '/\n/evil.example', 'javascript:alert(1)']) equal(safeHref(bad), undefined, JSON.stringify(bad));
+equal(safeHref('/events/open-day'), '/events/open-day');
 
 const RGP = 'https://app.rockgympro.com/b/s/?lk=abc123&bw=6f290f42e9fb4e12926bdb594e672d2a';
 

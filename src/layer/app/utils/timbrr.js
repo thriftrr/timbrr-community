@@ -15,10 +15,13 @@ export function placementOf(id) {
 }
 
 // Only links a visitor can safely follow: the web, mail, phone, this site. A
-// path can't start `//` or `/\`: a browser reads both as another host.
+// path can't start `//` or `/\`: a browser reads both as another host. Nor
+// can any address hold a control character: a browser drops a tab or a
+// line break, so `/<tab>/host` would be `//host`.
+const CONTROL = /[\u0000-\u001f\u007f]/;
 export function safeHref(href) {
  const value = String(href ?? '').trim();
- return /^(https?:\/\/|mailto:|tel:|\/(?![/\\])|#)/i.test(value) ? value : undefined;
+ return !CONTROL.test(value) && /^(https?:\/\/|mailto:|tel:|\/(?![/\\])|#)/i.test(value) ? value : undefined;
 }
 
 // Images from the web or this site; anything else isn't shown. A local
@@ -29,6 +32,7 @@ const WEB_SRC = /^(https:\/\/|\/(?![/\\]))/i;
 const LOCAL_SRC = /^http:\/\/(localhost|127\.0\.0\.1)(:\d{1,5})?\//i;
 export function safeSrc(src) {
  const value = String(src ?? '').trim();
+ if (CONTROL.test(value)) return undefined;
  return WEB_SRC.test(value) || (import.meta.dev && LOCAL_SRC.test(value)) ? value : undefined;
 }
 

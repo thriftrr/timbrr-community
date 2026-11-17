@@ -90,7 +90,8 @@ async function fetchDraft(event, slug, route) {
    headers: { accept: 'application/json', authorization: `Bearer ${previewToken(event)}` },
    signal: AbortSignal.timeout(WAIT),
   });
-  if (res.status === 401 || res.status === 404) return { status: res.status };
+  if (res.status === 404) return { status: 404, redirect: redirectIn(await res.text()) };
+  if (res.status === 401) return { status: res.status };
   if (res.status !== 200) throw new Error(`it answered ${res.status}`);
   return { status: 200, data: await res.json() };
  } catch (error) {
@@ -125,7 +126,7 @@ export async function fetchPublished(event, route) {
   const text = await res.text();
   if (res.status === 404) {
    if (cache && !kept) await keep(cache, key, 404, text);
-   return { status: 404 };
+   return { status: 404, redirect: redirectIn(text) };
   }
   if (res.status !== 200) throw new Error(`it answered ${res.status}`);
   const data = JSON.parse(text);
@@ -143,4 +144,15 @@ export async function fetchPublished(event, route) {
 async function keep(cache, url, status, body) {
  const headers = { 'content-type': 'application/json; charset=utf-8', 'cache-control': `public, max-age=${KEEP}` };
  await cache.put(url, new Response(body, { status, headers })).catch(() => {});
+}
+
+// An old address of a sapling's: a 404 whose body says where it lives now
+// (`data.redirect: { to, status }`). Only a path on this site is passed on.
+function redirectIn(text) {
+ try {
+  const redirect = JSON.parse(text)?.data?.redirect;
+  return typeof redirect?.to === 'string' && /^\/(?![/\\])[a-z0-9/_-]*$/i.test(redirect.to) && redirect.to.length <= 500 ? { to: redirect.to, status: 301 } : null;
+ } catch {
+  return null;
+ }
 }

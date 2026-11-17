@@ -33,12 +33,15 @@ export const WIDGETS = [
  'code',
  'hours',
  'table',
- // What a list of a site's content entries draws from (docs/README.md §
- // Content): { type, sort, dir, limit, filter, show }, picked in the studio.
- 'content',
- // Which field of a content entry an Entry field block shows: a field's key,
- // picked from the type's own list. The studio's picker also sets `kind` and
+ // What a Grove list draws from (docs/README.md § Groves): { grove, sort,
+ // dir, limit, filter, show, branch, related }, picked in the studio.
+ 'grove',
+ // Which ring of a sapling a Sapling ring block shows: a ring's key, picked
+ // from the grove's own list. The studio's picker also sets `kind` and
  // `from` on the block beside it.
+ 'grove_ring',
+ // retired: what the retired content blocks name; drop with them
+ 'content',
  'content_field',
 ];
 // The widgets that pick from `options`.
@@ -248,6 +251,45 @@ export const navItemSchema = navEntrySchema.extend({
  button: navButtonSchema.optional(),
 });
 export const navListSchema = z.array(navItemSchema).max(40).default([]);
+
+// What a field with the `grove` widget holds (docs/README.md § Groves): which
+// grove, in what order, how many, narrowed how. The studio's picker writes
+// it and the studio reads it again on every request, so this only says what
+// may be kept. A site's own block takes it the same way:
+//  schema: z.object({ source: groveSourceSchema }), fields: [{ key: 'source', label: 'What to list', widget: 'grove' }]
+//  filters   fixed: [{ ring, op, value }], up to 5; `in` takes a list, `filled` no value
+//  choices   rings a visitor narrows the list by, up to 3, as a dropdown or buttons
+//  related   'none', 'points_here' (saplings whose relation ring names the
+//            sapling the page shows), 'same_branch' (sharing a branch of
+//            `relatedSet` with it) or 'linked' (the saplings its relation
+//            ring `relatedRing` names); true is 'points_here', as kept before
+//  relatedTo, branch   set by the studio as it serves a page, never by a person
+//  filter    the single filter kept before `filters`, read as one of them
+export const GROVE_FILTER_OPS = ['eq', 'ne', 'gte', 'lte', 'in', 'filled'];
+const groveKey = z.string().max(40);
+export const groveSourceSchema = z
+ .object({
+  grove: groveKey.default(''),
+  sort: groveKey.default('published'),
+  dir: z.enum(['asc', 'desc']).default('desc'),
+  limit: z.number().int().min(1).max(50).default(12),
+  filters: z
+   .array(z.object({ ring: groveKey, op: z.enum(GROVE_FILTER_OPS), value: z.union([z.string().max(200), z.array(z.string().max(200)).max(20)]).default('') }))
+   .max(5)
+   .default([]),
+  filter: z.object({ ring: groveKey, op: z.enum(['eq', 'gte', 'lte']), value: z.string().max(200) }).nullable().default(null),
+  choices: z
+   .array(z.object({ ring: groveKey, ui: z.enum(['select', 'buttons']).default('select') }))
+   .max(3)
+   .default([]),
+  show: z.array(groveKey).max(12).default([]),
+  related: z.union([z.enum(['none', 'points_here', 'same_branch', 'linked']), z.boolean()]).default('none'),
+  relatedSet: groveKey.default(''),
+  relatedRing: groveKey.default(''),
+  relatedTo: z.string().max(64).default(''),
+  branch: z.object({ set: groveKey, slug: z.string().max(63) }).nullable().default(null),
+ })
+ .prefault({});
 
 // Fields more than one block uses.
 export const taglineField = { key: 'tagline', label: 'Tagline', widget: 'text', inline: true, ai: 'generate' };
