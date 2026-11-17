@@ -35,7 +35,7 @@ export default defineBlock({
  defaults: {
   tagline: 'We come to you',
   headline: 'Where we work',
-  body: richText('Free estimates and no trip charge anywhere in the areas below. Just outside the ring? Ask. We often make the trip anyway.'),
+  body: richText('Free estimates and no trip charge anywhere in the areas below. Just outside the field? Ask. We often make the trip anyway.'),
   items: [
    { title: 'Downtown' },
    { title: 'Midtown' },

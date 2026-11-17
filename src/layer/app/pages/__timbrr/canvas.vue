@@ -18,7 +18,7 @@
  // previews and the builder's Preview use it). With &window=1 as well (the
  // builder's Preview) its frame is a fixed window and the page scrolls in
  // it, as on a visitor's screen. Either way it never fetches
- // a grove's saplings (they come from the studio too, with the page),
+ // a collection's entries (they come from the studio too, with the page),
  // never holds a token, and its links go nowhere. Every message is
  // checked against one origin: the configured studio, or localhost in
  // development.
@@ -44,10 +44,10 @@
  const theme = ref({});
  const site = shallowRef(null); // the site's name, address, menu, details and frames, for its header and footer
  const forms = useTimbrrForms(); // the forms this page can show, as the site draws them
- // The saplings its grove blocks draw, sent by the studio (composables/groves.js).
- // Set from the start, so a Grove list here never asks the site itself.
- const groves = useTimbrrGroves();
- groves.value = { lists: {}, raw: {} };
+ // The entries its collection blocks draw, sent by the studio (composables/collections.js).
+ // Set from the start, so a Collection list here never asks the site itself.
+ const collections = useTimbrrCollections();
+ collections.value = { lists: {}, raw: {} };
  const mode = ref('full'); // 'render': the page between the site's header and footer
  const stage = ref(false); // the studio asked for the stage, for a Library header or footer
  const sheet = ref(''); // 'system': the design system instead of a page (the Branding editor's preview)
@@ -375,8 +375,8 @@
    theme.value = message.theme && typeof message.theme === 'object' ? message.theme : {};
    site.value = siteFrom(message.site, blocks.value[0], theme.value.brand);
    forms.value = message.forms && typeof message.forms === 'object' ? message.forms : {};
-   const sent = message.groves && typeof message.groves === 'object' ? message.groves : {};
-   groves.value = { lists: sent.lists && typeof sent.lists === 'object' ? sent.lists : {}, raw: sent.raw && typeof sent.raw === 'object' ? sent.raw : {} };
+   const sent = message.collections && typeof message.collections === 'object' ? message.collections : {};
+   collections.value = { lists: sent.lists && typeof sent.lists === 'object' ? sent.lists : {}, raw: sent.raw && typeof sent.raw === 'object' ? sent.raw : {} };
    mode.value = message.mode === 'render' ? 'render' : 'full';
    stage.value = message.stage === true;
    sheet.value = message.sheet === 'system' ? 'system' : '';

@@ -235,7 +235,7 @@ same-site paths). Nothing a page holds becomes markup.
   { "name": "bur-oak-site", "version": "0.0.0", "tier": "private" },
   { "name": "@timbrr/community", "version": "0.1.0", "tier": "community" }
  ],
- "widgets": ["text", "textarea", "html", "select", "buttons", "items", "image", "nav", "switch", "group", "form", "stepper", "number", "range", "date", "time", "checks", "color", "icon", "tags", "code", "hours", "table", "grove", "grove_ring", "content", "content_field"],
+ "widgets": ["text", "textarea", "html", "select", "buttons", "items", "image", "nav", "switch", "group", "form", "stepper", "number", "range", "date", "time", "checks", "color", "icon", "tags", "code", "hours", "table", "collection", "collection_field", "content", "content_field"],
  "blocks": [
   {
    "type": "hours", "tier": "base", "owner": null, "layer": "@timbrr/community",
@@ -249,15 +249,15 @@ same-site paths). Nothing a page holds becomes markup.
    "schema": { /* JSON Schema 2020-12, from z.toJSONSchema (input side) */ }
   }
  ],
- "groveHooks": { "format": false, "editor": true } // which kinds of grove hook the site's code has
+ "collectionHooks": { "format": false, "editor": true } // which kinds of collection hook the site's code has
 }
 ```
 
-`groveHooks` says whether the site's `grove-hooks/` files (docs/grove-hooks.md)
-format ring values and adjust the sapling editor. With `editor: true` the
-studio asks the site's `POST /__timbrr/grove-rings` before its sapling
-editor draws a grove's form. A manifest without it is read as neither; one
-whose `groveHooks` isn't two booleans is refused whole, like any other
+`collectionHooks` says whether the site's `collection-hooks/` files (docs/collection-hooks.md)
+format field values and adjust the entry editor. With `editor: true` the
+studio asks the site's `POST /__timbrr/collection-fields` before its entry
+editor draws a collection's form. A manifest without it is read as neither; one
+whose `collectionHooks` isn't two booleans is refused whole, like any other
 shape the studio doesn't read.
 
 A layer's tier is its `package.json` → `timbrr.tier`; anything undeclared
@@ -306,7 +306,7 @@ Studio → canvas
 
 | type | payload |
 |---|---|
-| `timbrr:doc` | `blocks` (`[{ id, type, hidden, data, lock? }]`; `lock` below), `theme` (`{ accent }`), `site` (`{ name, domain, nav, cta?, details?, frame? }` — what the site's header and footer draw; below), `forms` (`{ [id]: form }`, what Form blocks and a footer draw, § Forms), `groves` (`{ lists: { [block id]: list }, raw: { [block id]: data } }`, the saplings its grove blocks draw and the kept words of a block whose `{{ tokens }}` the studio filled, docs/README.md § Groves; missing from an older studio, and the blocks draw stand-ins), `mode` (`render`: the page between the site's header and footer; `full`, or missing: the blocks alone), `editable` (`false` when the person can only look: nothing is typed into, dragged or dropped; missing means `true`), `library` (`false` when the person can't open the Library: no Edit in Library pill, and a double-click does nothing; missing means `true`), `endZone` (`false` when the document takes no more blocks, like a Library header, which holds one: no dashed zone after the last block; missing means `true`), `stage` (`true` only for a Library header or footer: the first block goes on the stage instead of the page, below; missing means `false`), `sheet` (`system`: draw the site's design system instead of a page, `TbDesignSystem.vue`, for the Branding editor's preview; blocks are ignored; missing means a page) — the whole page, on every change |
+| `timbrr:doc` | `blocks` (`[{ id, type, hidden, data, lock? }]`; `lock` below), `theme` (`{ accent }`), `site` (`{ name, domain, nav, cta?, details?, frame? }` — what the site's header and footer draw; below), `forms` (`{ [id]: form }`, what Form blocks and a footer draw, § Forms), `collections` (`{ lists: { [block id]: list }, raw: { [block id]: data } }`, the entries its collection blocks draw and the kept words of a block whose `{{ tokens }}` the studio filled, docs/README.md § Collections; missing from an older studio, and the blocks draw stand-ins), `mode` (`render`: the page between the site's header and footer; `full`, or missing: the blocks alone), `editable` (`false` when the person can only look: nothing is typed into, dragged or dropped; missing means `true`), `library` (`false` when the person can't open the Library: no Edit in Library pill, and a double-click does nothing; missing means `true`), `endZone` (`false` when the document takes no more blocks, like a Library header, which holds one: no dashed zone after the last block; missing means `true`), `stage` (`true` only for a Library header or footer: the first block goes on the stage instead of the page, below; missing means `false`), `sheet` (`system`: draw the site's design system instead of a page, `TbDesignSystem.vue`, for the Branding editor's preview; blocks are ignored; missing means a page) — the whole page, on every change |
 | `timbrr:select` | `id` or null. A placement's id selects all of its blocks |
 | `timbrr:view` | `scale` — how far the studio scales the frame down to fit; the canvas draws its outlines, tabs and drop zone up by as much, so they read at their real size |
 | `timbrr:record` | nothing — the studio is recording this session (rrweb) and can't see into the frame: the canvas loads rrweb and passes what happens on it up to the studio's recorder. Sent again, the canvas sends its whole page afresh, because the studio has taken a new snapshot of its own. Nothing loads until it's asked |

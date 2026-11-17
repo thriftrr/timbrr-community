@@ -1,19 +1,19 @@
 import { z } from 'zod';
 import { defineBlock, headlineField, taglineField } from '../schema/define.js';
 
-// Retired: the Site search block under its Groves name
-// (blocks/grove_search.js) took its place, with the same data. Pages saved
+// Retired: the Site search block under its Collections name
+// (blocks/collection_search.js) took its place, with the same data. Pages saved
 // with this one keep it until the studio's convert-blocks moves them, and
 // the studio serves it as the new one in the meantime, so on the canvas it
 // draws only a note to convert the page.
 export default defineBlock({
  type: 'content_search',
  label: 'Site search (old)',
- description: 'A search box over your saplings',
+ description: 'A search box over your entries',
  category: 'dynamic',
  icon: 'search',
  retired: true,
- keywords: ['search', 'find', 'groves', 'saplings', 'results', 'look up', 'query'],
+ keywords: ['search', 'find', 'collections', 'entries', 'results', 'look up', 'query'],
  schema: z.object({
   tagline: z.string().max(80).default(''),
   headline: z.string().max(160).default(''),

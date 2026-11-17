@@ -146,7 +146,7 @@ async function keep(cache, url, status, body) {
  await cache.put(url, new Response(body, { status, headers })).catch(() => {});
 }
 
-// An old address of a sapling's: a 404 whose body says where it lives now
+// An old address of an entry's: a 404 whose body says where it lives now
 // (`data.redirect: { to, status }`). Only a path on this site is passed on.
 function redirectIn(text) {
  try {

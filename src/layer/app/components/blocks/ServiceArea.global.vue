@@ -1,6 +1,6 @@
 <script setup>
  // Where the business goes: a few lines about the area and the
- // neighborhoods (or towns) as chips, beside a drawn map with the ring they
+ // neighborhoods (or towns) as chips, beside a drawn map with the field they
  // sit in and a pin at its middle. The map is a picture, not an embed, so
  // the page never waits on a map service.
  const props = defineProps({ data: { type: Object, required: true } });
@@ -24,7 +24,7 @@
     </ul>
    </div>
    <div class="tb-service-area__map" aria-hidden="true">
-    <span class="tb-service-area__ring" />
+    <span class="tb-service-area__field" />
     <svg class="tb-service-area__pin" viewBox="0 0 24 24" width="36" height="36">
      <path d="M12 22s-7-6-7-12a7 7 0 0114 0c0 6-7 12-7 12z" />
      <circle cx="12" cy="10" r="2.5" />
@@ -78,8 +78,8 @@
   color: var(--site-heading);
  }
 
- /* The map: a street grid in a tint of the brand color, the ring the areas
-    sit in, and a pin at its middle. The ring follows the map's height, so
+ /* The map: a street grid in a tint of the brand color, the field the areas
+    sit in, and a pin at its middle. The field follows the map's height, so
     it stays round when the map is wider than tall. */
  .tb-service-area__map {
   --tb-service-area-paper: color-mix(in srgb, var(--site-surface), var(--site-bg));
@@ -97,7 +97,7 @@
   background-size: var(--tb-service-area-cell) var(--tb-service-area-cell);
  }
 
- .tb-service-area__ring {
+ .tb-service-area__field {
   position: absolute;
   top: 50%;
   left: 50%;

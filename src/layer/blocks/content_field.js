@@ -1,22 +1,22 @@
 import { z } from 'zod';
 import { defineBlock } from '../schema/define.js';
 
-// Retired: the Sapling ring (blocks/grove_ring.js) took its place, with the
-// same data under the Groves names (docs/README.md § Groves). Pages saved
+// Retired: the Entry field (blocks/collection_field.js) took its place, with the
+// same data under the Collections names (docs/README.md § Collections). Pages saved
 // with this one keep it until the studio's convert-blocks moves them, and
-// the studio serves it as a Sapling ring in the meantime, so on the canvas
+// the studio serves it as an Entry field in the meantime, so on the canvas
 // it draws only a note to convert the page. Its shape stays as it was kept.
 const NUMBERS = ['number', 'range'];
 const LINKS = ['link', 'email', 'phone', 'file'];
 
 export default defineBlock({
  type: 'content_field',
- label: 'Sapling ring (old)',
- description: 'One ring of a sapling: on its own page, or any page',
+ label: 'Entry field (old)',
+ description: 'One field of an entry: on its own page, or any page',
  category: 'dynamic',
  icon: 'text',
  retired: true,
- keywords: ['groves', 'sapling', 'ring', 'template', 'value'],
+ keywords: ['collections', 'entry', 'field', 'template', 'value'],
  schema: z.object({
   field: z.string().max(40).default('title'),
   from: z.object({ type: z.string().max(40).default(''), entry: z.string().max(64).default('') }).default({ type: '', entry: '' }),
