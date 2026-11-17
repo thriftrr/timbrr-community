@@ -212,14 +212,25 @@ export const imageSchema = z.object({
  zoom: z.number().min(1).max(4).optional(),
 });
 
+// An icon drawn by its paths: each the `d` of one path on a 24 × 24 grid,
+// drawn as a 2px stroke. Path commands, numbers and the marks between them,
+// nothing else.
+const svgPath = z
+ .string()
+ .max(2000)
+ .regex(/^[MLHVCSQTAZmlhvcsqtaz\d\s,.eE+-]+$/);
+export const iconDrawing = z.object({ name: z.string().max(60), paths: z.array(svgPath).min(1).max(24) });
+
 export const buttonSchema = z.object({
  label: z.string().max(60).default(''),
  to: z.string().max(2000).default(''),
  // 'text' is the words alone with an arrow; 'icon' is a round button that
  // shows only its icon (the label is still read out).
  style: z.enum(['solid', 'outline', 'text', 'icon']).default('solid'),
- // A key of BUTTON_ICONS (app/utils/button-icons.js), or '' for none.
- icon: z.string().max(24).default(''),
+ // A key of BUTTON_ICONS (app/utils/button-icons.js), or '' for none; or
+ // any icon from the studio's full set, carried with the paths that draw it
+ // ({ name, paths }), so a site needs no icon library of its own.
+ icon: z.union([z.string().max(24), iconDrawing]).default(''),
 });
 
 // One menu item, the NavItem the site's header and footer draw
@@ -303,8 +314,8 @@ export const buttonsField = {
   // Two fields, one stored key: a round icon button shows no words, so its
   // label is asked for as what it is there, the name a screen reader says.
   { key: 'label', label: 'Label', widget: 'text', inline: true, when: { style: { not: 'icon' } } },
-  { key: 'label', label: 'Name, read aloud', widget: 'text', when: { style: 'icon' }, help: 'Not shown. Screen readers say it, so say where the button goes.' },
-  { key: 'to', label: 'Links to', widget: 'text', link: true, placeholder: '/contact or https://…' },
+  { key: 'label', label: 'Name', widget: 'text', when: { style: 'icon' }, help: 'Not shown. Screen readers say it, so say where the button goes.' },
+  { key: 'to', label: 'Link', widget: 'text', link: true, placeholder: '/contact or https://…' },
   {
    key: 'style',
    label: 'Style',
@@ -317,14 +328,13 @@ export const buttonsField = {
     { label: 'Icon', value: 'icon' },
    ],
   },
-  ...[
-   { when: { style: { not: 'icon' } }, help: 'Sits beside the label. Pick None for words alone.' },
-   { when: { style: 'icon' }, help: 'The whole button. With None it shows an arrow.' },
-  ].map((by) => ({
+  {
    key: 'icon',
    label: 'Icon',
    widget: 'icon',
-   ...by,
+   // A studio that knows `any` searches every icon it has, beyond these,
+   // and saves the one picked as { name, paths } (buttonSchema).
+   any: true,
    // `paths` is what the studio draws each choice with.
    options: [
     ['None', ''],
@@ -339,6 +349,6 @@ export const buttonsField = {
     ['Shopping bag', 'bag'],
     ['Speech bubble', 'chat'],
    ].map(([label, value]) => ({ label, value, ...(value ? { paths: BUTTON_ICONS[value] } : {}) })),
-  })),
+  },
  ],
 };
