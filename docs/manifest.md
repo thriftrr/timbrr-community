@@ -169,8 +169,17 @@ know it draws the segments.
 A button (`buttonSchema`) has a `style` of `solid`, `outline`, `text` (the
 words alone with an arrow) or `icon` (a round button that shows only its
 icon; the label is still read out), and an `icon`: a key of `BUTTON_ICONS`
-(`app/utils/button-icons.js`) or `''`. `TbButton` draws the icon beside the
-label, and alone for the icon style (an arrow when none is picked).
+(`app/utils/button-icons.js`), `''`, or `{ name, paths }` (`iconDrawing`):
+any icon from the studio's full set, carried with the paths that draw it.
+`TbButton` draws the icon beside the label, and alone for the icon style (an
+arrow when none is picked).
+
+An `icon` field may say `any: true` (the shared `buttonsField`'s does): the
+studio then searches every icon it has, not just the field's options, and
+saves an icon from beyond them as `{ name, paths }`. So the schema behind an
+`any` field must take that shape too. A studio that doesn't know it offers
+the options alone. **The layer that sends `any` needs a schema that takes
+`{ name, paths }`; the studio can deploy before or after it.**
 
 A definition may list `without: [...]`: look fields (`background`,
 `spacing`, `divider`) the block has no use for. The key stays in its data;
