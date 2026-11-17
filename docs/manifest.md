@@ -504,7 +504,12 @@ The studio uses it twice, each with a frame of its own. The tray's hover
 preview sends one block, `{ id: 'preview', type, hidden: false, data }`
 with the block's defaults, and `mode: 'full'`, in one frame it keeps for
 the page view; before each new block it shrinks the frame to measure the
-next one, so blocks mustn't size themselves by the viewport (`vh`). The
+next one, so blocks mustn't size themselves by the viewport (`vh`, `svh`,
+`dvh`). A block that should be a screen tall uses `var(--tb-screen, 100svh)`
+instead: the site leaves `--tb-screen` unset, so it's the window's height
+there, and every canvas whose frame follows its page (not a window
+preview) sets it to 800px (site.css), so the page can't grow its own
+frame without end. The
 builder's Preview sends the page without its hidden blocks, the `site`
 (with the page's `frame`), `mode: 'render'` and `editable: false`. It
 asks for `?preview=1&window=1`: its frame is a fixed window (the device's

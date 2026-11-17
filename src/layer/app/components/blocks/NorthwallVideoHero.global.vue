@@ -87,13 +87,14 @@
 <style>
  /* The block is the screen: its height is the window's, less nothing, and
     never so short the words crowd. The site's dark color is under it all,
-    so it reads before anything loads. */
+    so it reads before anything loads. On the canvas a screen is a fixed
+    height (--tb-screen, site.css). */
  .tb-section.nw-vhero {
   position: relative;
   isolation: isolate;
   display: flex;
   align-items: center;
-  min-height: max(520px, 100svh);
+  min-height: max(520px, var(--tb-screen, 100svh));
   padding-block: calc(var(--site-space) * 1.2 + var(--tb-header-height, 0px)) calc(var(--site-space) * 1.2 + var(--nw-vhero-ridge, 0px));
   overflow: hidden;
   background: var(--site-dark);
@@ -287,12 +288,6 @@
 
  .tb-frame .nw-vhero__text > * {
   pointer-events: auto;
- }
-
- /* The canvas is taller than a screen, so full screen there is a fixed
-    height that still looks like one. */
- .tb-frame .tb-section.nw-vhero--full {
-  min-height: 680px;
  }
 
  @media (prefers-reduced-motion: reduce) {

@@ -48,18 +48,18 @@
     corners, the other service's own page inside. */
  .tb-embed__stage {
   overflow: hidden;
-  height: min(640px, 85svh);
+  height: min(640px, calc(var(--tb-screen, 100svh) * 0.85));
   border: 1px solid var(--site-border);
   border-radius: var(--site-radius);
   background: var(--site-surface);
  }
 
  .tb-embed--short .tb-embed__stage {
-  height: min(420px, 85svh);
+  height: min(420px, calc(var(--tb-screen, 100svh) * 0.85));
  }
 
  .tb-embed--tall .tb-embed__stage {
-  height: min(900px, 85svh);
+  height: min(900px, calc(var(--tb-screen, 100svh) * 0.85));
  }
 
  .tb-embed__stage--still {

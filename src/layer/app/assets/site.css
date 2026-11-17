@@ -468,6 +468,16 @@ html[data-timbrr-canvas][data-timbrr-window] body {
  overflow: visible;
 }
 
+/* A screen's height. A block that would size itself by the window (vh,
+   svh, dvh) uses var(--tb-screen, 100svh) instead: the site leaves it unset,
+   so the window's height it is. A frame that grows to fit its page has no
+   window height of its own (it's the page's), and a block sized by it would
+   grow the page, then the frame, then the block again, without end. There
+   it's a laptop screen's height. A window preview is a real window. */
+html[data-timbrr-canvas]:not([data-timbrr-window]) {
+ --tb-screen: 800px;
+}
+
 /* The page as the studio measures it: a box of its own, so nothing's
    margins slip out of the count. */
 .tb-canvas {
