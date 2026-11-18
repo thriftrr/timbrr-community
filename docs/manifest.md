@@ -62,6 +62,8 @@ For a particular kind of value:
 | `code` | a pasted snippet, as text | `placeholder` |
 | `hours` | a week of opening hours, as the site's details keep them: seven rows, Monday first, each `{ closed, open, close }`; `[]` while unset | |
 | `table` | a grid of cells: `{ align, rows, header_row, header_col }` (`tableSchema` in `schema/define.js`; below) | |
+| `shop_product` | a product in the site's connected Shopify store: its handle, `''` while unset. The studio's picker searches the store | |
+| `shop_collection` | a Shopify collection in that store: its handle, `''` while unset, picked the same way | |
 
 **A table** keeps `rows` top to bottom, each a list of cells left to right
 with one for every column: `{ text, colspan?, rowspan? }`. A merged cell is
@@ -249,7 +251,7 @@ same-site paths). Nothing a page holds becomes markup.
   { "name": "bur-oak-site", "version": "0.0.0", "tier": "private" },
   { "name": "@timbrr/community", "version": "0.1.0", "tier": "community" }
  ],
- "widgets": ["text", "textarea", "html", "select", "buttons", "items", "image", "nav", "switch", "group", "form", "stepper", "number", "range", "date", "time", "checks", "color", "icon", "tags", "code", "hours", "table", "collection", "collection_field", "content", "content_field"],
+ "widgets": ["text", "textarea", "html", "select", "buttons", "items", "image", "nav", "switch", "group", "form", "stepper", "number", "range", "date", "time", "checks", "color", "icon", "tags", "code", "hours", "table", "collection", "collection_field", "shop_product", "shop_collection", "content", "content_field"],
  "blocks": [
   {
    "type": "hours", "tier": "base", "owner": null, "layer": "@timbrr/community",
