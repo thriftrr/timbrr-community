@@ -55,7 +55,7 @@ page. The studio (`make up` in thriftrr/timbrr, on :3000) uses
 Timbrr's own library is 15 Core blocks, 7 Advanced ones a site turns on, the
 site's header and footer, and 24 retired blocks on their way out. The type is
 the file name in `blocks/` and the block's icon in the studio. Every block can
-also set its background, spacing and a line above it (Section, Spacer and
+also set its background, the space above and below it, and a line above it (Section, Spacer and
 Divider's old jobs), and a retired block's name is a preset of what replaced
 it, so searching the tray still finds it. Why, and how pages move over:
 `docs/blocks.md` in the timbrr repo.

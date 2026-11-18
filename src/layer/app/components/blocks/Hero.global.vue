@@ -109,7 +109,7 @@
   display: flex;
   align-items: center;
   min-height: clamp(440px, 52vw, 680px);
-  padding-block: calc(var(--site-space) * 1.4 + var(--tb-header-height, 0px)) calc(var(--site-space) * 1.4);
+  padding-block: calc(var(--site-space-above, var(--site-space)) * 1.4 + var(--tb-header-height, 0px)) calc(var(--site-space-below, var(--site-space)) * 1.4);
   overflow: hidden;
   background: var(--site-dark);
  }

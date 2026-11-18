@@ -68,7 +68,7 @@
 <style>
  /* A row of names sits a little tighter in the page than a full section. */
  .tb-section.tb-logos {
-  padding-block: calc(var(--site-space) * 0.75);
+  padding-block: calc(var(--site-space-above, var(--site-space)) * 0.75) calc(var(--site-space-below, var(--site-space)) * 0.75);
   text-align: center;
  }
 
