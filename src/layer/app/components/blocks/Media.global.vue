@@ -12,13 +12,20 @@
  const video = computed(() => (props.data.kind === 'video' ? safeSrc(props.data.video_url) : undefined));
  const player = computed(() => (props.data.kind === 'embed' ? embedSrc(props.data.embed_url) : undefined));
  const outLink = computed(() => (props.data.kind === 'embed' && !player.value ? safeHref(props.data.embed_url) : undefined));
+ const captions = computed(() => (video.value ? safeSrc(props.data.captions_url) : undefined));
+ const transcript = computed(() => (video.value ? safeHref(props.data.transcript_url) : undefined));
+ const site = useTimbrrSite();
+ const language = computed(() => site?.value?.language || 'en');
 </script>
 
 <template>
  <section class="tb-section tb-media" :class="`tb-media--${data.width}`">
   <figure class="tb-media__figure" :class="{ 'tb-wrap': data.width !== 'wide' }">
    <div v-if="video || player" class="tb-media__stage" :class="{ 'tb-media__stage--still': canvas }">
-    <video v-if="video" :src="video" :poster="safeSrc(data.image.src)" controls playsinline preload="metadata" class="tb-media__player"></video>
+    <!-- crossorigin only with captions: a track from another address needs it, and a video from a server that doesn't allow it would stop playing. -->
+    <video v-if="video" :src="video" :poster="safeSrc(data.image.src)" :crossorigin="captions ? 'anonymous' : undefined" controls playsinline preload="metadata" class="tb-media__player">
+     <track v-if="captions" kind="captions" :src="captions" :srclang="language" label="Captions" default />
+    </video>
     <iframe
      v-else
      :src="player"
@@ -30,6 +37,9 @@
     ></iframe>
    </div>
    <TbImage v-else :image="data.image" field="image" ratio="16 / 9" class="tb-media__image" />
+   <p v-if="transcript" class="tb-media__out" :class="{ 'tb-wrap': data.width === 'wide' }">
+    <a :href="transcript" rel="noopener">Read the transcript</a>
+   </p>
    <p v-if="outLink" class="tb-media__out" :class="{ 'tb-wrap': data.width === 'wide' }">
     <a :href="outLink" rel="noopener">Watch the video</a>
    </p>

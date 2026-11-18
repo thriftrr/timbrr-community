@@ -4,11 +4,17 @@
  // canvas, hidden blocks still show (faded) and unknown ones say so.
  import { definitions } from '#timbrr/blocks';
 
- defineProps({
+ const props = defineProps({
   blocks: { type: Array, default: () => [] },
  });
 
  const canvas = useCanvas();
+ // Which block draws the page's h1 (useHeadingTag): none inside another TbBlocks, a repeat's cells.
+ const nested = inject(H1_KEY, null) !== null;
+ provide(
+  H1_KEY,
+  computed(() => (nested ? '' : (props.blocks.find((block) => (canvas || !block.hidden) && wantsH1(block))?.id ?? ''))),
+ );
  const byType = new Map(definitions.map(({ def }) => [def.type, def]));
 </script>
 
