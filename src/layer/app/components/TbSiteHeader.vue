@@ -308,7 +308,7 @@
   <header
    ref="bar"
    class="tb-site-header"
-   :class="[`tb-site-header--${layout}`, `tb-site-header--menu-${header.menuAt ?? 'left'}`, `tb-site-header--phone-${header.phone.style}`, { 'is-live': live, 'is-clear': clear, 'is-away': away, 'is-crowded': crowded }]"
+   :class="[`tb-site-header--${layout}`, `tb-site-header--menu-${header.menuAt ?? 'left'}`, `tb-site-header--phone-${header.phone.style}`, `tb-site-header--bg-${header.look.background}`, `tb-site-header--height-${header.look.height}`, `tb-site-header--edge-${header.look.edge}`, `tb-site-header--cta-${header.look.button}`, `tb-site-header--logo-${header.look.logo}`, { 'is-live': live, 'is-clear': clear, 'is-away': away, 'is-crowded': crowded }]"
    @click="onClick"
    @focusin="hidden = false"
   >
@@ -1425,5 +1425,90 @@
   .tb-site-header.is-crowded .tb-site-header__pins {
    display: flex;
   }
+ }
+
+ /* The look (headerSchema `look`): the bar's background, height, edge,
+    button and logo size, drawn on the site's own variables so nothing can
+    clash with Branding. See-through over the hero wins while it lasts. */
+ .tb-site-header--height-compact .tb-site-header__bar {
+  min-height: 56px;
+  padding-block: 8px;
+ }
+
+ .tb-site-header--height-roomy .tb-site-header__bar {
+  min-height: 84px;
+  padding-block: 18px;
+ }
+
+ .tb-site-header--edge-none:not(.is-clear),
+ .tb-site-header--edge-shadow:not(.is-clear) {
+  border-bottom-color: transparent;
+ }
+
+ .tb-site-header--edge-shadow:not(.is-clear) {
+  box-shadow: 0 2px 14px color-mix(in srgb, var(--site-heading) 10%, transparent);
+ }
+
+ .tb-site-header--logo-small .tb-site-header__logo {
+  height: 32px;
+ }
+
+ .tb-site-header--logo-large .tb-site-header__logo {
+  max-width: 240px;
+  height: 52px;
+ }
+
+ .tb-site-header--cta-outline .tb-site-header__cta {
+  box-shadow: inset 0 0 0 1.5px currentColor;
+  background: transparent;
+  color: var(--site-heading);
+ }
+
+ .tb-site-header--bg-brand {
+  --tb-look-bg: var(--site-accent);
+  --tb-look-ink: var(--site-accent-ink);
+ }
+
+ .tb-site-header--bg-dark {
+  --tb-look-bg: var(--site-dark);
+  --tb-look-ink: var(--site-dark-ink);
+ }
+
+ /* The page's own colors are kept for what opens out of the bar: the
+    dropdowns and the phone menu stay on the page's background. */
+ :is(.tb-site-header--bg-brand, .tb-site-header--bg-dark):not(.is-clear) {
+  --tb-page-accent: var(--site-accent);
+  --tb-page-accent-ink: var(--site-accent-ink);
+  --tb-page-heading: var(--site-heading);
+  --tb-page-body: var(--site-body);
+  --tb-page-muted: var(--site-muted);
+  --tb-page-border: var(--site-border);
+  --tb-page-surface: var(--site-surface);
+  background: var(--tb-look-bg);
+ }
+
+ :is(.tb-site-header--bg-brand, .tb-site-header--bg-dark):not(.is-clear) :is(.tb-site-header__bar, .tb-site-header__utility) {
+  --site-heading: var(--tb-look-ink);
+  --site-body: var(--tb-look-ink);
+  --site-muted: color-mix(in srgb, var(--tb-look-ink) 78%, transparent);
+  --site-border: color-mix(in srgb, var(--tb-look-ink) 25%, transparent);
+  --site-surface: color-mix(in srgb, var(--tb-look-ink) 12%, transparent);
+ }
+
+ /* On the brand color the button can't be the brand color too: it turns
+    over, ink for its background and the brand color for its words. */
+ .tb-site-header--bg-brand:not(.is-clear) .tb-site-header__bar {
+  --site-accent: var(--tb-look-ink);
+  --site-accent-ink: var(--tb-look-bg);
+ }
+
+ :where(.tb-site-header--bg-brand, .tb-site-header--bg-dark):not(.is-clear) :where(.tb-site-header__panel, .tb-site-header__sheet) {
+  --site-accent: var(--tb-page-accent);
+  --site-accent-ink: var(--tb-page-accent-ink);
+  --site-heading: var(--tb-page-heading);
+  --site-body: var(--tb-page-body);
+  --site-muted: var(--tb-page-muted);
+  --site-border: var(--tb-page-border);
+  --site-surface: var(--tb-page-surface);
  }
 </style>

@@ -430,14 +430,35 @@
   }
  }
 
+ // The header section a click on the stage belongs to, by what it hit; the
+ // bar's own background is its look. The phone menu's toggle is none.
+ const HEADER_PARTS = [
+  ['.tb-site-header__notice, .tb-site-header__utility', 'announce'],
+  ['.tb-site-header__name', 'logo'],
+  ['.tb-site-header__nav', 'menu'],
+  ['.tb-site-header__cta, .tb-site-header__icons', 'buttons'],
+  ['.tb-site-header__menu', ''],
+  ['.tb-site-header', 'look'],
+ ];
+ function headerPart(target) {
+  const found = HEADER_PARTS.find(([selector]) => target.closest?.(selector));
+  return found?.[1] ?? '';
+ }
+
  // Links never take the canvas anywhere. Clicking a block selects it, and
  // clicking anywhere else selects nothing. A click on the header or footer
  // also says which it was, and one on an image which field it is, for the
  // studio to open. The stage has nothing to select, and the studio's panel
- // stays open.
+ // stays open: a click there says which part of the header it landed on, so
+ // the panel can open that part's section.
  function onClick(event) {
   if (event.target.closest?.('a')) event.preventDefault();
-  if (preview || staged.value) return;
+  if (preview) return;
+  if (staged.value) {
+   const part = headerPart(event.target);
+   if (part) post({ type: 'timbrr:part', id: staged.value.id, part });
+   return;
+  }
   const frame = event.target.closest?.('[data-block-id]');
   const id = frame?.dataset.blockId ?? null;
   selected.value = id;
