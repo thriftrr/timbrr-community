@@ -80,7 +80,7 @@
        <h3 class="tb-shop-card__title">
         <a :href="chooseHref(product)" :aria-expanded="open === index" @click.prevent="choose(index)">{{ product.title }}</a>
        </h3>
-       <p class="tb-shop-card__price">{{ priceOf(product) }}</p>
+       <p class="tb-shop-card__price">{{ priceOf(product) }}<span v-if="shopVariantNote(product)" class="tb-shop-card__note">{{ shopVariantNote(product) }}</span></p>
        <div v-if="open !== index" class="tb-shop-card__actions">
         <button v-if="!product.available" type="button" class="tb-button tb-shop-card__sold" disabled>Sold out</button>
         <a v-else-if="product.variants.length > 1" :href="chooseHref(product)" class="tb-button tb-button--outline tb-shop-card__choose" @click.prevent="choose(index)">Choose</a>
@@ -195,6 +195,13 @@
   font-size: 15px;
   font-weight: 700;
   color: var(--site-heading);
+ }
+
+ .tb-shop-card__note {
+  margin-left: 8px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--site-muted);
  }
 
  /* Pinned to the foot, so a row's buttons line up whatever the titles. */

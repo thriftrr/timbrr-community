@@ -184,6 +184,15 @@ export function shopRange(product) {
 
 // The variant to start on: the one named in the address when it's still in
 // stock, or else the first in stock, or else the first.
+// The card's small line beside the price: "3 colors" when the one choice
+// has a plain one-word name, else "3 options"; one variant says nothing.
+export function shopVariantNote(product) {
+ const count = product?.variants?.length ?? 0;
+ if (count < 2) return '';
+ const name = product.choice.toLowerCase();
+ return `${count} ${/^[a-z]+$/.test(name) ? (name.endsWith('s') ? name : `${name}s`) : 'options'}`;
+}
+
 export function shopStartVariant(product, wanted) {
  const variants = product?.variants ?? [];
  return variants.find((variant) => variant.id === wanted && variant.available) ?? variants.find((variant) => variant.available) ?? variants[0] ?? null;

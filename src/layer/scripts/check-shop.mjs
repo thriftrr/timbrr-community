@@ -2,7 +2,7 @@
 // against recorded Storefront answers, with no network, build or Vue:
 //   node layer/scripts/check-shop.mjs
 import { deepEqual, equal, ok } from 'node:assert/strict';
-import { shopAnswer, shopCheckout, shopConfig, shopMoney, shopRange, shopReturnPath, shopStartVariant } from '../app/utils/shop.js';
+import { shopAnswer, shopCheckout, shopConfig, shopMoney, shopRange, shopReturnPath, shopStartVariant, shopVariantNote } from '../app/utils/shop.js';
 
 // Recorded Storefront answers, trimmed to what the queries ask for.
 const variant = (id, title, amount, availableForSale = true) => ({ id: `gid://shopify/ProductVariant/${id}`, title, availableForSale, price: { amount, currencyCode: 'USD' } });
@@ -83,6 +83,9 @@ const sold = (await shopAnswer(shop, 'product', { handle: 'bread-class' })).prod
 equal(sold.available, false);
 equal(sold.choice, '');
 equal(shopRange(sold), '$65');
+equal(shopVariantNote({ choice: 'Color', variants: [{}, {}] }), '2 colors');
+equal(shopVariantNote({ choice: 'Size / Color', variants: [{}, {}, {}] }), '3 options');
+equal(shopVariantNote({ choice: '', variants: [{}] }), '');
 equal(shopStartVariant(sold).id, 'gid://shopify/ProductVariant/201');
 // The first in stock is where a product starts.
 equal(shopStartVariant({ variants: [{ id: 'a', available: false }, { id: 'b', available: true }] }).id, 'b');
