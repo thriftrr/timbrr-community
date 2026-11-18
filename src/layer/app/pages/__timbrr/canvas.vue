@@ -444,6 +444,18 @@
   const found = HEADER_PARTS.find(([selector]) => target.closest?.(selector));
   return found?.[1] ?? '';
  }
+ // What exactly was clicked, for the studio's small box beside it: a menu
+ // item (`item`, its place in the menu), a button (`button`, primary or
+ // secondary), the logo or the announcement, and where it is in this frame.
+ function headerTarget(target) {
+  const el = target.closest?.('[data-tb-item], [data-tb-button], .tb-site-header__name, .tb-site-header__notice');
+  if (!el) return {};
+  const box = el.getBoundingClientRect();
+  const rect = { x: Math.round(box.left), y: Math.round(box.top), width: Math.round(box.width), height: Math.round(box.height) };
+  if (el.dataset.tbItem !== undefined) return { item: Number(el.dataset.tbItem), rect };
+  if (el.dataset.tbButton) return { button: el.dataset.tbButton, rect };
+  return { rect };
+ }
 
  // Links never take the canvas anywhere. Clicking a block selects it, and
  // clicking anywhere else selects nothing. A click on the header or footer
@@ -456,7 +468,7 @@
   if (preview) return;
   if (staged.value) {
    const part = headerPart(event.target);
-   if (part) post({ type: 'timbrr:part', id: staged.value.id, part });
+   if (part) post({ type: 'timbrr:part', id: staged.value.id, part, ...headerTarget(event.target) });
    return;
   }
   const frame = event.target.closest?.('[data-block-id]');

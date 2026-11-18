@@ -60,14 +60,15 @@
   return { src, alt: image.alt || name.value, width: image.width, height: image.height, srcset: image.width ? mediaSrcset(src, image.width) : '' };
  });
 
+ // `at` is where the item is in the header's own menu, for the studio's stage.
  const items = computed(() =>
-  named(header.value?.menu).map((item) => {
+  (header.value?.menu ?? []).map((item, at) => ({ item, at })).filter(({ item }) => named([item]).length).map(({ item, at }) => {
    const children = item.layout === 'link' ? [] : named(item.children).map(linked);
    const kind = !children.length ? 'link' : item.layout === 'mega' ? 'mega' : 'dropdown';
    // What a big menu holds beside its links (schema/frames.js, navItem).
    const feature = kind === 'mega' && item.feature ? { ...item.feature, link: linkTo(item.feature), src: safeSrc(item.feature.image?.src) } : null;
    const button = kind === 'mega' && item.button ? { ...item.button, link: linkTo(item.button) } : null;
-   return { ...linked(item), kind, children, columns: kind === 'mega' ? megaColumns(children) : [], feature, button };
+   return { ...linked(item), at, kind, children, columns: kind === 'mega' ? megaColumns(children) : [], feature, button };
   }),
  );
  const announce = computed(() => {
@@ -358,6 +359,7 @@
        v-for="(item, index) in items"
        :key="index"
        class="tb-site-header__item"
+       :data-tb-item="item.at"
        :class="{ 'is-open': open === index, 'tb-site-header__item--mega': item.kind === 'mega' }"
        @pointerenter="pointerIn($event, index)"
        @pointerleave="pointerOut($event, index)"
@@ -424,8 +426,8 @@
     </div>
 
     <div v-if="primary || (secondary && layout !== 'button')" class="tb-site-header__buttons">
-     <component :is="secondary.link.is" v-if="secondary && layout !== 'button'" :to="secondary.link.to" :href="secondary.link.href" class="tb-site-header__cta tb-site-header__cta--outline">{{ secondary.label }}</component>
-     <component :is="primary.link.is" v-if="primary" :to="primary.link.to" :href="primary.link.href" class="tb-site-header__cta">{{ primary.label }}</component>
+     <component :is="secondary.link.is" v-if="secondary && layout !== 'button'" :to="secondary.link.to" :href="secondary.link.href" data-tb-button="secondary" class="tb-site-header__cta tb-site-header__cta--outline">{{ secondary.label }}</component>
+     <component :is="primary.link.is" v-if="primary" :to="primary.link.to" :href="primary.link.href" data-tb-button="primary" class="tb-site-header__cta">{{ primary.label }}</component>
     </div>
 
     <div v-if="anyPin" class="tb-site-header__pins">
@@ -511,8 +513,8 @@
          <component :is="icon.link.is" :to="icon.link.to" :href="icon.link.href" class="tb-site-header__sheet-link">{{ icon.text ?? icon.label }}</component>
         </li>
        </ul>
-       <component :is="secondary.link.is" v-if="secondary" :to="secondary.link.to" :href="secondary.link.href" class="tb-site-header__cta tb-site-header__cta--outline tb-site-header__cta--wide">{{ secondary.label }}</component>
-       <component :is="primary.link.is" v-if="primary && layout !== 'button'" :to="primary.link.to" :href="primary.link.href" class="tb-site-header__cta tb-site-header__cta--wide">{{ primary.label }}</component>
+       <component :is="secondary.link.is" v-if="secondary" :to="secondary.link.to" :href="secondary.link.href" data-tb-button="secondary" class="tb-site-header__cta tb-site-header__cta--outline tb-site-header__cta--wide">{{ secondary.label }}</component>
+       <component :is="primary.link.is" v-if="primary && layout !== 'button'" :to="primary.link.to" :href="primary.link.href" data-tb-button="primary" class="tb-site-header__cta tb-site-header__cta--wide">{{ primary.label }}</component>
       </div>
      </div>
     </details>
