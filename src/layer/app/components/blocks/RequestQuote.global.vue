@@ -97,7 +97,7 @@
  }
 
  /* Quiet boxes with the hint inside, as in the design; the brand color
-    rings the one being typed in. 16px type, so phones don't zoom in. */
+    fields the one being typed in. 16px type, so phones don't zoom in. */
  .tb-request-quote__control {
   display: block;
   width: 100%;

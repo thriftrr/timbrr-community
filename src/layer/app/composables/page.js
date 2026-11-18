@@ -184,7 +184,7 @@ export async function useTimbrrPage(path) {
   window.location.reload();
   return new Promise(() => {});
  }
- // An old address of a sapling's: the studio says where it lives now (a
+ // An old address of an entry's: the studio says where it lives now (a
  // 301 on the server, a plain move in the browser). Only a path on this
  // site is followed; anything else is the 404 it came with.
  const moved = fetched.error.value?.statusCode === 404 ? fetched.error.value.data?.data?.redirect?.to : null;

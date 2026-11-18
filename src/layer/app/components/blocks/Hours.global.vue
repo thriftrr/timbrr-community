@@ -55,7 +55,7 @@
   margin-top: 0;
  }
 
- /* The status: a soft pill in the brand color, with a dot that has a ring. */
+ /* The status: a soft pill in the brand color, with a dot that has a field. */
  .tb-hours__status {
   display: flex;
   align-items: center;

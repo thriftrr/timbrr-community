@@ -1,6 +1,6 @@
 <script setup>
- // A Gallery ring's value: its pictures in order, as a grid. A picture
- // sent as its address alone (the ring's "what the site gets") is drawn
+ // A Gallery field's value: its pictures in order, as a grid. A picture
+ // sent as its address alone (the field's "what the site gets") is drawn
  // from that address.
  const props = defineProps({
   value: { type: Array, required: true },
@@ -10,7 +10,7 @@
 </script>
 
 <template>
- <ul class="tb-ring-gallery">
+ <ul class="tb-field-gallery">
   <li v-for="(image, at) in images" :key="`${image.src}-${at}`">
    <TbImage :image="image" :ratio="ratio" sizes="(min-width: 720px) 360px, 50vw" />
   </li>
@@ -18,7 +18,7 @@
 </template>
 
 <style>
- .tb-ring-gallery {
+ .tb-field-gallery {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr));
   gap: 12px;
@@ -27,7 +27,7 @@
   list-style: none;
  }
 
- .tb-ring-gallery li {
+ .tb-field-gallery li {
   overflow: hidden;
   border-radius: var(--site-radius);
  }

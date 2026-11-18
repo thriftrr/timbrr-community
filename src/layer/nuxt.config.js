@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 // the studio. A site extends this layer and adds its own theme (and, if it
 // has them, its own blocks).
 export default defineNuxtConfig({
- modules: [fileURLToPath(new URL('./modules/blocks.js', import.meta.url)), fileURLToPath(new URL('./modules/grove-hooks.js', import.meta.url))],
+ modules: [fileURLToPath(new URL('./modules/blocks.js', import.meta.url)), fileURLToPath(new URL('./modules/collection-hooks.js', import.meta.url))],
  css: [fileURLToPath(new URL('./app/assets/site.css', import.meta.url))],
  runtimeConfig: {
   // NUXT_TIMBRR_API: the studio this site's published pages come from.
@@ -26,7 +26,7 @@ export default defineNuxtConfig({
    relaySecret: '',
    // NUXT_TIMBRR_API_KEY: one of the site's API keys (Site settings →
    // Developers), for the site's server to call the studio's developer API,
-   // e.g. checkRingPassword (server/utils/timbrr-api.js). Never sent to a browser.
+   // e.g. checkFieldPassword (server/utils/timbrr-api.js). Never sent to a browser.
    apiKey: '',
   },
   public: {

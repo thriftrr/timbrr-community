@@ -78,8 +78,8 @@
    const canvas = useCanvas();
    const scope = useBlockScope();
    const editable = computed(() => Boolean(canvas?.editable.value && scope && props.field));
-   // The document as it's kept, for the editor: in a grove's template
-   // what's drawn has `{tokens}` filled in (composables/groves.js).
+   // The document as it's kept, for the editor: in a collection's template
+   // what's drawn has `{tokens}` filled in (composables/collections.js).
    const kept = useKeptValue(props);
    const editing = computed(() => {
     const active = canvas?.active.value;

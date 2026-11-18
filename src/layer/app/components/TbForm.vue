@@ -358,7 +358,7 @@
   color: var(--site-muted);
  }
 
- /* Quiet boxes with the hint inside; the brand color rings the one being
+ /* Quiet boxes with the hint inside; the brand color fields the one being
     typed in. 16px type, so phones don't zoom in. */
  .tb-form__control {
   display: block;
