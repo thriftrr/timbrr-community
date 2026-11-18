@@ -48,7 +48,7 @@
 <style>
  /* A photo sits a little tighter in the page than a section of text. */
  .tb-section.tb-media {
-  padding-block: calc(var(--site-space) * 0.75);
+  padding-block: calc(var(--site-space-above, var(--site-space)) * 0.75) calc(var(--site-space-below, var(--site-space)) * 0.75);
  }
 
  .tb-media__figure {

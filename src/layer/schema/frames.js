@@ -21,6 +21,9 @@ const iconShape = z.object({ on, to: address }).default({ on: false, to: '' });
 
 export const headerSchema = z.object({
  layout: z.enum(['left', 'center', 'button']).default('left'),
+ // Never saved: the studio's hover preview of a phone menu style sets it, to
+ // draw the menu open (FB-111).
+ showMenu: z.boolean().optional(),
  // Where the menu sits on the bar when the logo is on the left: straight
  // after the logo, in the middle, or on the right beside the buttons.
  menuAt: z.enum(['left', 'center', 'right']).default('left'),

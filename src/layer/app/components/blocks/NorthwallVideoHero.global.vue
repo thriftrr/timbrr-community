@@ -95,7 +95,7 @@
   display: flex;
   align-items: center;
   min-height: max(520px, var(--tb-screen, 100svh));
-  padding-block: calc(var(--site-space) * 1.2 + var(--tb-header-height, 0px)) calc(var(--site-space) * 1.2 + var(--nw-vhero-ridge, 0px));
+  padding-block: calc(var(--site-space-above, var(--site-space)) * 1.2 + var(--tb-header-height, 0px)) calc(var(--site-space-below, var(--site-space)) * 1.2 + var(--nw-vhero-ridge, 0px));
   overflow: hidden;
   background: var(--site-dark);
  }
