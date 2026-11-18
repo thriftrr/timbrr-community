@@ -170,7 +170,8 @@ export async function shopCheckout(shop, form, options) {
 export function shopMoney(amount, currency = 'USD', short = false) {
  const whole = short && Number.isInteger(amount);
  try {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency, minimumFractionDigits: whole ? 0 : 2, maximumFractionDigits: whole ? 0 : 2 }).format(amount);
+  // The currency's own decimals (¥1,000, not ¥1,000.00) unless `short` drops them.
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency, ...(whole ? { minimumFractionDigits: 0, maximumFractionDigits: 0 } : {}) }).format(amount);
  } catch {
   return `${amount.toFixed(whole ? 0 : 2)} ${currency}`;
  }

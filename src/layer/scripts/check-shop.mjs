@@ -70,6 +70,8 @@ equal(shopRange(read.product), '$25 – $100');
 equal(shopMoney(50, 'USD'), '$50.00');
 equal(shopMoney(50, 'USD', true), '$50');
 equal(shopMoney(12.5, 'USD', true), '$12.50');
+equal(shopMoney(1000, 'JPY'), '¥1,000');
+equal(shopMoney(1.5, 'KWD'), 'KWD 1.500');
 equal(shopStartVariant(read.product, 'gid://shopify/ProductVariant/102').id, 'gid://shopify/ProductVariant/102');
 
 // No Buyer-IP header without a visitor's address (the canvas, in a browser).
