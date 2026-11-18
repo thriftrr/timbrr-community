@@ -13,6 +13,8 @@
 // the browser alike.
 
 const HEX = /^#[0-9a-f]{6}$/i;
+// A BCP 47 tag, as the studio's Settings stores it (sites.seo.language): <html lang>, WCAG 3.1.1.
+const LANGUAGE = /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/i;
 const DOMAIN = /^(?=.{4,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i;
 const LOCAL = /^(?:localhost|127\.0\.0\.1|\[::1\])$/;
 
@@ -49,6 +51,7 @@ export async function useTimbrrPage(path) {
    details: value.details && typeof value.details === 'object' ? value.details : null,
    brand: normalizeBrand(value.brand),
    overHero: isHeroBleed(blocks.value[0]),
+   language: LANGUAGE.test(value.language ?? '') ? value.language : 'en',
   };
  });
  // On a dev or staging address (the note the server writes says it is one),
@@ -152,7 +155,7 @@ export async function useTimbrrPage(path) {
  });
 
  useHead({
-  htmlAttrs: { lang: 'en' },
+  htmlAttrs: { lang: () => site.value.language },
   link: () => (head.value.canonical ? [{ rel: 'canonical', href: head.value.canonical }] : []),
  });
  useSeoMeta({

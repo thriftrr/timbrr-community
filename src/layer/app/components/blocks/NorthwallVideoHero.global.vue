@@ -38,6 +38,7 @@
  onMounted(() => {
   if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) play();
  });
+ const headingTag = useHeadingTag(); // the page's one h1, or an h2 that looks the same
 </script>
 
 <template>
@@ -64,7 +65,7 @@
    <div class="tb-wrap">
     <div class="nw-vhero__text">
      <TbText v-if="shows('tagline', data.tagline)" :data="data" field="tagline" tag="p" class="tb-eyebrow" />
-     <TbText :data="data" field="headline" tag="h1" class="nw-vhero__headline" />
+     <TbText :data="data" field="headline" :tag="headingTag" class="nw-vhero__headline" />
      <TbRich v-if="shows('description', data.description)" :data="data" field="description" class="nw-vhero__description" />
      <div v-if="buttons.length" class="tb-buttons">
       <TbButton v-for="index in buttons" :key="index" :data="data" :field="`buttons.${index}`" />
