@@ -108,7 +108,7 @@
   min-width: 0;
   height: calc(1.4em + 24px);
   margin: 0;
-  border: 1px solid color-mix(in srgb, var(--site-muted) 12%, var(--site-border));
+  border: 1px solid var(--site-muted);
   border-radius: var(--site-control-radius);
   padding: 11px 14px;
   background: var(--site-bg);
@@ -128,7 +128,7 @@
  }
 
  .tb-text-club__input:hover {
-  border-color: color-mix(in srgb, var(--site-muted) 40%, var(--site-border));
+  border-color: var(--site-body);
  }
 
  .tb-text-club__input:focus {

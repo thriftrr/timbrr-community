@@ -103,7 +103,7 @@
   width: 100%;
   min-width: 0;
   margin: 0;
-  border: 1px solid color-mix(in srgb, var(--site-muted) 12%, var(--site-border));
+  border: 1px solid var(--site-muted);
   border-radius: var(--site-control-radius);
   padding: 11px 14px;
   background: var(--site-bg);
@@ -122,7 +122,7 @@
  }
 
  .tb-request-quote__control:hover {
-  border-color: color-mix(in srgb, var(--site-muted) 40%, var(--site-border));
+  border-color: var(--site-body);
  }
 
  .tb-request-quote__control:focus {
@@ -176,7 +176,7 @@
   position: relative;
   grid-column: 1 / -1;
   display: block;
-  border: 1.5px dashed color-mix(in srgb, var(--site-muted) 28%, var(--site-border));
+  border: 1.5px dashed var(--site-muted);
   border-radius: var(--site-control-radius);
   padding: 18px 14px;
   font-size: 15px;
@@ -190,7 +190,7 @@
  }
 
  .tb-request-quote__photos:hover {
-  border-color: color-mix(in srgb, var(--site-muted) 55%, var(--site-border));
+  border-color: var(--site-body);
   background: var(--site-surface);
  }
 

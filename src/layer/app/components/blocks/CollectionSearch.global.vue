@@ -128,7 +128,7 @@
   flex: 1;
   min-width: 0;
   margin: 0;
-  border: 1px solid color-mix(in srgb, var(--site-muted) 12%, var(--site-border));
+  border: 1px solid var(--site-muted); /* 3:1 edge, 1.4.11 */
   border-radius: var(--site-control-radius);
   padding: 11px 14px;
   background: var(--site-bg);
