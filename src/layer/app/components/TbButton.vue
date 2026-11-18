@@ -8,7 +8,12 @@
   field: { type: String, required: true }, // path to the button: 'buttons.0'
  });
  const style = computed(() => valueAt(props.data, `${props.field}.style`) || 'solid');
- const icon = computed(() => BUTTON_ICONS[valueAt(props.data, `${props.field}.icon`)] ?? (style.value === 'icon' ? BUTTON_ICONS.arrow : null));
+ // A key of BUTTON_ICONS, or an icon that brings its own paths.
+ const icon = computed(() => {
+  const picked = valueAt(props.data, `${props.field}.icon`);
+  const paths = Array.isArray(picked?.paths) ? picked.paths : BUTTON_ICONS[picked];
+  return paths ?? (style.value === 'icon' ? BUTTON_ICONS.arrow : null);
+ });
 </script>
 
 <template>

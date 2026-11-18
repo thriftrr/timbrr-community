@@ -33,13 +33,13 @@ export const WIDGETS = [
  'code',
  'hours',
  'table',
- // What a Grove list draws from (docs/README.md § Groves): { grove, sort,
- // dir, limit, filter, show, branch, related }, picked in the studio.
- 'grove',
- // Which ring of a sapling a Sapling ring block shows: a ring's key, picked
- // from the grove's own list. The studio's picker also sets `kind` and
+ // What a Collection list draws from (docs/README.md § Collections): { collection, sort,
+ // dir, limit, filter, show, value, related }, picked in the studio.
+ 'collection',
+ // Which field of an entry an Entry field block shows: a field's key, picked
+ // from the collection's own list. The studio's picker also sets `kind` and
  // `from` on the block beside it.
- 'grove_ring',
+ 'collection_field',
  // retired: what the retired content blocks name; drop with them
  'content',
  'content_field',
@@ -218,14 +218,25 @@ export const imageSchema = z.object({
  zoom: z.number().min(1).max(4).optional(),
 });
 
+// An icon drawn by its paths: each the `d` of one path on a 24 × 24 grid,
+// drawn as a 2px stroke. Path commands, numbers and the marks between them,
+// nothing else.
+const svgPath = z
+ .string()
+ .max(2000)
+ .regex(/^[MLHVCSQTAZmlhvcsqtaz\d\s,.eE+-]+$/);
+export const iconDrawing = z.object({ name: z.string().max(60), paths: z.array(svgPath).min(1).max(24) });
+
 export const buttonSchema = z.object({
  label: z.string().max(60).default(''),
  to: z.string().max(2000).default(''),
  // 'text' is the words alone with an arrow; 'icon' is a round button that
  // shows only its icon (the label is still read out).
  style: z.enum(['solid', 'outline', 'text', 'icon']).default('solid'),
- // A key of BUTTON_ICONS (app/utils/button-icons.js), or '' for none.
- icon: z.string().max(24).default(''),
+ // A key of BUTTON_ICONS (app/utils/button-icons.js), or '' for none; or
+ // any icon from the studio's full set, carried with the paths that draw it
+ // ({ name, paths }), so a site needs no icon library of its own.
+ icon: z.union([z.string().max(24), iconDrawing]).default(''),
 });
 
 // One menu item, the NavItem the site's header and footer draw
@@ -258,42 +269,42 @@ export const navItemSchema = navEntrySchema.extend({
 });
 export const navListSchema = z.array(navItemSchema).max(40).default([]);
 
-// What a field with the `grove` widget holds (docs/README.md § Groves): which
-// grove, in what order, how many, narrowed how. The studio's picker writes
+// What a field with the `collection` widget holds (docs/README.md § Collections): which
+// collection, in what order, how many, narrowed how. The studio's picker writes
 // it and the studio reads it again on every request, so this only says what
 // may be kept. A site's own block takes it the same way:
-//  schema: z.object({ source: groveSourceSchema }), fields: [{ key: 'source', label: 'What to list', widget: 'grove' }]
-//  filters   fixed: [{ ring, op, value }], up to 5; `in` takes a list, `filled` no value
-//  choices   rings a visitor narrows the list by, up to 3, as a dropdown or buttons
-//  related   'none', 'points_here' (saplings whose relation ring names the
-//            sapling the page shows), 'same_branch' (sharing a branch of
-//            `relatedSet` with it) or 'linked' (the saplings its relation
-//            ring `relatedRing` names); true is 'points_here', as kept before
-//  relatedTo, branch   set by the studio as it serves a page, never by a person
+//  schema: z.object({ source: collectionSourceSchema }), fields: [{ key: 'source', label: 'What to list', widget: 'collection' }]
+//  filters   fixed: [{ field, op, value }], up to 5; `in` takes a list, `filled` no value
+//  choices   fields a visitor narrows the list by, up to 3, as a dropdown or buttons
+//  related   'none', 'points_here' (entries whose relation field names the
+//            entry the page shows), 'same_dimension_value' (sharing a value of
+//            `relatedSet` with it) or 'linked' (the entries its relation
+//            field `relatedField` names); true is 'points_here', as kept before
+//  relatedTo, value   set by the studio as it serves a page, never by a person
 //  filter    the single filter kept before `filters`, read as one of them
-export const GROVE_FILTER_OPS = ['eq', 'ne', 'gte', 'lte', 'in', 'filled'];
-const groveKey = z.string().max(40);
-export const groveSourceSchema = z
+export const COLLECTION_FILTER_OPS = ['eq', 'ne', 'gte', 'lte', 'in', 'filled'];
+const collectionKey = z.string().max(40);
+export const collectionSourceSchema = z
  .object({
-  grove: groveKey.default(''),
-  sort: groveKey.default('published'),
+  collection: collectionKey.default(''),
+  sort: collectionKey.default('published'),
   dir: z.enum(['asc', 'desc']).default('desc'),
   limit: z.number().int().min(1).max(50).default(12),
   filters: z
-   .array(z.object({ ring: groveKey, op: z.enum(GROVE_FILTER_OPS), value: z.union([z.string().max(200), z.array(z.string().max(200)).max(20)]).default('') }))
+   .array(z.object({ field: collectionKey, op: z.enum(COLLECTION_FILTER_OPS), value: z.union([z.string().max(200), z.array(z.string().max(200)).max(20)]).default('') }))
    .max(5)
    .default([]),
-  filter: z.object({ ring: groveKey, op: z.enum(['eq', 'gte', 'lte']), value: z.string().max(200) }).nullable().default(null),
+  filter: z.object({ field: collectionKey, op: z.enum(['eq', 'gte', 'lte']), value: z.string().max(200) }).nullable().default(null),
   choices: z
-   .array(z.object({ ring: groveKey, ui: z.enum(['select', 'buttons']).default('select') }))
+   .array(z.object({ field: collectionKey, ui: z.enum(['select', 'buttons']).default('select') }))
    .max(3)
    .default([]),
-  show: z.array(groveKey).max(12).default([]),
-  related: z.union([z.enum(['none', 'points_here', 'same_branch', 'linked']), z.boolean()]).default('none'),
-  relatedSet: groveKey.default(''),
-  relatedRing: groveKey.default(''),
+  show: z.array(collectionKey).max(12).default([]),
+  related: z.union([z.enum(['none', 'points_here', 'same_dimension_value', 'linked']), z.boolean()]).default('none'),
+  relatedSet: collectionKey.default(''),
+  relatedField: collectionKey.default(''),
   relatedTo: z.string().max(64).default(''),
-  branch: z.object({ set: groveKey, slug: z.string().max(63) }).nullable().default(null),
+  dimensionValue: z.object({ set: collectionKey, slug: z.string().max(63) }).nullable().default(null),
  })
  .prefault({});
 
@@ -309,8 +320,8 @@ export const buttonsField = {
   // Two fields, one stored key: a round icon button shows no words, so its
   // label is asked for as what it is there, the name a screen reader says.
   { key: 'label', label: 'Label', widget: 'text', inline: true, when: { style: { not: 'icon' } } },
-  { key: 'label', label: 'Name, read aloud', widget: 'text', when: { style: 'icon' }, help: 'Not shown. Screen readers say it, so say where the button goes.' },
-  { key: 'to', label: 'Links to', widget: 'text', link: true, placeholder: '/contact or https://…' },
+  { key: 'label', label: 'Name', widget: 'text', when: { style: 'icon' }, help: 'Not shown. Screen readers say it, so say where the button goes.' },
+  { key: 'to', label: 'Link', widget: 'text', link: true, placeholder: '/contact or https://…' },
   {
    key: 'style',
    label: 'Style',
@@ -323,14 +334,13 @@ export const buttonsField = {
     { label: 'Icon', value: 'icon' },
    ],
   },
-  ...[
-   { when: { style: { not: 'icon' } }, help: 'Sits beside the label. Pick None for words alone.' },
-   { when: { style: 'icon' }, help: 'The whole button. With None it shows an arrow.' },
-  ].map((by) => ({
+  {
    key: 'icon',
    label: 'Icon',
    widget: 'icon',
-   ...by,
+   // A studio that knows `any` searches every icon it has, beyond these,
+   // and saves the one picked as { name, paths } (buttonSchema).
+   any: true,
    // `paths` is what the studio draws each choice with.
    options: [
     ['None', ''],
@@ -345,6 +355,6 @@ export const buttonsField = {
     ['Shopping bag', 'bag'],
     ['Speech bubble', 'chat'],
    ].map(([label, value]) => ({ label, value, ...(value ? { paths: BUTTON_ICONS[value] } : {}) })),
-  })),
+  },
  ],
 };

@@ -168,7 +168,7 @@
   margin-top: 0;
  }
 
- /* Open now: a soft pill, with a dot that has a ring when the doors are. */
+ /* Open now: a soft pill, with a dot that has a field when the doors are. */
  .tb-visit__status {
   display: flex;
   align-items: center;

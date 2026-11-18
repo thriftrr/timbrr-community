@@ -1,5 +1,5 @@
 <script setup>
- // A Map ring's value: { lat, lng, zoom, label } as a picture of the map,
+ // A Map field's value: { lat, lng, zoom, label } as a picture of the map,
  // OpenStreetMap's tiles with a pin, the tiles' credit, and a link that
  // opens the place on openstreetmap.org. No map script runs on the page.
  const props = defineProps({
@@ -34,47 +34,47 @@
 </script>
 
 <template>
- <figure class="tb-ring-map">
-  <div class="tb-ring-map__view" :style="{ height: `${height}px` }">
-   <div class="tb-ring-map__tiles" :style="{ width: `${WIDTH}px`, height: `${WIDTH}px`, left: `calc(50% - ${pin.x}px)`, top: `calc(50% - ${pin.y}px)` }">
+ <figure class="tb-field-map">
+  <div class="tb-field-map__view" :style="{ height: `${height}px` }">
+   <div class="tb-field-map__tiles" :style="{ width: `${WIDTH}px`, height: `${WIDTH}px`, left: `calc(50% - ${pin.x}px)`, top: `calc(50% - ${pin.y}px)` }">
     <img v-for="tile in tiles" :key="tile.key" :src="tile.src" alt="" loading="lazy" width="256" height="256" :style="{ left: `${tile.left}px`, top: `${tile.top}px` }" />
    </div>
-   <span class="tb-ring-map__pin" aria-hidden="true" />
-   <a class="tb-ring-map__credit" href="https://www.openstreetmap.org/copyright" rel="noopener">© OpenStreetMap contributors</a>
+   <span class="tb-field-map__pin" aria-hidden="true" />
+   <a class="tb-field-map__credit" href="https://www.openstreetmap.org/copyright" rel="noopener">© OpenStreetMap contributors</a>
   </div>
   <figcaption>
    <span v-if="value.label">{{ value.label }} · </span>
-   <a :href="open" class="tb-ring-value__link" rel="noopener">Open map</a>
+   <a :href="open" class="tb-field-value__link" rel="noopener">Open map</a>
   </figcaption>
  </figure>
 </template>
 
 <style>
- .tb-ring-map {
+ .tb-field-map {
   display: grid;
   gap: 8px;
   margin: 0;
  }
 
- .tb-ring-map__view {
+ .tb-field-map__view {
   position: relative;
   overflow: hidden;
   border-radius: var(--site-radius);
   background: var(--site-surface);
  }
 
- .tb-ring-map__tiles {
+ .tb-field-map__tiles {
   position: absolute;
  }
 
- .tb-ring-map__tiles img {
+ .tb-field-map__tiles img {
   position: absolute;
   width: 256px;
   height: 256px;
   max-width: none;
  }
 
- .tb-ring-map__pin {
+ .tb-field-map__pin {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -88,7 +88,7 @@
   transform: rotate(-45deg);
  }
 
- .tb-ring-map__credit {
+ .tb-field-map__credit {
   position: absolute;
   right: 0;
   bottom: 0;
@@ -98,7 +98,7 @@
   color: #333;
  }
 
- .tb-ring-map figcaption {
+ .tb-field-map figcaption {
   font-size: 14px;
   color: var(--site-muted);
  }

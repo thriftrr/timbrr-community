@@ -7,7 +7,7 @@ import { fetchPublished, normalizePagePath } from '../../utils/studio.js';
 // (pages/[...slug].vue) asks for it, on the server for a first visit and
 // from the browser as a visitor moves between pages. No page there, or no
 // site set up here, is a 404; the studio failing is a 502. Either way the
-// answer is { statusCode, message }, and for an old address of a sapling's
+// answer is { statusCode, message }, and for an old address of an entry's
 // `data.redirect: { to, status }` too. On a dev or staging address it's the
 // draft instead, never cached, and a 401 once the visitor's access has gone.
 export default defineEventHandler(async (event) => {
@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
  if (found) return answer.data;
  setResponseStatus(event, status);
  if (status === 401) return { statusCode: 401, message: 'Sign in to see this site.' };
- // An old address of a sapling's: the page says where it lives now, and the site's page sends the visitor there.
+ // An old address of an entry's: the page says where it lives now, and the site's page sends the visitor there.
  return status === 404
   ? { statusCode: 404, message: "That page doesn't exist.", ...(answer.redirect ? { data: { redirect: answer.redirect } } : {}) }
   : { statusCode: 502, message: "Couldn't get this page from the studio. Try again in a minute." };

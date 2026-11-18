@@ -1,5 +1,5 @@
 <script setup>
- // A link a ring holds: a Link ring's { url, label, newTab } (or its
+ // A link a field holds: a Link field's { url, label, newTab } (or its
  // address alone), or a Page link's { title, path }. A path on this site
  // goes through the router; one opening in a new tab says so to screen
  // readers. Anything that isn't a safe address isn't drawn.
@@ -14,14 +14,14 @@
 </script>
 
 <template>
- <NuxtLink v-if="url && inside" :to="url" class="tb-ring-value__link">{{ words }}</NuxtLink>
- <a v-else-if="url" :href="url" class="tb-ring-value__link" :target="newTab ? '_blank' : undefined" :rel="newTab ? 'noopener' : undefined">
-  {{ words }}<span v-if="newTab" class="tb-ring-link__note"> (opens in a new tab)</span>
+ <NuxtLink v-if="url && inside" :to="url" class="tb-field-value__link">{{ words }}</NuxtLink>
+ <a v-else-if="url" :href="url" class="tb-field-value__link" :target="newTab ? '_blank' : undefined" :rel="newTab ? 'noopener' : undefined">
+  {{ words }}<span v-if="newTab" class="tb-field-link__note"> (opens in a new tab)</span>
  </a>
 </template>
 
 <style>
- .tb-ring-link__note {
+ .tb-field-link__note {
   position: absolute;
   width: 1px;
   height: 1px;
