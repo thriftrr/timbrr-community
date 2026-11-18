@@ -243,8 +243,16 @@ function absolute(src, origin) {
 export function brandStyle(accent, brand) {
  const vars = brandVars(brand);
  if (HEX.test(accent ?? '')) {
-  vars['--site-accent'] = accent;
-  vars['--site-accent-ink'] ??= inkOn(accent);
+  // The brand color is also link and label text on the page and its bands,
+  // and a button's fill under paper ink, so on a light page it's darkened
+  // until it reads 4.5:1 against the darkest of those, whatever the owner
+  // picked. Darkening can't help on a dark page, so there it stays as picked.
+  const page = vars['--site-bg'] ?? '#ffffff';
+  const light = HEX.test(page) && contrastRatio('#000000', page) > contrastRatio('#ffffff', page);
+  const darkest = [page, vars['--site-surface'], '#f7f5ec'].filter((c) => HEX.test(c ?? '')).sort((a, b) => contrastRatio('#000000', a) - contrastRatio('#000000', b))[0];
+  const safe = light ? nudgeAccent(accent, darkest, 4.5) : accent;
+  vars['--site-accent'] = safe;
+  vars['--site-accent-ink'] ??= inkOn(safe);
  }
  return vars;
 }

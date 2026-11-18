@@ -17,8 +17,9 @@
 
 <template>
  <div class="tb-page" :style="style">
+  <a href="#main" class="tb-skip">Skip to main content</a>
   <TbSiteHeader v-if="framed" :site="site" />
-  <main class="tb-page__main">
+  <main id="main" tabindex="-1" class="tb-page__main">
    <TbBlocks :blocks="blocks" />
   </main>
   <TbSiteFooter v-if="framed" :site="site" />

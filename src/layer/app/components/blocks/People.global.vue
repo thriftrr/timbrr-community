@@ -36,6 +36,7 @@
     class="tb-people__list"
     :class="slider ? 'tb-slider' : { 'tb-people__list--fours': fours }"
     :tabindex="slider ? 0 : undefined"
+    :aria-label="slider ? (typeof data.headline === 'string' && data.headline) || 'Slides' : undefined"
     role="list"
    >
     <li v-for="(item, index) in data.items" :key="index" class="tb-card tb-people__card">

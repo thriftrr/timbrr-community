@@ -36,7 +36,7 @@
 <template>
  <figure class="tb-field-map">
   <div class="tb-field-map__view" :style="{ height: `${height}px` }">
-   <div class="tb-field-map__tiles" :style="{ width: `${WIDTH}px`, height: `${WIDTH}px`, left: `calc(50% - ${pin.x}px)`, top: `calc(50% - ${pin.y}px)` }">
+   <div class="tb-field-map__tiles" aria-hidden="true" :style="{ width: `${WIDTH}px`, height: `${WIDTH}px`, left: `calc(50% - ${pin.x}px)`, top: `calc(50% - ${pin.y}px)` }">
     <img v-for="tile in tiles" :key="tile.key" :src="tile.src" alt="" loading="lazy" width="256" height="256" :style="{ left: `${tile.left}px`, top: `${tile.top}px` }" />
    </div>
    <span class="tb-field-map__pin" aria-hidden="true" />

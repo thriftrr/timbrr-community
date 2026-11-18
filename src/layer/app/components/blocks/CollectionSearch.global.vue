@@ -146,7 +146,8 @@
  .tb-collection-search__input:focus {
   border-color: var(--site-accent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--site-accent) 16%, transparent);
-  outline: 0;
+  outline: 2px solid var(--site-accent);
+  outline-offset: 1px;
  }
 
  .tb-collection-search__status {

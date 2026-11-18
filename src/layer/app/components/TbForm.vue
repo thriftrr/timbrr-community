@@ -38,6 +38,24 @@
  const noHeading = computed(() => props.hideTitle || props.form.hideHeader === true);
  const span = (field) => (props.form.advanced && !props.compact ? { half: 6, third: 4 }[field.width] ?? 12 : 12);
  const fieldId = (field) => `${uid}-${field.id}`;
+ // A field's hint and error, which a screen reader reads with it.
+ const describedBy = (field) => [field.help && `${fieldId(field)}-help`, errors[field.id] && `${fieldId(field)}-error`].filter(Boolean).join(' ') || undefined;
+ // The browser can fill what it knows (1.3.5): by type, else by what the label asks for.
+ function autofill(field) {
+  const byType = { name: 'name', email: 'email', phone: 'tel' }[field.type];
+  if (byType) return byType;
+  const label = String(field.label ?? '').toLowerCase();
+  if (/first name/.test(label)) return 'given-name';
+  if (/last name|surname/.test(label)) return 'family-name';
+  if (/zip|postal/.test(label)) return 'postal-code';
+  if (/street|address/.test(label) && !/email|e-mail/.test(label)) return 'street-address';
+  if (/^city\b|\bcity$/.test(label)) return 'address-level2';
+  return undefined;
+ }
+ // After a failed check, focus goes to the first field with a mistake.
+ function focusFirstError() {
+  nextTick(() => root.value?.querySelector('.tb-form__field:has(.tb-form__error) :is(input, select, textarea)')?.focus());
+ }
  const priced = (field, option) => props.form.advanced && Number(option.v) > 0;
  const timesGuests = (field) => props.form.fields.some((entry) => entry.type === 'calc' && entry.terms?.some((term) => term.field === field.id && term.op === '×'));
  const price = (field, option) => `${field.type === 'checkbox' ? '+' : ''}${formMoney(option.v)}${field.type === 'radio' && timesGuests(field) ? ' each' : ''}`;
@@ -82,7 +100,7 @@
  }
 
  function next() {
-  if (!checkStep()) return;
+  if (!checkStep()) return focusFirstError();
   step.value = current.value + 1;
   nextTick(() => root.value?.scrollIntoView?.({ block: 'nearest' }));
  }
@@ -133,6 +151,7 @@
    Object.assign(errors, answer.errors);
    const at = steps.value.findIndex((entry) => entry.fields.some((field) => answer.errors[field.id]));
    if (at >= 0) step.value = at;
+   focusFirstError();
    return;
   }
   if (!res.ok || !answer?.ok) throw new Error(answer?.message ?? '');
@@ -144,7 +163,8 @@
  }
 
  async function submit() {
-  if (props.locked || sending.value || !checkStep()) return;
+  if (props.locked || sending.value) return;
+  if (!checkStep()) return focusFirstError();
   sending.value = true;
   failed.value = '';
   try {
@@ -171,8 +191,8 @@
 
 <template>
  <div ref="root" class="tb-form__body" :class="{ 'tb-form__body--compact': compact, 'tb-form__body--untitled': noHeading }" :inert="locked">
-  <div v-if="sent" class="tb-form__sent" role="status"><TbRich :doc="sent" /></div>
-  <form v-else novalidate :aria-label="noHeading ? title : undefined" @submit.prevent="last ? submit() : next()">
+  <div role="status"><div v-if="sent" class="tb-form__sent"><TbRich :doc="sent" /></div></div>
+  <form v-if="!sent" novalidate :aria-label="noHeading ? title : undefined" @submit.prevent="last ? submit() : next()">
    <template v-if="!compact">
     <h2 v-if="title && !noHeading" class="tb-heading tb-form__title">{{ title }}</h2>
     <p v-if="form.intro && !form.hideHeader" class="tb-form__lede">{{ form.intro }}</p>
@@ -182,19 +202,19 @@
     <div class="tb-form__bars" aria-hidden="true">
      <span v-for="(entry, index) in steps" :key="index" class="tb-form__bar" :class="{ 'is-done': index <= current }" />
     </div>
-    <p class="tb-form__step">Step {{ current + 1 }} of {{ steps.length }} · {{ steps[current].title }}</p>
+    <p class="tb-form__step" role="status">Step {{ current + 1 }} of {{ steps.length }} · {{ steps[current].title }}</p>
    </div>
 
    <div class="tb-form__grid">
     <div v-for="field in shown" :key="field.id" class="tb-form__field" :style="{ '--tb-form-span': span(field) }">
      <template v-if="field.type === 'consent'">
       <label class="tb-form__consent-row">
-       <input v-model="values[field.id]" type="checkbox" class="tb-form__tick" :aria-invalid="Boolean(errors[field.id])" @change="clear(field)" />
+       <input v-model="values[field.id]" type="checkbox" class="tb-form__tick" :aria-required="field.required || undefined" :aria-invalid="Boolean(errors[field.id])" :aria-describedby="describedBy(field)" @change="clear(field)" />
        <span>{{ field.label }}</span>
       </label>
      </template>
 
-     <fieldset v-else-if="field.type === 'radio' || field.type === 'checkbox'" class="tb-form__set">
+     <fieldset v-else-if="field.type === 'radio' || field.type === 'checkbox'" class="tb-form__set" :aria-describedby="describedBy(field)">
       <legend class="tb-form__label">
        {{ field.label }}<span v-if="!field.required" class="tb-form__optional">Optional</span>
       </legend>
@@ -223,16 +243,16 @@
       <label class="tb-form__label" :for="fieldId(field)">
        {{ field.label }}<span v-if="!field.required" class="tb-form__optional">Optional</span>
       </label>
-      <textarea v-if="field.type === 'textarea'" :id="fieldId(field)" v-model="values[field.id]" rows="4" :placeholder="field.placeholder" class="tb-form__control tb-form__long" :aria-invalid="Boolean(errors[field.id])" @input="clear(field)" />
+      <textarea v-if="field.type === 'textarea'" :id="fieldId(field)" v-model="values[field.id]" rows="4" :placeholder="field.placeholder" class="tb-form__control tb-form__long" :aria-required="field.required || undefined" :aria-invalid="Boolean(errors[field.id])" :aria-describedby="describedBy(field)" @input="clear(field)" />
       <div v-else-if="field.type === 'select'" class="tb-form__picker">
-       <select :id="fieldId(field)" v-model="values[field.id]" class="tb-form__control" :aria-invalid="Boolean(errors[field.id])" @change="clear(field)">
+       <select :id="fieldId(field)" v-model="values[field.id]" class="tb-form__control" :aria-required="field.required || undefined" :aria-invalid="Boolean(errors[field.id])" :aria-describedby="describedBy(field)" @change="clear(field)">
         <option :value="undefined" disabled>Choose…</option>
         <option v-for="option in field.options" :key="option.l" :value="option.l">{{ option.l }}</option>
        </select>
        <span class="tb-form__arrow" aria-hidden="true">▾</span>
       </div>
       <label v-else-if="field.type === 'file'" class="tb-form__drop">
-       <input :id="fieldId(field)" type="file" :accept="accepted(field)" class="tb-form__drop-input" :aria-invalid="Boolean(errors[field.id])" @change="pick(field, $event)" />
+       <input :id="fieldId(field)" type="file" :accept="accepted(field)" class="tb-form__drop-input" :aria-required="field.required || undefined" :aria-invalid="Boolean(errors[field.id])" :aria-describedby="describedBy(field)" @change="pick(field, $event)" />
        <span class="tb-form__drop-text">{{ values[field.id]?.name ?? 'Choose a file or drop it here' }}</span>
        <span class="tb-form__drop-hint">{{ fileHint(field) }}</span>
       </label>
@@ -241,20 +261,22 @@
        :id="fieldId(field)"
        v-model="values[field.id]"
        :type="{ email: 'email', phone: 'tel', number: 'number', date: 'date' }[field.type] ?? 'text'"
-       :autocomplete="{ name: 'name', email: 'email', phone: 'tel' }[field.type]"
+       :autocomplete="autofill(field)"
        :placeholder="field.placeholder"
        class="tb-form__control"
+       :aria-required="field.required || undefined"
        :aria-invalid="Boolean(errors[field.id])"
+       :aria-describedby="describedBy(field)"
        @input="clear(field)"
       />
      </template>
 
-     <p v-if="field.help" class="tb-form__help">{{ field.help }}</p>
-     <p v-if="errors[field.id]" class="tb-form__error" role="alert">{{ errors[field.id] }}</p>
+     <p v-if="field.help" :id="`${fieldId(field)}-help`" class="tb-form__help">{{ field.help }}</p>
+     <p v-if="errors[field.id]" :id="`${fieldId(field)}-error`" class="tb-form__error" role="alert">{{ errors[field.id] }}</p>
     </div>
    </div>
 
-   <input v-model="trap" type="text" name="website_url" tabindex="-1" autocomplete="off" aria-hidden="true" class="tb-form__trap" />
+   <input v-model="trap" type="text" name="website_url" tabindex="-1" autocomplete="off" inert class="tb-form__trap" />
    <div ref="check" />
    <p v-if="failed" class="tb-form__error" role="alert">{{ failed }}</p>
 
@@ -365,7 +387,7 @@
   width: 100%;
   min-width: 0;
   margin: 0;
-  border: 1px solid color-mix(in srgb, var(--site-muted) 12%, var(--site-border));
+  border: 1px solid var(--site-muted);
   border-radius: var(--site-control-radius);
   padding: 11px 14px;
   background: var(--site-bg);
@@ -379,19 +401,20 @@
  }
 
  .tb-form__control::placeholder {
-  color: color-mix(in srgb, var(--site-muted) 78%, var(--site-bg));
+  color: var(--site-muted);
   opacity: 1;
  }
 
  .tb-form__control:hover {
-  border-color: color-mix(in srgb, var(--site-muted) 40%, var(--site-border));
+  border-color: var(--site-body);
  }
 
  .tb-form__control:focus,
  .tb-form__drop:focus-within {
   border-color: var(--site-accent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--site-accent) 16%, transparent);
-  outline: 0;
+  outline: 2px solid var(--site-accent);
+  outline-offset: 2px;
  }
 
  .tb-form__control[aria-invalid='true'] {
@@ -431,7 +454,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  border: 1px solid color-mix(in srgb, var(--site-muted) 12%, var(--site-border));
+  border: 1px solid var(--site-muted);
   border-radius: var(--site-control-radius);
   padding: 11px 14px;
   background: var(--site-bg);
@@ -479,7 +502,7 @@
  .tb-form__drop {
   position: relative;
   display: block;
-  border: 1px dashed color-mix(in srgb, var(--site-muted) 40%, var(--site-border));
+  border: 1px dashed var(--site-muted);
   border-radius: var(--site-control-radius);
   padding: 14px;
   background: var(--site-bg);

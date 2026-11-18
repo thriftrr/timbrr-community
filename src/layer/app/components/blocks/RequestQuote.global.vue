@@ -59,7 +59,7 @@
     </div>
     <label class="tb-request-quote__photos">
      <input type="file" name="photos" accept="image/*" multiple class="tb-request-quote__file" @change="onPhotos" />
-     {{ photosText }}
+     <span aria-live="polite">{{ photosText }}</span>
     </label>
    </div>
    <div v-if="shows('submit_label', data.submit_label)" class="tb-request-quote__actions">
@@ -128,7 +128,8 @@
  .tb-request-quote__control:focus {
   border-color: var(--site-accent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--site-accent) 16%, transparent);
-  outline: 0;
+  outline: 2px solid var(--site-accent);
+  outline-offset: 1px;
  }
 
  /* The service menu: the same box, with the design's ▾ in place of the
