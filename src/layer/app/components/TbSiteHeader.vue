@@ -28,6 +28,7 @@
 
  const props = defineProps({
   site: { type: Object, required: true }, // { name, domain, nav: NavItem[], cta?: NavItem, details?, overHero?, frame?: { header } }
+  showMenu: { type: Boolean, default: false }, // open the menu, at its first item with more under it: the studio's preview of a phone menu style
  });
 
  const uid = useId();
@@ -37,7 +38,7 @@
  const open = ref(null); // the index of the open menu item
  const pinned = ref(null); // the one a click opened
  const sheetOpen = ref(false);
- const scrolled = ref(false);
+ const pastHero = ref(false); // the hero under a see-through header has scrolled by
  const hidden = ref(false); // scrolled away, with sticky set to 'up'
 
  const chosen = computed(() => props.site.frame?.header);
@@ -118,7 +119,11 @@
  });
 
  const seeThrough = computed(() => Boolean(header.value?.transparent && props.site.overHero));
- const clear = computed(() => seeThrough.value && !scrolled.value && open.value === null && !sheetOpen.value);
+ // See-through stays see-through all the way down (FB-112): over the hero in
+ // the dark band's ink (`clear`), past it in the page's own ink (`bare`).
+ const closed = computed(() => open.value === null && !sheetOpen.value);
+ const clear = computed(() => seeThrough.value && !pastHero.value && closed.value);
+ const bare = computed(() => seeThrough.value && pastHero.value && closed.value);
  const away = computed(() => header.value?.sticky === 'up' && hidden.value && open.value === null && !sheetOpen.value);
  // A see-through header stuck over the page would be light words on light
  // paper with no script to turn it solid, so it only sticks once there is one.
@@ -254,18 +259,26 @@
 
  function onScroll() {
   const y = Math.max(0, window.scrollY);
-  scrolled.value = y > 30;
+  pastHero.value = heroGone();
   const moved = y - lastY;
   if (Math.abs(moved) < 4) return; // a phone's jitter isn't a change of direction
   hidden.value = moved > 0 && y > 90;
   lastY = y;
  }
 
+ // The hero is the page's first block; it's gone once its bottom is above
+ // the header's.
+ function heroGone() {
+  const hero = document.querySelector('.tb-page__main > *');
+  if (!hero || !bar.value) return window.scrollY > 30;
+  return hero.getBoundingClientRect().bottom <= bar.value.getBoundingClientRect().bottom;
+ }
+
  function follow(on) {
   window.removeEventListener('scroll', onScroll);
   if (!on) return;
   lastY = Math.max(0, window.scrollY);
-  scrolled.value = lastY > 30;
+  pastHero.value = heroGone();
   window.addEventListener('scroll', onScroll, { passive: true });
  }
 
@@ -292,6 +305,15 @@
   // The stage changes all of these as the panel is edited.
   watch(() => header.value?.sticky === 'up' || seeThrough.value, follow, { immediate: true });
   watch(seeThrough, measure, { immediate: true, flush: 'post' });
+  watch(
+   () => props.showMenu && header.value?.phone.style,
+   (on) => {
+    if (!on || !sheet.value) return;
+    sheet.value.open = true;
+    sheet.value.querySelector('details.tb-site-header__fold')?.setAttribute('open', '');
+   },
+   { immediate: true, flush: 'post' },
+  );
  });
 
  onBeforeUnmount(() => {
@@ -308,7 +330,7 @@
   <header
    ref="bar"
    class="tb-site-header"
-   :class="[`tb-site-header--${layout}`, `tb-site-header--menu-${header.menuAt ?? 'left'}`, `tb-site-header--phone-${header.phone.style}`, { 'is-live': live, 'is-clear': clear, 'is-away': away, 'is-crowded': crowded }]"
+   :class="[`tb-site-header--${layout}`, `tb-site-header--menu-${header.menuAt ?? 'left'}`, `tb-site-header--phone-${header.phone.style}`, { 'is-live': live, 'is-clear': clear, 'is-bare': bare, 'is-away': away, 'is-crowded': crowded }]"
    @click="onClick"
    @focusin="hidden = false"
   >
@@ -562,12 +584,18 @@
   transform: translateY(-110%);
  }
 
- /* See-through: the bar and the utility row in the dark band's ink, over the
-    hero. Written on the variables, so everything in them follows. An open
-    menu always turns it solid, and that holds with no script too. */
- :root .tb-site-header.is-clear:not(:has(.tb-site-header__menu[open])) {
-  border-bottom-color: color-mix(in srgb, var(--site-dark-ink) 18%, transparent);
+ /* See-through: no background and no rule, all the way down. Over the hero
+    the bar and the utility row take the dark band's ink (written on the
+    variables, so everything in them follows); past it they keep the page's
+    own. An open menu always turns it solid, and that holds with no script
+    too. */
+ :root .tb-site-header:is(.is-clear, .is-bare):not(:has(.tb-site-header__menu[open])) {
+  border-bottom-color: transparent;
   background: transparent;
+ }
+
+ .tb-site-header:is(.is-clear, .is-bare):not(:has(.tb-site-header__menu[open])) .tb-site-header__utility {
+  border-bottom-color: transparent;
  }
 
  .tb-site-header.is-clear:not(:has(.tb-site-header__menu[open])) :is(.tb-site-header__bar, .tb-site-header__utility) {

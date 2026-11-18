@@ -42,6 +42,10 @@
   'tb-look--tight': data.value?.spacing === 'tight',
   'tb-look--roomy': data.value?.spacing === 'roomy',
   'tb-look--divider': data.value?.divider === true,
+  // Set apart only when one is; `spacing` alone keeps drawing as before.
+  ...(data.value?.above || data.value?.below
+   ? { [`tb-look--above-${data.value.above ?? data.value.spacing ?? 'normal'}`]: true, [`tb-look--below-${data.value.below ?? data.value.spacing ?? 'normal'}`]: true }
+   : {}),
  }));
  const placement = computed(() => props.block.lock?.id ?? props.block.id);
  const selected = computed(() => placementOf(canvas?.selected.value) === placement.value);
@@ -151,7 +155,7 @@
      type="button"
      role="radio"
      class="tb-frame__pill"
-     :aria-checked="data[field.key] === option.value ? 'true' : 'false'"
+     :aria-checked="(data[field.key] ?? data[field.fallback]) === option.value ? 'true' : 'false'"
      @click="canvas.edit(block.id, field.key, option.value)"
     >
      {{ option.label }}

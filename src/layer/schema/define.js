@@ -57,6 +57,10 @@ export const WYS_TOOLS = ['bold', 'italic', 'underline', 'link', 'h2', 'h3', 'ul
 const lookShape = {
  background: z.enum(['page', 'soft', 'brand', 'dark']).default('page'),
  spacing: z.enum(['tight', 'normal', 'roomy']).default('normal'),
+ // Room above and below set apart (FB-106). Left out, each is `spacing`,
+ // so pages saved before keep their look; the inspector shows it that way.
+ above: z.enum(['tight', 'normal', 'roomy']).optional(),
+ below: z.enum(['tight', 'normal', 'roomy']).optional(),
  divider: z.boolean().default(false),
 };
 const lookFields = [
@@ -72,16 +76,17 @@ const lookFields = [
    { label: 'Dark', value: 'dark', swatch: 'dark' },
   ],
  },
- {
-  key: 'spacing',
-  label: 'Spacing',
+ ...['above', 'below'].map((key) => ({
+  key,
+  label: key === 'above' ? 'Space above' : 'Space below',
   widget: 'buttons',
+  fallback: 'spacing', // shown, and drawn, from `spacing` while unset
   options: [
    { label: 'Tight', value: 'tight' },
    { label: 'Normal', value: 'normal' },
    { label: 'Roomy', value: 'roomy' },
   ],
- },
+ })),
  { key: 'divider', label: 'Line above', widget: 'switch' },
 ];
 
@@ -97,12 +102,13 @@ const lookFields = [
 //              their type (unknown names draw as a square)
 //  fields      [{ key, label, widget, inline?, link?, format?, ai?, options?,
 //              subfields?, itemLabel?, min?, max?, step?, unit?, help?,
-//              placeholder?, when? }]; `when` says when the field applies
+//              placeholder?, when?, fallback? }]; `when` says when the field applies
 //              ({ otherKey: value | [values] | { not } | { filled } }, an
 //              option can carry one too: app/utils/when.js, docs/manifest.md
 //              § Conditional fields): the studio shows it only then, and the
 //              block must not draw it otherwise; `link` marks a text
 //              field holding an address (the studio offers a page picker)
+//              and `fallback` names the key whose value it shows while unset
 //  wys         per-field formatting tools on the canvas; unlisted → bold, italic
 //  owner       the brand that commissioned it (community and private tiers)
 //  frame       true: a site's header or footer, kept in the studio's Library

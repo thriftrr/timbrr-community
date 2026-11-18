@@ -173,7 +173,7 @@ icon; the label is still read out), and an `icon`: a key of `BUTTON_ICONS`
 label, and alone for the icon style (an arrow when none is picked).
 
 A definition may list `without: [...]`: look fields (`background`,
-`spacing`, `divider`) the block has no use for. The key stays in its data;
+`above`, `below`, `divider`) the block has no use for. The key stays in its data;
 the inspector doesn't offer it.
 
 The header's `menuAt` (`left` | `center` | `right`) is where the menu sits on
@@ -200,8 +200,13 @@ turning one off leaves the blocks already on pages alone.
 **`retired: true`** marks a block a Core block has replaced. It's never in
 the tray, and pages that still hold one keep drawing and saving until
 they're converted. A block can't be both. `defineBlock` adds the settings
-every block has (`background`, `spacing`, `divider`) to everything except a
-frame or a retired block.
+every block has (`background`, `spacing`, `above`, `below`, `divider`) to
+everything except a frame or a retired block. `above` and `below` (Space
+above, Space below) are unset until someone picks one; until then each draws
+as `spacing`, and the studio shows `spacing` in its place (a field's
+`fallback` names the key it shows while unset). A block's own padding reads
+`--site-space-above` and `--site-space-below`, each falling back to
+`--site-space`.
 
 **`presets`** is a list of ways to start a block, `[{ key, label,
 description?, data }]`. A preset's `data` goes over the block's `defaults`,

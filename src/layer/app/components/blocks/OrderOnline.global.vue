@@ -48,7 +48,7 @@
 
 <style>
  .tb-order-online {
-  padding-block: calc(var(--site-space) * 0.75);
+  padding-block: calc(var(--site-space-above, var(--site-space)) * 0.75) calc(var(--site-space-below, var(--site-space)) * 0.75);
   background: var(--site-dark);
   color: color-mix(in srgb, var(--site-dark-ink) 82%, var(--site-dark));
  }

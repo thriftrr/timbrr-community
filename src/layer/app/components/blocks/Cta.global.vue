@@ -50,7 +50,7 @@
 
 <style>
  .tb-cta {
-  padding-block: calc(var(--site-space) * 1.1);
+  padding-block: calc(var(--site-space-above, var(--site-space)) * 1.1) calc(var(--site-space-below, var(--site-space)) * 1.1);
   text-align: center;
  }
 
@@ -151,7 +151,7 @@
  /* Band: one slim row, the words on the left and the buttons on the right,
     small print under the words' row. */
  .tb-section.tb-cta--band {
-  padding-block: calc(var(--site-space) * 0.3);
+  padding-block: calc(var(--site-space-above, var(--site-space)) * 0.3) calc(var(--site-space-below, var(--site-space)) * 0.3);
   text-align: left;
  }
 
