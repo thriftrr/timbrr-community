@@ -164,6 +164,12 @@ const GROUPS = {
   equal(mended.layout, 'left');
   equal(mended.sticky, 'never');
   equal(mended.primary.label, 'Keep');
+  // A header from before the look draws as it always did; a bad look value
+  // falls back on its own.
+  deepEqual(headerData({ layout: 'left' }).look, { background: 'light', height: 'regular', edge: 'line', button: 'filled', logo: 'medium' });
+  const look = headerData({ look: { background: 'brand', height: 'huge' } }).look;
+  equal(look.background, 'brand');
+  equal(look.height, 'regular');
   equal(footerData({ layout: 'slim', social: [{ network: 'myspace', to: 'https://x.test' }, { network: 'x', to: 'https://x.test' }] }).social[1].network, 'x');
   equal(footerData({ style: 'slim', legal: 'x' }).layout, 'slim');
  },

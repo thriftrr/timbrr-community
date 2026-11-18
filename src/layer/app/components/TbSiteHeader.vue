@@ -60,14 +60,15 @@
   return { src, alt: image.alt || name.value, width: image.width, height: image.height, srcset: image.width ? mediaSrcset(src, image.width) : '' };
  });
 
+ // `at` is where the item is in the header's own menu, for the studio's stage.
  const items = computed(() =>
-  named(header.value?.menu).map((item) => {
+  (header.value?.menu ?? []).map((item, at) => ({ item, at })).filter(({ item }) => named([item]).length).map(({ item, at }) => {
    const children = item.layout === 'link' ? [] : named(item.children).map(linked);
    const kind = !children.length ? 'link' : item.layout === 'mega' ? 'mega' : 'dropdown';
    // What a big menu holds beside its links (schema/frames.js, navItem).
    const feature = kind === 'mega' && item.feature ? { ...item.feature, link: linkTo(item.feature), src: safeSrc(item.feature.image?.src) } : null;
    const button = kind === 'mega' && item.button ? { ...item.button, link: linkTo(item.button) } : null;
-   return { ...linked(item), kind, children, columns: kind === 'mega' ? megaColumns(children) : [], feature, button };
+   return { ...linked(item), at, kind, children, columns: kind === 'mega' ? megaColumns(children) : [], feature, button };
   }),
  );
  const announce = computed(() => {
@@ -330,7 +331,7 @@
   <header
    ref="bar"
    class="tb-site-header"
-   :class="[`tb-site-header--${layout}`, `tb-site-header--menu-${header.menuAt ?? 'left'}`, `tb-site-header--phone-${header.phone.style}`, { 'is-live': live, 'is-clear': clear, 'is-bare': bare, 'is-away': away, 'is-crowded': crowded }]"
+   :class="[`tb-site-header--${layout}`, `tb-site-header--menu-${header.menuAt ?? 'left'}`, `tb-site-header--phone-${header.phone.style}`, `tb-site-header--bg-${header.look.background}`, `tb-site-header--height-${header.look.height}`, `tb-site-header--edge-${header.look.edge}`, `tb-site-header--cta-${header.look.button}`, `tb-site-header--logo-${header.look.logo}`, { 'is-live': live, 'is-clear': clear, 'is-bare': bare, 'is-away': away, 'is-crowded': crowded }]"
    @click="onClick"
    @focusin="hidden = false"
   >
@@ -358,6 +359,7 @@
        v-for="(item, index) in items"
        :key="index"
        class="tb-site-header__item"
+       :data-tb-item="item.at"
        :class="{ 'is-open': open === index, 'tb-site-header__item--mega': item.kind === 'mega' }"
        @pointerenter="pointerIn($event, index)"
        @pointerleave="pointerOut($event, index)"
@@ -424,8 +426,8 @@
     </div>
 
     <div v-if="primary || (secondary && layout !== 'button')" class="tb-site-header__buttons">
-     <component :is="secondary.link.is" v-if="secondary && layout !== 'button'" :to="secondary.link.to" :href="secondary.link.href" class="tb-site-header__cta tb-site-header__cta--outline">{{ secondary.label }}</component>
-     <component :is="primary.link.is" v-if="primary" :to="primary.link.to" :href="primary.link.href" class="tb-site-header__cta">{{ primary.label }}</component>
+     <component :is="secondary.link.is" v-if="secondary && layout !== 'button'" :to="secondary.link.to" :href="secondary.link.href" data-tb-button="secondary" class="tb-site-header__cta tb-site-header__cta--outline">{{ secondary.label }}</component>
+     <component :is="primary.link.is" v-if="primary" :to="primary.link.to" :href="primary.link.href" data-tb-button="primary" class="tb-site-header__cta">{{ primary.label }}</component>
     </div>
 
     <div v-if="anyPin" class="tb-site-header__pins">
@@ -511,8 +513,8 @@
          <component :is="icon.link.is" :to="icon.link.to" :href="icon.link.href" class="tb-site-header__sheet-link">{{ icon.text ?? icon.label }}</component>
         </li>
        </ul>
-       <component :is="secondary.link.is" v-if="secondary" :to="secondary.link.to" :href="secondary.link.href" class="tb-site-header__cta tb-site-header__cta--outline tb-site-header__cta--wide">{{ secondary.label }}</component>
-       <component :is="primary.link.is" v-if="primary && layout !== 'button'" :to="primary.link.to" :href="primary.link.href" class="tb-site-header__cta tb-site-header__cta--wide">{{ primary.label }}</component>
+       <component :is="secondary.link.is" v-if="secondary" :to="secondary.link.to" :href="secondary.link.href" data-tb-button="secondary" class="tb-site-header__cta tb-site-header__cta--outline tb-site-header__cta--wide">{{ secondary.label }}</component>
+       <component :is="primary.link.is" v-if="primary && layout !== 'button'" :to="primary.link.to" :href="primary.link.href" data-tb-button="primary" class="tb-site-header__cta tb-site-header__cta--wide">{{ primary.label }}</component>
       </div>
      </div>
     </details>
@@ -1453,5 +1455,90 @@
   .tb-site-header.is-crowded .tb-site-header__pins {
    display: flex;
   }
+ }
+
+ /* The look (headerSchema `look`): the bar's background, height, edge,
+    button and logo size, drawn on the site's own variables so nothing can
+    clash with Branding. See-through wins while it lasts. */
+ .tb-site-header--height-compact .tb-site-header__bar {
+  min-height: 56px;
+  padding-block: 8px;
+ }
+
+ .tb-site-header--height-roomy .tb-site-header__bar {
+  min-height: 84px;
+  padding-block: 18px;
+ }
+
+ .tb-site-header--edge-none:not(.is-clear, .is-bare),
+ .tb-site-header--edge-shadow:not(.is-clear, .is-bare) {
+  border-bottom-color: transparent;
+ }
+
+ .tb-site-header--edge-shadow:not(.is-clear, .is-bare) {
+  box-shadow: 0 2px 14px color-mix(in srgb, var(--site-heading) 10%, transparent);
+ }
+
+ .tb-site-header--logo-small .tb-site-header__logo {
+  height: 32px;
+ }
+
+ .tb-site-header--logo-large .tb-site-header__logo {
+  max-width: 240px;
+  height: 52px;
+ }
+
+ .tb-site-header--cta-outline .tb-site-header__cta {
+  box-shadow: inset 0 0 0 1.5px currentColor;
+  background: transparent;
+  color: var(--site-heading);
+ }
+
+ .tb-site-header--bg-brand {
+  --tb-look-bg: var(--site-accent);
+  --tb-look-ink: var(--site-accent-ink);
+ }
+
+ .tb-site-header--bg-dark {
+  --tb-look-bg: var(--site-dark);
+  --tb-look-ink: var(--site-dark-ink);
+ }
+
+ /* The page's own colors are kept for what opens out of the bar: the
+    dropdowns and the phone menu stay on the page's background. */
+ :is(.tb-site-header--bg-brand, .tb-site-header--bg-dark):not(.is-clear, .is-bare) {
+  --tb-page-accent: var(--site-accent);
+  --tb-page-accent-ink: var(--site-accent-ink);
+  --tb-page-heading: var(--site-heading);
+  --tb-page-body: var(--site-body);
+  --tb-page-muted: var(--site-muted);
+  --tb-page-border: var(--site-border);
+  --tb-page-surface: var(--site-surface);
+  background: var(--tb-look-bg);
+ }
+
+ :is(.tb-site-header--bg-brand, .tb-site-header--bg-dark):not(.is-clear, .is-bare) :is(.tb-site-header__bar, .tb-site-header__utility) {
+  --site-heading: var(--tb-look-ink);
+  --site-body: var(--tb-look-ink);
+  --site-muted: color-mix(in srgb, var(--tb-look-ink) 78%, transparent);
+  --site-border: color-mix(in srgb, var(--tb-look-ink) 25%, transparent);
+  --site-surface: color-mix(in srgb, var(--tb-look-ink) 12%, transparent);
+ }
+
+ /* On the brand color the button can't be the brand color too: it turns
+    over, ink for its background and the brand color for its words. */
+ .tb-site-header--bg-brand:not(.is-clear, .is-bare) .tb-site-header__bar {
+  --site-accent: var(--tb-look-ink);
+  --site-accent-ink: var(--tb-look-bg);
+ }
+
+ :where(.tb-site-header--bg-brand, .tb-site-header--bg-dark):not(.is-clear, .is-bare) :where(.tb-site-header__panel, .tb-site-header__sheet) {
+  --site-accent: var(--tb-page-accent);
+  --site-accent-ink: var(--tb-page-accent-ink);
+  --site-heading: var(--tb-page-heading);
+  --site-body: var(--tb-page-body);
+  --site-muted: var(--tb-page-muted);
+  --site-border: var(--tb-page-border);
+  --site-surface: var(--tb-page-surface);
  }
 </style>
