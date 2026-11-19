@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { CATEGORIES, CHOICE_WIDGETS, WIDGETS, WYS_TOOLS } from './define.js';
 import { whenProblem, whenTerms } from '../app/utils/when.js';
 import { collectionHookFlags } from './collection-hooks.js';
+import { SITE_LOADS, THIRD_PARTIES, cookieProblem, thirdPartiesForManifest } from './third-parties.js';
 
 // The manifest: everything a studio needs to edit this site's blocks without
 // holding any of their code. Contract: docs/manifest.md. `version` changes
@@ -104,6 +105,21 @@ function checkPresets(def, where) {
  }
 }
 
+// What a block says it can load (`loads`, docs/manifest.md § Third parties)
+// has to be in the list of third parties, each with a cookie statement a
+// privacy policy can use. A mistyped id would hide a service from the site's
+// own "What this site collects" list.
+function checkLoads(loads, where) {
+ if (loads === undefined) return;
+ if (!Array.isArray(loads)) throw new Error(`${where}: loads must be a list`);
+ for (const id of loads) {
+  const entry = THIRD_PARTIES.find((one) => one.id === id);
+  if (!entry) throw new Error(`${where}: loads "${id}", which isn't in schema/third-parties.js`);
+  const problem = cookieProblem(entry.cookies);
+  if (problem) throw new Error(`${where}: ${id}: ${problem}`);
+ }
+}
+
 // Where a block comes from, for the studio's tray: a site's own blocks are
 // private; shared ones are Timbrr's base library unless a brand owns them
 // (commissioned by one site, shared with every site: the community shelf).
@@ -133,6 +149,7 @@ export function buildManifest(site, layers, definitions, collectionHooks = []) {
   }
   if (def.advanced && def.retired) throw new Error(`${where}: a block can't be advanced and retired`);
   checkPresets(def, where);
+  checkLoads(def.loads, where);
   const defaults = def.schema.parse(def.defaults ?? {});
   return {
    type: def.type,
@@ -149,13 +166,14 @@ export function buildManifest(site, layers, definitions, collectionHooks = []) {
    ...(def.retired === true ? { retired: true } : {}),
    ...(def.presets?.length ? { presets: def.presets } : {}),
    ...(def.keywords?.length ? { keywords: def.keywords } : {}),
+   ...(def.loads?.length ? { loads: def.loads } : {}),
    fields: def.fields,
    defaults,
    wys: def.wys ?? {},
    schema: z.toJSONSchema(def.schema, { io: 'input', unrepresentable: 'throw' }),
   };
  });
- return { version: MANIFEST_VERSION, generatedAt: new Date().toISOString(), site, layers, widgets: WIDGETS, blocks, collectionHooks: collectionHookFlags(collectionHooks) };
+ return { version: MANIFEST_VERSION, generatedAt: new Date().toISOString(), site, layers, widgets: WIDGETS, thirdParties: thirdPartiesForManifest(), siteLoads: SITE_LOADS, blocks, collectionHooks: collectionHookFlags(collectionHooks) };
 }
 
 // What wraps a field's real shape (a default, a missing value allowed);

@@ -276,16 +276,56 @@ same-site paths). Nothing a page holds becomes markup.
    "component": "BlocksHours", "label": "Hours", "description": "From settings, open-now indicator",
    "category": "dynamic", "icon": "hours",
    // "frame": true on a site_header or site_footer; "advanced": true, "retired": true,
-   // "presets": [ ... ] and "keywords": [ ... ] the same way: left out unless set
+   // "presets": [ ... ], "keywords": [ ... ] and "loads": ["youtube", ...] the same way: left out unless set
    "fields": [ /* as defined */ ],
    "defaults": { /* parsed through the schema: every key present */ },
    "wys": { "headline": [], "items.*.title": [], "items.*.body": [], "note": ["italic"] },
    "schema": { /* JSON Schema 2020-12, from z.toJSONSchema (input side) */ }
   }
  ],
+ "thirdParties": [ /* every service a block can load, below */ ],
+ "siteLoads": ["timbrr_hosting", "timbrr_analytics", "timbrr_draft", "google_fonts"], // loaded by every page
  "collectionHooks": { "format": false, "editor": true } // which kinds of collection hook the site's code has
 }
 ```
+
+### Third parties
+
+`thirdParties` is the list the studio builds a site's "What this site
+collects" from (the studio's `docs/adr/0023-web-analytics.md` § 8). It comes
+from `schema/third-parties.js`; a block says which ones it can load with
+`loads: ['youtube']` in `defineBlock`, and `siteLoads` is what every page
+loads whatever its blocks. A site's list is its blocks' `loads` (the ones on
+its pages) plus `siteLoads`.
+
+```jsonc
+{
+ "id": "vimeo", "name": "Vimeo",
+ "kind": "load",                       // own | load (the page fetches it) | link (a click goes there)
+ "origins": ["player.vimeo.com"],      // "*.x.com" covers subdomains; "anyOrigin": true for an address the owner pastes
+ "what": "…", "collects": "…",         // plain words
+ "processor": "Vimeo.com, Inc.",       // who receives it; no country is stated
+ "cookies": ["vuid", "player", "…"],   // 'none' | a list of names | 'to-be-verified'
+ "source": "https://…"                 // where the cookie statement comes from, and when (see the file)
+}
+```
+
+Every entry says one definite thing about `cookies`: `'none'`, the names the
+service's own documentation lists, or `'to-be-verified'` (the studio shows
+"Cookie list to be verified" and leaves the row out of the policy text).
+`'none'` is allowed only for our own entries (`kind: 'own'`). "May set
+cookies" is refused, because it can't go in a policy. A statement about a
+service we don't run is looked up in its official documentation, with the
+address and date in `source`, never written from memory.
+
+`node layer/scripts/check-embed.mjs` fails the build when an address in the
+layer's code isn't listed, when a block's components can load a service the
+block doesn't declare (by address, or through `embedSrc`, `embedFrame`,
+`useShopRead` or a `Tb*` component the entry names in `via`), when a listed
+service has no cookie statement, and when an address used on every page isn't
+in `siteLoads`. Adding a service is a new entry first. A block the check can't
+see through (a component that reaches an address by a helper that isn't in
+`via`) has to be declared by hand.
 
 `collectionHooks` says whether the site's `collection-hooks/` files (docs/collection-hooks.md)
 format field values and adjust the entry editor. With `editor: true` the
@@ -344,6 +384,7 @@ Studio → canvas
 | `timbrr:select` | `id` or null. A placement's id selects all of its blocks |
 | `timbrr:view` | `scale` — how far the studio scales the frame down to fit; the canvas draws its outlines, tabs and drop zone up by as much, so they read at their real size |
 | `timbrr:record` | nothing — the studio is recording this session (rrweb) and can't see into the frame: the canvas loads rrweb and passes what happens on it up to the studio's recorder. Sent again, the canvas sends its whole page afresh, because the studio has taken a new snapshot of its own. Nothing loads until it's asked |
+| `timbrr:insights` | `on` — Insights is showing (false takes it all away; nothing is drawn or measured until it's true). With `on: true`: `mode` (`seen`, `heat` or `scroll`), `selected` (the block's id or null), `colors` (`{ best, middle, lowest }`), `blocks` (`[{ id, name, state, since?, hasRow, seen, clicked, rate, rank, reach }]`: `state` is `live`, `new` (not published yet) or `changed`; `rank` is `best`, `middle`, `lowest` or null; `reach` is 0..1, how many of a page's views saw the block), `buttons` (the selected block's `[{ index, clicks }]`, in the order the page's script counts them) and `heat` (`{ <block id>: { size, cells, max } }`, a 20 x 20 grid for the device the canvas is sized to). The canvas draws a veil and a badge per block, the buttons' counts, the heat, or the lines where `reach` crosses 75, 50 and 25 percent. It sits over the page and takes no clicks. The header and footer have no block id and are drawn as "Not tracked". Only numbers and names the studio read go in; the canvas never reads text from a visitor |
 | `timbrr:format` | `tool` (`bold` `italic` `underline` `link` `h2` `h3` `ul` `ol` `clear`), with `href` for `link` (empty takes the link off) — applied to the open rich-text field if it allows that tool, ignored otherwise |
 | `timbrr:release` | nothing — the studio's keyboard went somewhere other than the format bar (the inspector, the tray): an open rich-text field goes back to text |
 | `timbrr:dragover` | `y` — a block from the studio's tray is over the page, `y` px from its top in the page's own pixels (before any scaling): the canvas puts its drop line where the block would go. A browser lets a drag drop only into documents of the origin it started in, so the studio takes the drop over the frame and says where it is |
@@ -356,7 +397,7 @@ Canvas → studio
 |---|---|
 | `timbrr:ready` | `manifestVersion` — repeated every 250 ms until the first `timbrr:doc` |
 | `timbrr:size` | `height` — the page's height (the page's own, not the window's, so it goes down as well as up), measured again after every `timbrr:doc` and sent when it changed; the studio sizes the frame to it. With `window: true` (a window preview, `&window=1`) the frame keeps its size and the page scrolls in it. Never sent from the stage, whose frame has a fixed height |
-| `timbrr:click` | `id` of the block clicked, or null (a locked block's own `<placement id>.<block id>`); also sent when the caret goes into a field of another block. A click on the site's header or footer in Render view has a null `id` and `side`, `header` or `footer`. A click on an image a block drew with `field`, on an editable canvas, adds `field`, its path (`items.0.image`), and the studio opens that field in its inspector. A studio that doesn't know it just selects the block, and a click without it always does |
+| `timbrr:click` | `id` of the block clicked, or null (a locked block's own `<placement id>.<block id>`); also sent when the caret goes into a field of another block. A click on the site's header or footer in Render view has a null `id` and `side`, `header` or `footer`. A click on an image a block drew with `field`, on an editable canvas, adds `field`, its path (`items.0.image`), and the studio opens that field in its inspector. A studio that doesn't know it just selects the block, and a click without it always does. A click on a link adds `href`, its address as written, and on a link or a button `control: true` and `label` (its words, up to 60 characters; the studio's funnel walk in Analytics makes a step of it); both are ignored by a studio that doesn't know them |
 | `timbrr:part` | On the stage, a click on the header: `id` (the block's) and `part`, one of `announce`, `logo`, `menu`, `buttons`, `look`. On a menu item it adds `item` (its place in the menu), on a main or second button `button` (`primary` or `secondary`), and on those, the logo or the announcement `rect` (`{ x, y, width, height }` in the frame). The studio opens that section of the header's panel, and a small box beside what was clicked |
 | `timbrr:edit` | `id`, `field` (a path: `items.0.title`), `value` — a string for a text field, a rich-text document (`{ type: 'doc', content: […] }`) for an `html` one. The studio takes nothing else |
 | `timbrr:focus` | `id`, `field`, `kind` (`text` or `rich`), `label` (the field's name from its definition: `Description`, or `Cards 2 · Title` in a list), `tools` (what the field allows: its `wys` for rich text, none for plain), `active` (the tools on at the caret), `href` (the link at the caret, or null) — when the caret arrives, and again whenever any of it changes |
@@ -367,6 +408,7 @@ Canvas → studio
 | `timbrr:locked` | `id` — the placement: a printable key (no Ctrl or Meta, not held down) other than those `timbrr:flag` and `timbrr:key` carry was pressed while it was selected, on an editable canvas, with no field open. The studio says why nothing happened. A studio too old for `timbrr:key` says nothing for those; the studio deploys first, so no site should meet one |
 | `timbrr:flag` | Nothing else: F was pressed in the frame (no Ctrl, Meta, Alt or Shift) with no field open. Keys pressed here never reach the studio, so this is how it opens its Flag something panel. Goes first: such a key doesn't also send `timbrr:locked` |
 | `timbrr:key` | `key` (`Delete`, `Backspace`, `n`, `d` or `h`; `ArrowUp` or `ArrowDown`, bare with a block selected to select its neighbor, or with `alt: true` to move it), `alt` — a key for the selected block was pressed in the frame on an editable canvas, with no field open, not on the stage and not held down, with no other modifier. The studio decides what it does, and may ignore it; a studio that doesn't know the message drops it, and a canvas that doesn't send it just has no keys. Such a key doesn't also send `timbrr:locked`. With `mod: true` the key is `z` or `y` pressed with ⌘ or Ctrl (`ctrl: true` for Ctrl, `shift` for Shift), no field open: undo or redo, for the studio's History |
+| `timbrr:buttons` | `id`, `labels` — while Insights shows a block's buttons (`timbrr:insights` with `selected`): the words on each of that block's buttons and links, in the order the page's script counts them (`a[href], button`, leaving out the canvas's own tab and Style menu), cut to 60 characters. They are the person's own words, sent so the inspector's numbers can name them. Sent when they change |
 | `timbrr:crop` | `id`, `field` (an image's path) and either `focal` (`{ x, y }`, 0..1) and `zoom` (1..4), or `reset: true` — a picture was cropped by hand: a double-click on one its box crops (not `ratio="auto"`, not in a locked block) on an editable canvas opens the crop; drag moves the photo, the wheel or the bar's slider zooms, arrows nudge, Enter or a press elsewhere keeps it, Escape cancels, Reset asks for the library's own. The canvas draws it at once; the studio writes it into the image value and sends the page back. A studio that doesn't know the message drops it |
 
 In the canvas each block sits in a frame (`.tb-frame`): a quiet outline

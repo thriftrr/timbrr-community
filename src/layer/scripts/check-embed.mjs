@@ -1,7 +1,13 @@
 // Checks what an Embed block frames and what a Price calculator adds up to,
-// with no build and no Vue:
+// and that every third party a block can load is declared with a cookie
+// statement (schema/third-parties.js), with no build and no Vue:
 //   node layer/scripts/check-embed.mjs
-import { equal } from 'node:assert/strict';
+import { equal, ok, throws } from 'node:assert/strict';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { buildManifest, componentName } from '../schema/manifest.js';
+import { SITE_LOADS, THIRD_PARTIES, cookieProblem, originMatches } from '../schema/third-parties.js';
 import { calculatorTotal, embedFrame, priceNumber } from '../app/utils/blocks.js';
 import { safeHref } from '../app/utils/timbrr.js';
 
@@ -35,3 +41,117 @@ equal(calculatorTotal(data, 3, [true, true]), 164);
 equal(calculatorTotal({ price: '', extra: '', addons: [] }, 4, []), 0);
 
 console.log('ok  embedFrame, priceNumber, calculatorTotal');
+
+// ---- Third parties: what a block can load, and what we say about it ----
+
+const layerDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const read = (file) => readFileSync(file, 'utf8');
+const walk = (dir) => readdirSync(dir).flatMap((name) => (statSync(join(dir, name)).isDirectory() ? walk(join(dir, name)) : [join(dir, name)]));
+
+// An entry can't be used in a privacy policy without one definite thing about
+// cookies. "May set cookies" is refused, and so is 'none' for a service we
+// don't run: that has to come from our own code, not from memory.
+equal(cookieProblem('none'), null);
+equal(cookieProblem('to-be-verified'), null);
+equal(cookieProblem(['vuid', '[clip_id]_password']), null);
+for (const bad of ['may set cookies', 'maybe', '', undefined, null, [], ['it sets a few'], [''], 42]) ok(cookieProblem(bad), `cookieProblem accepted ${JSON.stringify(bad)}`);
+const ids = new Set();
+for (const entry of THIRD_PARTIES) {
+ const where = `third party ${entry.id}`;
+ ok(!ids.has(entry.id), `${where} is listed twice`);
+ ids.add(entry.id);
+ for (const key of ['name', 'what', 'collects', 'processor', 'source']) ok(typeof entry[key] === 'string' && entry[key].trim(), `${where} has no ${key}`);
+ equal(cookieProblem(entry.cookies), null, `${where}: ${cookieProblem(entry.cookies)}`);
+ ok(['own', 'load', 'link'].includes(entry.kind), `${where}: unknown kind ${entry.kind}`);
+ if (entry.kind !== 'own') {
+  ok(entry.cookies !== 'none', `${where} says no cookies, which only our own code can say`);
+  ok(entry.origins.length || entry.anyOrigin, `${where} has no origin`);
+  if (Array.isArray(entry.cookies)) ok(/https?:\/\//.test(entry.source), `${where} names cookies without the source's address`);
+ }
+}
+for (const id of SITE_LOADS) ok(ids.has(id), `SITE_LOADS names ${id}, which isn't listed`);
+
+// Where an address may appear without being a third party: our own, the
+// standards' namespaces, and links a visitor clicks to a profile (nothing is
+// loaded from them).
+const IGNORED_HOSTS = ['localhost', '127.0.0.1', 'timbrr.app', 'www.w3.org', 'www.sitemaps.org', 'schema.org', 'analytics.invalid'];
+const LINK_OUT = ['www.instagram.com', 'www.facebook.com', 'www.tiktok.com', 'x.com', 'www.youtube.com'];
+const HOST = /https?:\/\/([a-z0-9][a-z0-9.-]*)/gi;
+const hostsIn = (text) => [...text.matchAll(HOST)].map((match) => match[1].toLowerCase());
+const entryFor = (host) => THIRD_PARTIES.find((entry) => originMatches(entry.origins, host));
+
+// 1. Every address in the layer's code is ours, a link out, or listed.
+const SITE_FILES = [join(layerDir, 'app/utils/brand.js'), join(layerDir, '../starter/nuxt.config.js')];
+const sources = [...['app', 'server', 'modules'].flatMap((dir) => walk(join(layerDir, dir))), join(layerDir, '../starter/nuxt.config.js')].filter((file) => /\.(js|vue|mjs)$/.test(file) && !file.endsWith('analytics-script.js'));
+for (const file of sources) {
+ for (const host of hostsIn(read(file))) {
+  if (IGNORED_HOSTS.some((ignored) => host === ignored || host.endsWith(`.${ignored}`)) || LINK_OUT.includes(host)) continue;
+  ok(entryFor(host), `${file.replace(layerDir, 'layer')} loads ${host}, which schema/third-parties.js doesn't list`);
+ }
+}
+// What every page loads has to be said of every site.
+for (const file of SITE_FILES) {
+ for (const host of hostsIn(read(file))) {
+  const entry = entryFor(host);
+  if (entry) ok(SITE_LOADS.includes(entry.id), `${file.replace(layerDir, 'layer')} loads ${host} on every page, so ${entry.id} belongs in SITE_LOADS`);
+ }
+}
+
+// 2. A block declares what its components load: the addresses in them, and
+// the helpers and components that bring a service in (`via`). A component
+// reaches the Tb* components it names.
+const componentsDir = join(layerDir, 'app/components');
+function reach(file, seen = new Set()) {
+ if (seen.has(file)) return seen;
+ seen.add(file);
+ for (const name of new Set(read(file).match(/\bTb[A-Z]\w*/g) ?? [])) {
+  try {
+   reach(join(componentsDir, `${name}.vue`), seen);
+  } catch {
+   // a name that isn't a component file (a CSS class, a helper)
+  }
+ }
+ return seen;
+}
+// The ids a block's components need declared, from their text.
+function loadsNeeded(text) {
+ const words = new Set(text.match(/\b\w+\b/g));
+ return THIRD_PARTIES.filter((entry) => entry.kind !== 'own' && (entry.via?.some((name) => words.has(name)) || hostsIn(text).some((host) => originMatches(entry.origins, host)))).map((entry) => entry.id);
+}
+equal(loadsNeeded("embedSrc(props.value)").join(), 'youtube,vimeo');
+equal(loadsNeeded("<TbShopBuy />").join(), 'shopify');
+equal(loadsNeeded('<iframe src="https://tile.openstreetmap.org/1/1/1.png">').join(), 'openstreetmap');
+equal(loadsNeeded('no third party here').length, 0);
+
+const layer = { name: '@timbrr/community', version: '0.0.0', tier: 'community' };
+const definitions = [];
+for (const file of readdirSync(join(layerDir, 'blocks')).filter((name) => /\.m?js$/.test(name)).sort()) {
+ definitions.push({ def: (await import(pathToFileURL(join(layerDir, 'blocks', file)).href)).default, layer });
+}
+const declared = new Set();
+const undeclared = [];
+for (const { def } of definitions) {
+ const component = join(componentsDir, 'blocks', `${componentName(def.type).replace(/^Blocks/, '')}.global.vue`);
+ let text;
+ try {
+  text = [...reach(component)].map(read).join('\n');
+ } catch {
+  continue; // no component of its own: nothing it can load
+ }
+ for (const id of loadsNeeded(text)) if (!def.loads?.includes(id)) undeclared.push(`block ${def.type} can load ${id}: add loads: ['${id}'] in blocks/${def.type}.js`);
+ for (const id of def.loads ?? []) declared.add(id);
+}
+equal(undeclared.join('\n'), '');
+// A listed service nothing declares is a stale entry.
+for (const entry of THIRD_PARTIES) ok(entry.kind === 'own' || SITE_LOADS.includes(entry.id) || declared.has(entry.id), `${entry.id} is listed but no block declares it`);
+
+// The manifest carries the list for the studio, and refuses a block that
+// names a service it doesn't know.
+const manifest = buildManifest('check', [layer], definitions);
+equal(manifest.thirdParties.length, THIRD_PARTIES.length);
+equal(manifest.siteLoads.join(), SITE_LOADS.join());
+ok(manifest.blocks.find((block) => block.type === 'media').loads.includes('youtube'));
+const media = definitions.find(({ def }) => def.type === 'media').def;
+throws(() => buildManifest('check', [layer], [{ def: { ...media, loads: ['nope'] }, layer }]), /isn't in schema\/third-parties\.js/);
+
+console.log(`ok  third parties: ${THIRD_PARTIES.length} listed, ${definitions.filter(({ def }) => def.loads?.length).length} blocks declare what they load`);

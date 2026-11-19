@@ -124,6 +124,9 @@ const lookFields = [
 //  presets     [{ key, label, description?, data }]: ways to start this block,
 //              found by name in the tray's search; `data` goes over `defaults`
 //  keywords    more words the tray's search finds this block by
+//  loads       the third parties this block can load or send a visitor to, by id
+//              in schema/third-parties.js (['youtube']); check-embed.mjs fails
+//              the build when a block uses one it didn't list
 //  without     look fields this block has no use for (['divider']); the
 //              key stays in its data, the inspector just doesn't offer it
 export function defineBlock(definition) {

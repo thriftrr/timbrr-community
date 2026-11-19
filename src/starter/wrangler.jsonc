@@ -11,6 +11,14 @@
  // The only studio whose messages the canvas takes and that may frame it
  // (read per request, so changing it here needs a deploy, not a rebuild).
  "vars": { "NUXT_PUBLIC_STUDIO_ORIGIN": "https://timbrr.app" },
+ // Timbrr Analytics counts into this dataset (src/layer/server/utils/analytics.js,
+ // docs/analytics.md). A Worker without the binding serves its pages as
+ // before and counts nothing, so a client site copied from this file adds
+ // it when it wants to count. The dataset is made by the first write; the
+ // account needs Workers Analytics Engine turned on once. Environments don't
+ // inherit it: `timbrr` and `hosted` carry their own, and `preview` leaves
+ // it out on purpose, since a draft is never counted.
+ "analytics_engine_datasets": [{ "binding": "TIMBRR_HITS", "dataset": "timbrr_hits" }],
  "env": {
   // The Timbrr marketing site: the same build deployed a second time as
   // its own Worker on the apex domain, serving what the studio publishes
@@ -25,6 +33,7 @@
    "name": "timbrr-site",
    "routes": [{ "pattern": "timbrr.app/*", "zone_name": "timbrr.app" }],
    "observability": { "enabled": true },
+   "analytics_engine_datasets": [{ "binding": "TIMBRR_HITS", "dataset": "timbrr_hits" }],
    "vars": {
     "NUXT_PUBLIC_SITE": "timbrr",
     "NUXT_PUBLIC_STUDIO_ORIGIN": "https://timbrr.app",
@@ -48,6 +57,7 @@
    "name": "timbrr-sites",
    "routes": [{ "pattern": "*/*", "zone_name": "timbrr.app" }],
    "observability": { "enabled": true, "redact_query_string": true },
+   "analytics_engine_datasets": [{ "binding": "TIMBRR_HITS", "dataset": "timbrr_hits" }],
    "vars": {
     "NUXT_PUBLIC_STUDIO_ORIGIN": "https://timbrr.app",
     "NUXT_TIMBRR_API": "https://timbrr.app",

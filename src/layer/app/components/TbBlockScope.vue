@@ -5,6 +5,11 @@
  // block, never around it, so the layout is exactly the site's. Its fields
  // read their tools and names from `def` through the block scope.
  //
+ // On the live site its id goes on the block's root element (data-block-id,
+ // as in the canvas's frame): it's how the page's analytics script finds a
+ // block (docs/analytics.md). A block with more than one root element isn't
+ // tracked, as it doesn't get the look classes either.
+ //
  // The tab also says how the block is set (its layout, and its background
  // when that isn't the plain one), and on the selected block it opens a
  // small menu of the block's choices (its `buttons` fields: layout,
@@ -106,7 +111,7 @@
 </script>
 
 <template>
- <component :is="component" v-if="!canvas && data" :data="data" :class="look" />
+ <component :is="component" v-if="!canvas && data" :data="data" :class="look" :data-block-id="block.id" />
  <div
   v-else-if="canvas"
   class="tb-frame"
