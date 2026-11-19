@@ -1,0 +1,16 @@
+# Security updates and a weekly look at the npm workspace (layer + starter),
+# grouped into one pull request so it stays one review.
+version: 2
+updates:
+ - package-ecosystem: npm
+   directory: /src
+   schedule:
+    interval: weekly
+   open-pull-requests-limit: 5
+   groups:
+    npm:
+     patterns: ['*']
+ - package-ecosystem: github-actions
+   directory: /
+   schedule:
+    interval: weekly

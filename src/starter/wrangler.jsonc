@@ -6,7 +6,8 @@
  "name": "timbrr-canvas",
  "account_id": "7a16cc804ef680614283102ffad99469",
  "compatibility_date": "2025-08-01",
- "observability": { "enabled": true },
+ // Query strings can hold tokens and what visitors typed, so logs leave them out.
+ "observability": { "enabled": true, "redact_query_string": true },
  "routes": [{ "pattern": "canvas.timbrr.app", "custom_domain": true }],
  // The only studio whose messages the canvas takes and that may frame it
  // (read per request, so changing it here needs a deploy, not a rebuild).
@@ -24,7 +25,8 @@
   "timbrr": {
    "name": "timbrr-site",
    "routes": [{ "pattern": "timbrr.app/*", "zone_name": "timbrr.app" }],
-   "observability": { "enabled": true },
+   // One request in ten is logged: enough to see a problem, less cost and less held about visitors.
+   "observability": { "enabled": true, "head_sampling_rate": 0.1, "redact_query_string": true },
    "vars": {
     "NUXT_PUBLIC_SITE": "timbrr",
     "NUXT_PUBLIC_STUDIO_ORIGIN": "https://timbrr.app",
@@ -47,7 +49,7 @@
   "hosted": {
    "name": "timbrr-sites",
    "routes": [{ "pattern": "*/*", "zone_name": "timbrr.app" }],
-   "observability": { "enabled": true, "redact_query_string": true },
+   "observability": { "enabled": true, "head_sampling_rate": 0.1, "redact_query_string": true },
    "vars": {
     "NUXT_PUBLIC_STUDIO_ORIGIN": "https://timbrr.app",
     "NUXT_TIMBRR_API": "https://timbrr.app",

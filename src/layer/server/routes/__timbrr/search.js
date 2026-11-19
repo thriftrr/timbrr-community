@@ -1,5 +1,6 @@
-import { defineEventHandler, getHeader, getQuery, getRequestIP, setResponseHeaders, setResponseStatus } from 'h3';
+import { defineEventHandler, getQuery, setResponseHeaders, setResponseStatus } from 'h3';
 import { fetchPublished } from '../../utils/studio.js';
+import { visitorAddress } from '../../utils/visitor.js';
 
 // /__timbrr/search?q=open&limit=10&p=1: a visitor's search of this site's
 // published entries, exactly as the studio's public read API sends it
@@ -45,7 +46,7 @@ export default defineEventHandler(async (event) => {
  const keys = typeof asked.collections === 'string' ? asked.collections.split(',').slice(0, 30) : [];
  const collections = keys.every((key) => /^[a-z][a-z0-9_]{0,39}$/.test(key)) ? [...new Set(keys)].sort().join(',') : '';
 
- if (!allowed(getHeader(event, 'cf-connecting-ip') ?? getRequestIP(event) ?? '')) {
+ if (!allowed(visitorAddress(event))) {
   setResponseStatus(event, 429);
   setResponseHeaders(event, { 'Cache-Control': 'no-store', 'Retry-After': '60', 'X-Robots-Tag': 'noindex' });
   return { statusCode: 429, message: 'Too many searches. Try again in a minute.' };

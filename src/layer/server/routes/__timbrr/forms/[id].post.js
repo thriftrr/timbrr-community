@@ -1,6 +1,7 @@
-import { defineEventHandler, getHeader, getRequestIP, getRouterParam, readRawBody, setResponseHeaders, setResponseStatus } from 'h3';
+import { defineEventHandler, getHeader, getRouterParam, readRawBody, setResponseHeaders, setResponseStatus } from 'h3';
 import { useRuntimeConfig } from '#imports';
 import { previewToken, studioApi } from '../../../utils/preview.js';
+import { visitorAddress } from '../../../utils/visitor.js';
 
 // /__timbrr/forms/:id: someone sending a form. The browser only ever talks to
 // the site, so its request goes on to the studio from here, as it came, and the
@@ -33,7 +34,7 @@ export default defineEventHandler(async (event) => {
  const headers = {
   accept: 'application/json',
   'content-type': getHeader(event, 'content-type') ?? 'application/json',
-  'x-timbrr-visitor': getHeader(event, 'cf-connecting-ip') ?? getRequestIP(event) ?? '',
+  'x-timbrr-visitor': visitorAddress(event), // an IPv6 visitor's /64, so per-visitor limits hold
   ...(config.timbrr?.relaySecret ? { 'x-timbrr-relay': config.timbrr.relaySecret } : {}),
   ...(preview ? { authorization: `Bearer ${previewToken(event)}` } : {}),
  };

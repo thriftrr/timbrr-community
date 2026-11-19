@@ -16,7 +16,8 @@
  const uid = useId();
 
  // Results go to another page only when it's a page of this site.
- const to = computed(() => (/^\/(?!\/)/.test(props.data.to ?? '') ? props.data.to.replace(/[?#].*$/, '') : ''));
+ // safeHref refuses /\host too, which browsers read as //host.
+ const to = computed(() => (safeHref(props.data.to)?.startsWith('/') ? safeHref(props.data.to).replace(/[?#].*$/, '') : ''));
  const tidy = (path) => path.replace(/\/+$/, '') || '/';
  const elsewhere = computed(() => Boolean(to.value) && tidy(to.value) !== tidy(route.path));
  const q = computed(() => (canvas || elsewhere.value ? '' : String([route.query.q].flat()[0] ?? '').trim().slice(0, 100)));

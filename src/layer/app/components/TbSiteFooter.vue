@@ -72,7 +72,7 @@
  const forms = useTimbrrForms();
  const newsletterForm = computed(() => {
   const row = footer.value?.newsletter;
-  return row?.on && row.form ? (forms.value[row.form] ?? null) : null;
+  return row?.on && row.form ? formNamed(forms.value, row.form) : null;
  });
 
  const newsletter = computed(() => {
