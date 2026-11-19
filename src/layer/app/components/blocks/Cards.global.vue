@@ -43,6 +43,7 @@
     :class="slider ? 'tb-slider' : `tb-cards__list--${across}`"
     :style="slider ? { '--tb-slider-across': data.columns } : undefined"
     :tabindex="slider ? 0 : undefined"
+    :aria-label="slider ? (typeof data.headline === 'string' && data.headline) || 'Slides' : undefined"
     role="list"
    >
     <li

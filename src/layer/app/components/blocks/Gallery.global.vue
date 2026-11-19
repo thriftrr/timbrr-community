@@ -33,6 +33,7 @@
     :class="{ 'tb-slider': data.layout === 'slider' }"
     :style="data.layout === 'slider' ? { '--tb-slider-across': data.columns } : undefined"
     :tabindex="data.layout === 'slider' ? 0 : undefined"
+    :aria-label="data.layout === 'slider' ? (typeof data.headline === 'string' && data.headline) || 'Slides' : undefined"
     role="list"
    >
     <li v-for="(item, index) in data.items" :key="index">

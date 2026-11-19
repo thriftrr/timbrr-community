@@ -164,8 +164,8 @@
 
  .tb-calculator__tick {
   flex: none;
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   margin: 0;
   accent-color: var(--site-accent);
   cursor: pointer;

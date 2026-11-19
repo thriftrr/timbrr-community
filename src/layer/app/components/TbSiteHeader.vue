@@ -397,7 +397,7 @@
           </div>
          </div>
          <component :is="item.feature.link.is" v-if="item.feature" :to="item.feature.link.to" :href="item.feature.link.href" class="tb-site-header__feature">
-          <img v-if="item.feature.src" class="tb-site-header__feature-image" :src="item.feature.src" :alt="item.feature.image.alt" loading="lazy" />
+          <img v-if="item.feature.src" class="tb-site-header__feature-image" :src="item.feature.src" :alt="item.feature.image.alt || ''" loading="lazy" />
           <span v-if="item.feature.heading" class="tb-site-header__feature-heading">{{ item.feature.heading }}</span>
           <span v-if="item.feature.text" class="tb-site-header__desc">{{ item.feature.text }}</span>
          </component>

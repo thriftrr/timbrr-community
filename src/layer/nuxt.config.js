@@ -7,6 +7,8 @@ import { fileURLToPath } from 'node:url';
 export default defineNuxtConfig({
  modules: [fileURLToPath(new URL('./modules/blocks.js', import.meta.url)), fileURLToPath(new URL('./modules/collection-hooks.js', import.meta.url))],
  css: [fileURLToPath(new URL('./app/assets/site.css', import.meta.url))],
+ // Every page a site serves, the canvas included; a published page sets its own (composables/page.js).
+ app: { head: { htmlAttrs: { lang: 'en' } } },
  runtimeConfig: {
   // NUXT_TIMBRR_API: the studio this site's published pages come from.
   // Server-only: the site's own server asks it (server/utils/studio.js);

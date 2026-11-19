@@ -62,6 +62,8 @@ For a particular kind of value:
 | `code` | a pasted snippet, as text | `placeholder` |
 | `hours` | a week of opening hours, as the site's details keep them: seven rows, Monday first, each `{ closed, open, close }`; `[]` while unset | |
 | `table` | a grid of cells: `{ align, rows, header_row, header_col }` (`tableSchema` in `schema/define.js`; below) | |
+| `shop_product` | a product in the site's connected Shopify store: its handle, `''` while unset. The studio's picker searches the store | |
+| `shop_collection` | a Shopify collection in that store: its handle, `''` while unset, picked the same way | |
 
 **A table** keeps `rows` top to bottom, each a list of cells left to right
 with one for every column: `{ text, colspan?, rowspan? }`. A merged cell is
@@ -110,6 +112,24 @@ keys parses them away and ignores them.
 `zoom` (1 to 4, optional) is one placement's own: the photo is scaled about
 its focal point inside a box that keeps the block's shape. Without it, or at
 1, the picture is the single `<img>` it always was (`scripts/check-image.mjs`).
+
+`altFrom` (`'library'` | `'page'`, optional) says whose alt text it is. The
+studio writes `'library'` when a photo is picked and `'page'` once someone
+types this page's own. The layer only parses it: the studio's public answer
+already puts the library's current alt into a `'library'` value (and into an
+older value with no `altFrom` and no alt), so pages pick up alt written in
+the media library within a few minutes, without a publish. Any other value
+is refused.
+
+**Image delivery.** When the site answer's `site` carries `delivery`
+(`{ origin, widths, quality }`, set up by the Timbrr team; the key is left
+out when it's off), `mediaSrcset` lists Cloudflare resizing addresses
+instead of the stored WebPs: one per `widths` entry under the picture's
+width, then the picture's own width capped at the largest entry, each
+`<origin>/cdn-cgi/image/width=<w>,quality=<q>,format=auto,fit=scale-down,metadata=none/<id>/<version>/master.webp`.
+`src` stays the master, and a pasted address or a non-master `src` gets no
+srcset either way. `mediaDeliveryUrl` in `app/utils/timbrr.js` is a hand
+copy of the studio's; keep the two in step.
 
 **Field flags:** `inline` (drawn through `<TbText>` or `<TbRich>`, so it's
 typed into on the canvas), `link` (a text field that holds an address, like
@@ -249,7 +269,7 @@ same-site paths). Nothing a page holds becomes markup.
   { "name": "bur-oak-site", "version": "0.0.0", "tier": "private" },
   { "name": "@timbrr/community", "version": "0.1.0", "tier": "community" }
  ],
- "widgets": ["text", "textarea", "html", "select", "buttons", "items", "image", "nav", "switch", "group", "form", "stepper", "number", "range", "date", "time", "checks", "color", "icon", "tags", "code", "hours", "table", "collection", "collection_field", "content", "content_field"],
+ "widgets": ["text", "textarea", "html", "select", "buttons", "items", "image", "nav", "switch", "group", "form", "stepper", "number", "range", "date", "time", "checks", "color", "icon", "tags", "code", "hours", "table", "collection", "collection_field", "shop_product", "shop_collection", "content", "content_field"],
  "blocks": [
   {
    "type": "hours", "tier": "base", "owner": null, "layer": "@timbrr/community",

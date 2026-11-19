@@ -43,6 +43,7 @@
  const blocks = ref([]);
  const theme = ref({});
  const site = shallowRef(null); // the site's name, address, menu, details and frames, for its header and footer
+ useHead({ htmlAttrs: { lang: () => site.value?.language ?? 'en' } });
  const forms = useTimbrrForms(); // the forms this page can show, as the site draws them
  // The entries its collection blocks draw, sent by the studio (composables/collections.js).
  // Set from the start, so a Collection list here never asks the site itself.
@@ -102,7 +103,11 @@
    nav: navList(value.nav, 1),
    cta: buttonFrom(value.cta),
    details: detailsFrom(value.details),
+   language: /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/i.test(value.language ?? '') ? value.language : 'en',
    overHero: isHeroBleed(firstBlock),
+   // The connected Shopify store ({ domain, token, apiVersion, shopUrl },
+   // a public token), or null: the shop blocks read it straight from here.
+   shop: shopConfig(value.shop),
    frame: {
     header: frameFrom(value.frame?.header, headerData),
     footer: frameFrom(value.frame?.footer, footerData),
@@ -257,6 +262,19 @@
 
  function onDblClick(event) {
   if (preview || !editable.value || staged.value || crop.value) return;
+  // A field of a form: the studio opens that form's Build with it selected. The
+  // form is inert here, so the click lands on the block and the field is found
+  // by where it was.
+  const block = event.target.closest?.('[data-block-id]');
+  const formField = block && [...block.querySelectorAll('[data-form-field]')].find((el) => {
+   const box = el.getBoundingClientRect();
+   return event.clientX >= box.left && event.clientX <= box.right && event.clientY >= box.top && event.clientY <= box.bottom;
+  });
+  if (formField && !block.dataset.blockId.includes('.')) {
+   window.getSelection()?.removeAllRanges();
+   post({ type: 'timbrr:formfield', id: block.dataset.blockId, field: formField.dataset.formField });
+   return;
+  }
   const el = event.target.closest?.('[data-image-crop]');
   const id = el?.closest('[data-block-id]')?.dataset.blockId;
   const field = el?.dataset.imageField;

@@ -17,6 +17,7 @@
  const buttons = computed(() =>
   props.data.buttons.flatMap((button, index) => (shows(`buttons.${index}.label`, button.label) ? [index] : [])),
  );
+ const headingTag = useHeadingTag(); // the page's one h1, or an h2 that looks the same
 </script>
 
 <template>
@@ -24,7 +25,7 @@
   <div class="tb-wrap tb-hero__inner">
    <div class="tb-hero__text">
     <TbText v-if="shows('tagline', data.tagline)" :data="data" field="tagline" tag="p" class="tb-eyebrow" />
-    <TbText :data="data" field="headline" tag="h1" class="tb-hero__headline" />
+    <TbText :data="data" field="headline" :tag="headingTag" class="tb-hero__headline" />
     <TbRich v-if="shows('description', data.description)" :data="data" field="description" class="tb-hero__description" />
     <div v-if="buttons.length" class="tb-buttons">
      <TbButton v-for="index in buttons" :key="index" :data="data" :field="`buttons.${index}`" />
