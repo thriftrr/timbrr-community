@@ -55,7 +55,7 @@ page. The studio (`make up` in thriftrr/timbrr, on :3000) uses
 Timbrr's own library is 15 Core blocks, 7 Advanced ones a site turns on, the
 site's header and footer, and 24 retired blocks on their way out. The type is
 the file name in `blocks/` and the block's icon in the studio. Every block can
-also set its background, spacing and a line above it (Section, Spacer and
+also set its background, the space above and below it, and a line above it (Section, Spacer and
 Divider's old jobs), and a retired block's name is a preset of what replaced
 it, so searching the tray still finds it. Why, and how pages move over:
 `docs/blocks.md` in the timbrr repo.
@@ -103,6 +103,15 @@ it, so searching the tray still finds it. Why, and how pages move over:
 - `reviews` Google reviews: a rating summary and review cards, copied in by hand.
 - `instagram` Instagram feed: the handle, a Follow button and tiles you pick,
   not a live feed.
+- `studio_demo` Studio demo: a working copy of the Timbrr studio for a page
+  that sells it, on a made-up plumber's site. A side rail opens seven rooms:
+  the page editor, Collections, Library, Forms, Media, People & access and
+  Branding. Visitors add blocks, type, upload, invite and change the brand.
+  Nothing leaves the browser and nothing is saved; Start over gives the room
+  a fresh copy. The brand chosen in Branding shows in the page editor too.
+  "Opens on" picks the first room. On the studio's canvas it holds still, so
+  a click selects the block; it runs in Preview and on the site. The studio
+  needs no change for it (its icon is `monitor`).
 
 **Community** (`owner` set: commissioned by one brand, on every site's
 Community shelf; the type carries the brand's prefix)

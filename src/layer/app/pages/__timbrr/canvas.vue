@@ -105,6 +105,9 @@
    details: detailsFrom(value.details),
    language: /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/i.test(value.language ?? '') ? value.language : 'en',
    overHero: isHeroBleed(firstBlock),
+   // The connected Shopify store ({ domain, token, apiVersion, shopUrl },
+   // a public token), or null: the shop blocks read it straight from here.
+   shop: shopConfig(value.shop),
    frame: {
     header: frameFrom(value.frame?.header, headerData),
     footer: frameFrom(value.frame?.footer, footerData),
@@ -259,6 +262,19 @@
 
  function onDblClick(event) {
   if (preview || !editable.value || staged.value || crop.value) return;
+  // A field of a form: the studio opens that form's Build with it selected. The
+  // form is inert here, so the click lands on the block and the field is found
+  // by where it was.
+  const block = event.target.closest?.('[data-block-id]');
+  const formField = block && [...block.querySelectorAll('[data-form-field]')].find((el) => {
+   const box = el.getBoundingClientRect();
+   return event.clientX >= box.left && event.clientX <= box.right && event.clientY >= box.top && event.clientY <= box.bottom;
+  });
+  if (formField && !block.dataset.blockId.includes('.')) {
+   window.getSelection()?.removeAllRanges();
+   post({ type: 'timbrr:formfield', id: block.dataset.blockId, field: formField.dataset.formField });
+   return;
+  }
   const el = event.target.closest?.('[data-image-crop]');
   const id = el?.closest('[data-block-id]')?.dataset.blockId;
   const field = el?.dataset.imageField;
@@ -432,14 +448,47 @@
   }
  }
 
+ // The header section a click on the stage belongs to, by what it hit; the
+ // bar's own background is its look. The phone menu's toggle is none.
+ const HEADER_PARTS = [
+  ['.tb-site-header__notice, .tb-site-header__utility', 'announce'],
+  ['.tb-site-header__name', 'logo'],
+  ['.tb-site-header__nav', 'menu'],
+  ['.tb-site-header__cta, .tb-site-header__icons', 'buttons'],
+  ['.tb-site-header__menu', ''],
+  ['.tb-site-header', 'look'],
+ ];
+ function headerPart(target) {
+  const found = HEADER_PARTS.find(([selector]) => target.closest?.(selector));
+  return found?.[1] ?? '';
+ }
+ // What exactly was clicked, for the studio's small box beside it: a menu
+ // item (`item`, its place in the menu), a button (`button`, primary or
+ // secondary), the logo or the announcement, and where it is in this frame.
+ function headerTarget(target) {
+  const el = target.closest?.('[data-tb-item], [data-tb-button], .tb-site-header__name, .tb-site-header__notice');
+  if (!el) return {};
+  const box = el.getBoundingClientRect();
+  const rect = { x: Math.round(box.left), y: Math.round(box.top), width: Math.round(box.width), height: Math.round(box.height) };
+  if (el.dataset.tbItem !== undefined) return { item: Number(el.dataset.tbItem), rect };
+  if (el.dataset.tbButton) return { button: el.dataset.tbButton, rect };
+  return { rect };
+ }
+
  // Links never take the canvas anywhere. Clicking a block selects it, and
  // clicking anywhere else selects nothing. A click on the header or footer
  // also says which it was, and one on an image which field it is, for the
  // studio to open. The stage has nothing to select, and the studio's panel
- // stays open.
+ // stays open: a click there says which part of the header it landed on, so
+ // the panel can open that part's section.
  function onClick(event) {
   if (event.target.closest?.('a')) event.preventDefault();
-  if (preview || staged.value) return;
+  if (preview) return;
+  if (staged.value) {
+   const part = headerPart(event.target);
+   if (part) post({ type: 'timbrr:part', id: staged.value.id, part, ...headerTarget(event.target) });
+   return;
+  }
   const frame = event.target.closest?.('[data-block-id]');
   const id = frame?.dataset.blockId ?? null;
   selected.value = id;

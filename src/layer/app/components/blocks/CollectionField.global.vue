@@ -65,7 +65,7 @@
 <style>
  /* Fields stack close: a template is often a run of them. */
  .tb-section.tb-collection-field {
-  padding-block: calc(var(--site-space) * 0.25);
+  padding-block: calc(var(--site-space-above, var(--site-space)) * 0.25) calc(var(--site-space-below, var(--site-space)) * 0.25);
  }
 
  .tb-collection-field__heading {

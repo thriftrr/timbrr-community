@@ -7,10 +7,14 @@
  // or that the Human check has to run first. `locked` is the studio's canvas,
  // where it's only a picture; `compact` is a footer's, with no heading or room
  // around it; `hideTitle` leaves the heading out and names the form for screen
- // readers instead.
+ // readers instead. A Form block that holds its own words passes `intro` (the
+ // block's, possibly empty) along with `heading`: then what's given is all that
+ // draws, and with no heading the form's name is what screen readers get. With
+ // `intro` left out, the form's own title and intro draw as they always did.
  const props = defineProps({
   form: { type: Object, required: true },
   heading: { type: String, default: '' },
+  intro: { type: String, default: null },
   hideTitle: { type: Boolean, default: false },
   locked: { type: Boolean, default: false },
   compact: { type: Boolean, default: false },
@@ -33,9 +37,12 @@
  const current = computed(() => Math.min(step.value, steps.value.length - 1));
  const last = computed(() => current.value >= steps.value.length - 1);
  const shown = computed(() => steps.value[current.value].fields.filter((field) => field.type !== 'hidden' && formFieldVisible(props.form, field, values)));
- const title = computed(() => props.heading.trim() || props.form.title);
+ const own = computed(() => props.intro !== null);
+ const title = computed(() => (own.value ? props.heading.trim() : props.heading.trim() || props.form.title));
  // The form's own switch (Build > Form) or the block's hides both heading and intro; the block's alone keeps the intro.
- const noHeading = computed(() => props.hideTitle || props.form.hideHeader === true);
+ const noHeading = computed(() => (own.value ? !title.value : props.hideTitle || props.form.hideHeader === true));
+ const label = computed(() => (own.value ? props.form.title : title.value));
+ const lede = computed(() => (own.value ? props.intro : props.form.hideHeader ? '' : props.form.intro));
  const span = (field) => (props.form.advanced && !props.compact ? { half: 6, third: 4 }[field.width] ?? 12 : 12);
  const fieldId = (field) => `${uid}-${field.id}`;
  // A field's hint and error, which a screen reader reads with it.
@@ -192,10 +199,10 @@
 <template>
  <div ref="root" class="tb-form__body" :class="{ 'tb-form__body--compact': compact, 'tb-form__body--untitled': noHeading }" :inert="locked">
   <div role="status"><div v-if="sent" class="tb-form__sent"><TbRich :doc="sent" /></div></div>
-  <form v-if="!sent" novalidate :aria-label="noHeading ? title : undefined" @submit.prevent="last ? submit() : next()">
+  <form v-if="!sent" novalidate :aria-label="noHeading ? label : undefined" @submit.prevent="last ? submit() : next()">
    <template v-if="!compact">
     <h2 v-if="title && !noHeading" class="tb-heading tb-form__title">{{ title }}</h2>
-    <p v-if="form.intro && !form.hideHeader" class="tb-form__lede">{{ form.intro }}</p>
+    <p v-if="lede" class="tb-form__lede">{{ lede }}</p>
    </template>
 
    <div v-if="steps.length > 1" class="tb-form__progress">
@@ -206,7 +213,7 @@
    </div>
 
    <div class="tb-form__grid">
-    <div v-for="field in shown" :key="field.id" class="tb-form__field" :style="{ '--tb-form-span': span(field) }">
+    <div v-for="field in shown" :key="field.id" class="tb-form__field" :data-form-field="field.id" :style="{ '--tb-form-span': span(field) }">
      <template v-if="field.type === 'consent'">
       <label class="tb-form__consent-row">
        <input v-model="values[field.id]" type="checkbox" class="tb-form__tick" :aria-required="field.required || undefined" :aria-invalid="Boolean(errors[field.id])" :aria-describedby="describedBy(field)" @change="clear(field)" />

@@ -127,7 +127,7 @@ html:has(.tb-site-header-shell.is-sticky) {
 
 .tb-section {
  margin: 0;
- padding-block: var(--site-space);
+ padding-block: var(--site-space-above, var(--site-space)) var(--site-space-below, var(--site-space));
 }
 
 /* The look of a block: every block's background, spacing and line above it
@@ -177,6 +177,15 @@ html:has(.tb-site-header-shell.is-sticky) {
 .tb-look--roomy {
  --site-space: calc(clamp(72px, 12vw, 132px) * var(--site-space-scale));
 }
+
+/* Room above and below, set apart (FB-106). A block's padding reads these,
+   falling back to --site-space; `spacing` alone still sets both. */
+.tb-look--above-tight { --site-space-above: calc(clamp(28px, 4vw, 44px) * var(--site-space-scale)); }
+.tb-look--above-normal { --site-space-above: calc(clamp(48px, 8vw, 88px) * var(--site-space-scale)); }
+.tb-look--above-roomy { --site-space-above: calc(clamp(72px, 12vw, 132px) * var(--site-space-scale)); }
+.tb-look--below-tight { --site-space-below: calc(clamp(28px, 4vw, 44px) * var(--site-space-scale)); }
+.tb-look--below-normal { --site-space-below: calc(clamp(48px, 8vw, 88px) * var(--site-space-scale)); }
+.tb-look--below-roomy { --site-space-below: calc(clamp(72px, 12vw, 132px) * var(--site-space-scale)); }
 
 .tb-look--divider {
  border-top: 1px solid var(--site-border);

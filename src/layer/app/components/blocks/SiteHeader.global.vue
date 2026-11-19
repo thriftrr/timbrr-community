@@ -5,6 +5,8 @@
  // from the canvas; with no site to read, as on the starter's block shelf, a
  // placeholder stands in. The Library's stage doesn't come through here:
  // this is the header alone, with no hero to be see-through over.
+ // `showMenu` is never saved: the studio's hover preview of a phone menu
+ // style sets it, to draw the menu opened (FB-111).
  const props = defineProps({ data: { type: Object, required: true } });
 
  const site = useTimbrrSite();
@@ -16,5 +18,10 @@
 </script>
 
 <template>
- <TbSiteHeader :site="framed" />
+ <!-- An open phone menu hangs below the bar, past a page that's only the
+      header; a screen's height (--tb-screen on the canvas) keeps it in view. -->
+ <div v-if="data.showMenu" style="min-height: var(--tb-screen, 100svh)">
+  <TbSiteHeader :site="framed" show-menu />
+ </div>
+ <TbSiteHeader v-else :site="framed" />
 </template>

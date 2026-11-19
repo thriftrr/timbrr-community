@@ -21,6 +21,9 @@ const iconShape = z.object({ on, to: address }).default({ on: false, to: '' });
 
 export const headerSchema = z.object({
  layout: z.enum(['left', 'center', 'button']).default('left'),
+ // Never saved: the studio's hover preview of a phone menu style sets it, to
+ // draw the menu open (FB-111).
+ showMenu: z.boolean().optional(),
  // Where the menu sits on the bar when the logo is on the left: straight
  // after the logo, in the middle, or on the right beside the buttons.
  menuAt: z.enum(['left', 'center', 'right']).default('left'),
@@ -67,6 +70,21 @@ export const headerSchema = z.object({
    phone: { on: false },
    language: { on: false, to: '', label: '' },
   }),
+ // How the bar looks, all of it from the site's own colors and fonts, so
+ // nothing here can clash with Branding. The defaults are how every header
+ // looked before there was a choice.
+ look: z
+  .object({
+   background: z.enum(['light', 'brand', 'dark']).default('light'),
+   height: z.enum(['compact', 'regular', 'roomy']).default('regular'),
+   edge: z.enum(['none', 'line', 'shadow']).default('line'),
+   button: z.enum(['filled', 'outline']).default('filled'),
+   logo: z.enum(['small', 'medium', 'large']).default('medium'),
+  })
+  .default({ background: 'light', height: 'regular', edge: 'line', button: 'filled', logo: 'medium' }),
+ // The starting look the studio last applied, so it can say what's been
+ // changed since and put it back. The site never reads it.
+ start: z.string().max(40).default(''),
  sticky: z.enum(['never', 'always', 'up']).default('never'),
  transparent: z.boolean().default(false),
  phone: z

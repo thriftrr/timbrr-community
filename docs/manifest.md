@@ -62,6 +62,8 @@ For a particular kind of value:
 | `code` | a pasted snippet, as text | `placeholder` |
 | `hours` | a week of opening hours, as the site's details keep them: seven rows, Monday first, each `{ closed, open, close }`; `[]` while unset | |
 | `table` | a grid of cells: `{ align, rows, header_row, header_col }` (`tableSchema` in `schema/define.js`; below) | |
+| `shop_product` | a product in the site's connected Shopify store: its handle, `''` while unset. The studio's picker searches the store | |
+| `shop_collection` | a Shopify collection in that store: its handle, `''` while unset, picked the same way | |
 
 **A table** keeps `rows` top to bottom, each a list of cells left to right
 with one for every column: `{ text, colspan?, rowspan? }`. A merged cell is
@@ -182,7 +184,7 @@ the options alone. **The layer that sends `any` needs a schema that takes
 `{ name, paths }`; the studio can deploy before or after it.**
 
 A definition may list `without: [...]`: look fields (`background`,
-`spacing`, `divider`) the block has no use for. The key stays in its data;
+`above`, `below`, `divider`) the block has no use for. The key stays in its data;
 the inspector doesn't offer it.
 
 The header's `menuAt` (`left` | `center` | `right`) is where the menu sits on
@@ -209,8 +211,13 @@ turning one off leaves the blocks already on pages alone.
 **`retired: true`** marks a block a Core block has replaced. It's never in
 the tray, and pages that still hold one keep drawing and saving until
 they're converted. A block can't be both. `defineBlock` adds the settings
-every block has (`background`, `spacing`, `divider`) to everything except a
-frame or a retired block.
+every block has (`background`, `spacing`, `above`, `below`, `divider`) to
+everything except a frame or a retired block. `above` and `below` (Space
+above, Space below) are unset until someone picks one; until then each draws
+as `spacing`, and the studio shows `spacing` in its place (a field's
+`fallback` names the key it shows while unset). A block's own padding reads
+`--site-space-above` and `--site-space-below`, each falling back to
+`--site-space`.
 
 **`presets`** is a list of ways to start a block, `[{ key, label,
 description?, data }]`. A preset's `data` goes over the block's `defaults`,
@@ -244,7 +251,7 @@ same-site paths). Nothing a page holds becomes markup.
   { "name": "bur-oak-site", "version": "0.0.0", "tier": "private" },
   { "name": "@timbrr/community", "version": "0.1.0", "tier": "community" }
  ],
- "widgets": ["text", "textarea", "html", "select", "buttons", "items", "image", "nav", "switch", "group", "form", "stepper", "number", "range", "date", "time", "checks", "color", "icon", "tags", "code", "hours", "table", "collection", "collection_field", "content", "content_field"],
+ "widgets": ["text", "textarea", "html", "select", "buttons", "items", "image", "nav", "switch", "group", "form", "stepper", "number", "range", "date", "time", "checks", "color", "icon", "tags", "code", "hours", "table", "collection", "collection_field", "shop_product", "shop_collection", "content", "content_field"],
  "blocks": [
   {
    "type": "hours", "tier": "base", "owner": null, "layer": "@timbrr/community",
@@ -332,6 +339,7 @@ Canvas → studio
 | `timbrr:ready` | `manifestVersion` — repeated every 250 ms until the first `timbrr:doc` |
 | `timbrr:size` | `height` — the page's height (the page's own, not the window's, so it goes down as well as up), measured again after every `timbrr:doc` and sent when it changed; the studio sizes the frame to it. With `window: true` (a window preview, `&window=1`) the frame keeps its size and the page scrolls in it. Never sent from the stage, whose frame has a fixed height |
 | `timbrr:click` | `id` of the block clicked, or null (a locked block's own `<placement id>.<block id>`); also sent when the caret goes into a field of another block. A click on the site's header or footer in Render view has a null `id` and `side`, `header` or `footer`. A click on an image a block drew with `field`, on an editable canvas, adds `field`, its path (`items.0.image`), and the studio opens that field in its inspector. A studio that doesn't know it just selects the block, and a click without it always does |
+| `timbrr:part` | On the stage, a click on the header: `id` (the block's) and `part`, one of `announce`, `logo`, `menu`, `buttons`, `look`. On a menu item it adds `item` (its place in the menu), on a main or second button `button` (`primary` or `secondary`), and on those, the logo or the announcement `rect` (`{ x, y, width, height }` in the frame). The studio opens that section of the header's panel, and a small box beside what was clicked |
 | `timbrr:edit` | `id`, `field` (a path: `items.0.title`), `value` — a string for a text field, a rich-text document (`{ type: 'doc', content: […] }`) for an `html` one. The studio takes nothing else |
 | `timbrr:focus` | `id`, `field`, `kind` (`text` or `rich`), `label` (the field's name from its definition: `Description`, or `Cards 2 · Title` in a list), `tools` (what the field allows: its `wys` for rich text, none for plain), `active` (the tools on at the caret), `href` (the link at the caret, or null) — when the caret arrives, and again whenever any of it changes |
 | `timbrr:blur` | nothing — the caret left the field |
@@ -416,6 +424,14 @@ with the defaults (`headerFromSite`), so there's one way of drawing them.
   phone: { on: false },                // the number from site.details
   language: { on: false, to: '', label: '' },  // label empty reads EN
  },
+ look: {                               // all from the site's own colors
+  background: 'light',                 // 'light' | 'brand' | 'dark'
+  height: 'regular',                   // 'compact' | 'regular' | 'roomy'
+  edge: 'line',                        // 'none' | 'line' | 'shadow'
+  button: 'filled',                    // 'filled' | 'outline'
+  logo: 'medium',                      // 'small' | 'medium' | 'large'
+ },
+ start: '',                            // the studio's starting look; the site ignores it
  sticky: 'never',                      // 'never' | 'always' | 'up'
  transparent: false,
  phone: {
@@ -460,7 +476,11 @@ with the frame drawn by `<TbFrameStage>` through the same component a page
 uses. Its `site` is the one sent, with `frame: { [side]: <the block's data> }`
 and `overHero: true`, so a see-through header always has something to sit
 over. There are no block frames, no selection, no typing and no drops, and
-clicking never sends `timbrr:click`, so the studio's panel stays open. The
+clicking never sends `timbrr:click`, so the studio's panel stays open. A
+click on a header sends `timbrr:part` instead, with the block's `id` and
+`part`, the panel section it belongs to: `announce` (the announcement or
+small links), `logo`, `menu`, `buttons` (buttons and icons) or `look`
+(the bar itself). The phone menu's toggle sends nothing. The
 header's own controls work and links still don't go anywhere. The frame's
 document scrolls, so sticky, slide-away and see-through run as on a live
 page, which is why the studio gives this frame a fixed height, and why the
