@@ -163,9 +163,11 @@
   }
   if (!res.ok || !answer?.ok) throw new Error(answer?.message ?? '');
   if (answer.after === 'redirect' && typeof answer.to === 'string' && answer.to.startsWith('/') && !answer.to.startsWith('//')) {
+   timbrrEvent('form_sent');
    await navigateTo(answer.to);
    return;
   }
+  timbrrEvent('form_sent');
   sent.value = answer.message ?? { type: 'doc', content: [] };
  }
 

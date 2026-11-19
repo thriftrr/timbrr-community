@@ -70,13 +70,14 @@
     <TbText v-if="shows('headline', data.headline)" :data="data" field="headline" tag="h2" class="tb-heading tb-book__headline" />
     <TbRich v-if="shows('body', data.body)" :data="data" field="body" class="tb-book__body" />
     <div v-if="buttons.length || shows('provider', data.provider)" class="tb-buttons tb-book__actions">
-     <TbButton v-for="index in buttons" :key="index" :data="data" :field="`buttons.${index}`" />
+     <TbButton v-for="index in buttons" :key="index" :data="data" :field="`buttons.${index}`" data-tb-event="booking_open" />
      <TbText v-if="shows('provider', data.provider)" :data="data" field="provider" tag="p" class="tb-book__provider" />
     </div>
    </div>
    <component
     :is="calendarHref ? 'a' : 'div'"
     :href="calendarHref"
+    :data-tb-event="calendarHref ? 'booking_open' : undefined"
     :tabindex="calendarHref ? -1 : undefined"
     class="tb-book__calendar"
     aria-hidden="true"
