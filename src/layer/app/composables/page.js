@@ -154,9 +154,23 @@ export async function useTimbrrPage(path) {
   };
  });
 
+ // Analytics (docs/analytics.md). The studio says on the page whether this
+ // site counts and which events the owner picked; only then does the page
+ // load /__timbrr/a.js, and the script reads what to send from these two
+ // attributes, set again whenever the page changes. A studio that sends
+ // nothing (an older one), a draft on a dev or staging address and the canvas
+ // (which never comes through here) count nothing.
+ const preview = useState('timbrr-preview', () => Boolean(useRequestEvent()?.context.timbrrPreview));
+ const analytics = computed(() => {
+  const picks = fetched.data.value?.analytics;
+  const events = Array.isArray(picks?.events) ? picks.events.filter((name) => /^[a-z]+$/.test(name)) : [];
+  return !preview.value && picks?.on === true && events.length && typeof page.value.path === 'string' ? { events: events.join(','), where: `${page.value.path} ${typeof page.value.id === 'string' ? page.value.id : ''}`.trim() } : null;
+ });
+
  useHead({
-  htmlAttrs: { lang: () => site.value.language },
+  htmlAttrs: { lang: () => site.value.language, 'data-tb-a': () => analytics.value?.events, 'data-tb-p': () => analytics.value?.where },
   link: () => (head.value.canonical ? [{ rel: 'canonical', href: head.value.canonical }] : []),
+  script: () => (analytics.value ? [{ key: 'timbrr-analytics', src: '/__timbrr/a.js', defer: true }] : []),
  });
  useSeoMeta({
   title: () => head.value.title,

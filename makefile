@@ -68,3 +68,4 @@ check:
 	cd src && node layer/scripts/check-blocks.mjs
 	cd src && node layer/scripts/check-embed.mjs
 	cd src && node layer/scripts/check-shop.mjs
+	cd src && node layer/scripts/build-analytics.mjs --check
