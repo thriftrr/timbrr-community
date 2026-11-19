@@ -55,8 +55,12 @@ export async function useTimbrrPage(path) {
  // the page follows its draft: every two seconds, while the tab is showing,
  // it asks whether the draft changed and reads it again only if so. The
  // studio saves a moment after each change, so this is what "live" means.
- // It stops once the visitor's access has gone, or after a run of failures.
+ // While nothing changes it asks less often (4, 8, then every 15 seconds),
+ // back to two on a change or when the tab is shown again, since every ask
+ // costs the studio a few reads. It stops once the visitor's access has
+ // gone, or after a run of failures.
  const LIVE_MS = 2000;
+ const LIVE_MOST = 15_000;
  const LIVE_GIVE_UP = 15;
  onMounted(() => {
   const when = document.getElementById('timbrr-preview-when');
@@ -64,9 +68,24 @@ export async function useTimbrrPage(path) {
   let stamp = null;
   let misses = 0;
   let busy = false;
+  let wait = LIVE_MS;
+  let timer = null;
+  let stopped = false;
+  const later = () => {
+   clearTimeout(timer);
+   if (!stopped) timer = setTimeout(tick, wait);
+  };
+  const tick = async () => {
+   await check();
+   wait = Math.min(LIVE_MOST, wait * 2);
+   later();
+  };
   const said = () => (when.textContent = ` · updated ${new Date().toLocaleTimeString()}`);
   const missed = (status) => {
-   if (status === 401 || ++misses >= LIVE_GIVE_UP) clearInterval(timer);
+   if (status === 401 || ++misses >= LIVE_GIVE_UP) {
+    stopped = true;
+    clearTimeout(timer);
+   }
   };
   // A failed read empties the page (Nuxt sets its data back to the default),
   // so the copy on screen is put back and the stamp isn't taken: the next
@@ -95,6 +114,7 @@ export async function useTimbrrPage(path) {
     if (answer.stamp !== stamp) {
      if (!(await reread())) return;
      if (stamp !== null) said();
+     wait = LIVE_MS / 2; // doubled back to LIVE_MS by tick
     }
     misses = 0;
     stamp = answer.stamp;
@@ -102,12 +122,17 @@ export async function useTimbrrPage(path) {
     busy = false;
    }
   };
-  const timer = setInterval(check, LIVE_MS);
-  // Back on this tab: don't wait for the next tick.
-  const onShow = () => !document.hidden && check();
+  later();
+  // Back on this tab: ask now, then every two seconds again.
+  const onShow = () => {
+   if (document.hidden || stopped) return;
+   wait = LIVE_MS / 2;
+   tick();
+  };
   document.addEventListener('visibilitychange', onShow);
   onBeforeUnmount(() => {
-   clearInterval(timer);
+   stopped = true;
+   clearTimeout(timer);
    document.removeEventListener('visibilitychange', onShow);
   });
  });

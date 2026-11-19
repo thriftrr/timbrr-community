@@ -1,6 +1,6 @@
 import { createError, defineEventHandler, getRequestURL, sendRedirect, setResponseHeaders } from 'h3';
 import { useRuntimeConfig } from '#imports';
-import { PREVIEW_HOST_HEADER, gateUrl, previewAllowed, previewTarget, previewToken } from '../utils/preview.js';
+import { PREVIEW_HOST_HEADER, gateUrl, passHost, previewAllowed, previewTarget, previewToken } from '../utils/preview.js';
 
 // Every request to a dev or staging address: it's never indexed or cached,
 // and nothing is served until the studio has said this visitor may see it.
@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
  }
  config.public.site = target.slug;
  event.context.timbrrPreview = target;
- event.node.req.headers[PREVIEW_HOST_HEADER] = target.host;
+ passHost(event, PREVIEW_HOST_HEADER, target.host);
  setResponseHeaders(event, { 'X-Robots-Tag': 'noindex, nofollow', 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer' });
 
  const url = getRequestURL(event);

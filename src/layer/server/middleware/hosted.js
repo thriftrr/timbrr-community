@@ -1,7 +1,7 @@
 import { createError, defineEventHandler } from 'h3';
 import { useRuntimeConfig } from '#imports';
 import { HOSTED_HOST_HEADER, hostedHost, hostedMode, siteForHost } from '../utils/hosted.js';
-import { previewTarget } from '../utils/preview.js';
+import { passHost, previewTarget } from '../utils/preview.js';
 
 // Every request to a launch domain, on the shared Worker only: look up the
 // site the hostname belongs to and set it on this request's copy of the
@@ -20,5 +20,5 @@ export default defineEventHandler(async (event) => {
  }
  if (!slug) throw createError({ statusCode: 404, statusMessage: 'Page Not Found' });
  config.public.site = slug;
- event.node.req.headers[HOSTED_HOST_HEADER] = host;
+ passHost(event, HOSTED_HOST_HEADER, host);
 });
