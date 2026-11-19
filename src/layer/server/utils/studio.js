@@ -36,28 +36,44 @@ function once(key, work) {
 // the edge for as long, so a data center asks about once every five seconds
 // however many isolates it runs. A studio that can't be reached, or is too
 // old to know, leaves the last one standing.
-const epochs = new Map(); // site → { epoch, at }
+// The answer also names, per database, the point the studio read it at
+// (bookmarks), and the page reads keyed by this epoch send them back, so with
+// read replicas a page is never read from further back than its epoch: a
+// lagging replica can't keep a page just taken down under the new key.
+const epochs = new Map(); // site → { epoch, headers, at }
 async function siteEpoch(api, site, cache) {
  const known = epochs.get(site);
  if (known && Date.now() - known.at < EPOCH_FOR) return known.epoch;
  return once(`epoch:${api}:${site}`, async () => {
   const url = `${api}/api/public/sites/${encodeURIComponent(site)}/epoch`;
   let epoch = known?.epoch ?? 0;
+  let headers = known?.headers ?? {};
   try {
    const kept = cache ? await cache.match(url).catch(() => undefined) : undefined;
    const res = kept ?? (await fetch(url, { headers: { accept: 'application/json' }, signal: AbortSignal.timeout(EPOCH_WAIT) }));
    if (res.ok) {
     const text = await res.text();
-    epoch = Number(JSON.parse(text)?.epoch) || 0;
+    const answer = JSON.parse(text);
+    epoch = Number(answer?.epoch) || 0;
+    headers = bookmarkHeaders(answer?.bookmarks);
     if (cache && !kept) await cache.put(url, new Response(text, { headers: { 'content-type': 'application/json', 'cache-control': `public, max-age=${EPOCH_FOR / 1000}` } })).catch(() => {});
    }
   } catch {
    // keep what we had
   }
   if (epochs.size > 5000) epochs.clear();
-  epochs.set(site, { epoch, at: Date.now() });
+  epochs.set(site, { epoch, headers, at: Date.now() });
   return epoch;
  });
+}
+
+// The studio's bookmarks as request headers, only well-formed ones.
+export function bookmarkHeaders(bookmarks) {
+ const headers = {};
+ for (const [name, value] of Object.entries(bookmarks && typeof bookmarks === 'object' ? bookmarks : {})) {
+  if (/^[a-z0-9_]{1,32}$/.test(name) && /^[0-9a-f]{8}-[0-9a-f]{8}-[0-9a-f]{8}-[0-9a-f]{32}$/.test(value)) headers[`x-db-bookmark-${name}`] = value;
+ }
+ return headers;
 }
 
 // The studio's rule for a domain, and the hosts that are this computer.
@@ -146,6 +162,7 @@ export async function fetchPublished(event, route) {
   // address, and that plain address also keeps a day-long copy.
   const epoch = await siteEpoch(api, site, cache);
   const key = `${url}${url.includes('?') ? '&' : '?'}epoch=${epoch}`;
+  const headers = epochs.get(site)?.headers;
   const kept = await cache.match(key).catch(() => undefined);
   if (kept) return read({ status: kept.status, text: await kept.text() });
   // The minute's copy ran out, or a publish moved the epoch: the day-long
@@ -154,10 +171,10 @@ export async function fetchPublished(event, route) {
   // visitor, and a studio that's down for a while takes nothing down here.
   const stale = await cache.match(url).catch(() => undefined);
   if (stale && [200, 404].includes(stale.status)) {
-   event.waitUntil?.(refresh(cache, url, key).catch((error) => console.error(`[timbrr] Couldn't refresh ${route} for ${site} from the studio: ${error.message}`)));
+   event.waitUntil?.(refresh(cache, url, key, headers).catch((error) => console.error(`[timbrr] Couldn't refresh ${route} for ${site} from the studio: ${error.message}`)));
    return read({ status: stale.status, text: await stale.text() });
   }
-  return read(await refresh(cache, url, key));
+  return read(await refresh(cache, url, key, headers));
  } catch (error) {
   console.error(`[timbrr] Couldn't read ${route} for ${site} from the studio at ${api || '(none)'}: ${error.message}`);
   return { status: 502 };
@@ -165,17 +182,17 @@ export async function fetchPublished(event, route) {
 }
 
 // The studio's answer for `url`, as { status, text }, one call at a time.
-function ask(url) {
+function ask(url, headers = {}) {
  return once(url, async () => {
-  const res = await fetch(url, { headers: { accept: 'application/json' }, signal: AbortSignal.timeout(WAIT) });
+  const res = await fetch(url, { headers: { accept: 'application/json', ...headers }, signal: AbortSignal.timeout(WAIT) });
   return { status: res.status, text: await res.text() };
  });
 }
 
 // Ask the studio and keep a good answer twice: the minute's copy under the
 // epoch's key, the day's copy under the plain address.
-async function refresh(cache, url, key) {
- const answer = await ask(url);
+async function refresh(cache, url, key, headers) {
+ const answer = await ask(url, headers);
  if (answer.status === 200) read(answer); // throws on an answer with no site
  if (answer.status === 200 || answer.status === 404) {
   await keep(cache, key, answer.status, answer.text, KEEP);
