@@ -12,15 +12,26 @@ export const PREVIEW_COOKIE = 'timbrr-preview';
 export const PREVIEW_HOST_HEADER = 'x-timbrr-preview-host';
 const WAIT = 8000; // ms the studio gets to answer
 
+// Nuxt's own requests for a page's data arrive without the visitor's Host,
+// so the middleware passes the host along in a header. A visitor can send
+// that header too, so it only counts beside this isolate's own random key,
+// which Nuxt's requests carry and nobody outside ever sees.
+const INTERNAL_HEADER = 'x-timbrr-internal';
+const INTERNAL = globalThis.crypto.randomUUID();
+export function passHost(event, header, host) {
+ event.node.req.headers[header] = host;
+ event.node.req.headers[INTERNAL_HEADER] = INTERNAL;
+}
+export function passedHost(event, header) {
+ return getHeader(event, INTERNAL_HEADER) === INTERNAL ? getHeader(event, header) : '';
+}
+
 // The address this request came in on, as { slug, kind }, or null for any
-// other host. Nuxt's own requests for a page's data arrive without the
-// visitor's Host, so the middleware passes it along in PREVIEW_HOST_HEADER.
-// A visitor could send that header too, but it only ever leads to the gate
-// and the same token check.
+// other host (or one passed along in PREVIEW_HOST_HEADER, see passHost).
 export function previewTarget(event) {
  const domain = String(useRuntimeConfig(event).timbrr?.previewDomain ?? '').trim();
  if (!domain) return null;
- const host = (getHeader(event, PREVIEW_HOST_HEADER) || getRequestURL(event).hostname).toLowerCase();
+ const host = (passedHost(event, PREVIEW_HOST_HEADER) || getRequestURL(event).hostname).toLowerCase();
  const match = /^([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)\.(dev|staging)\.(.+)$/.exec(host);
  return match && match[3] === domain ? { slug: match[1], kind: match[2], host } : null;
 }

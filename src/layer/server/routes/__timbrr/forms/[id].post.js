@@ -10,7 +10,8 @@ import { previewToken, studioApi } from '../../../utils/preview.js';
 // set (the studio's NUXT_RELAY_SECRET), that secret goes along to prove it's one. On a dev or staging address it goes with the visitor's token to
 // the draft's route, and lands as a test.
 const WAIT = 25000; // ms the studio gets, uploads and all
-const MAX = 26 * 1024 * 1024;
+const MAX = 26 * 1024 * 1024; // a form with files on it
+const PLAIN = 64 * 1024; // a form of words only (anything that isn't multipart)
 const FORM_ID = /^[A-Za-z0-9_-]{1,64}$/;
 
 function answer(event, status, body) {
@@ -26,10 +27,12 @@ export default defineEventHandler(async (event) => {
  const site = preview?.slug ?? String(config.public.site ?? '').trim();
  const api = studioApi(event);
  if (!FORM_ID.test(id) || !site || !/^https?:\/\/[^/]/.test(api)) return answer(event, 404, { statusCode: 404, message: "That form doesn't exist." });
- if (Number(getHeader(event, 'content-length') ?? 0) > MAX) return answer(event, 413, { statusCode: 413, message: 'Those files are too big to send together.' });
+ const most = /^multipart\/form-data/i.test(getHeader(event, 'content-type') ?? '') ? MAX : PLAIN;
+ if (Number(getHeader(event, 'content-length') ?? 0) > most) return answer(event, 413, { statusCode: 413, message: 'Those files are too big to send together.' });
 
+ // A body with no length said is read and measured too.
  const body = await readRawBody(event, false);
- if (body && body.length > MAX) return answer(event, 413, { statusCode: 413, message: 'Those files are too big to send together.' });
+ if (body && body.length > most) return answer(event, 413, { statusCode: 413, message: 'Those files are too big to send together.' });
  const headers = {
   accept: 'application/json',
   'content-type': getHeader(event, 'content-type') ?? 'application/json',
