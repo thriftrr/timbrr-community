@@ -260,6 +260,19 @@
 
  function onDblClick(event) {
   if (preview || !editable.value || staged.value || crop.value) return;
+  // A field of a form: the studio opens that form's Build with it selected. The
+  // form is inert here, so the click lands on the block and the field is found
+  // by where it was.
+  const block = event.target.closest?.('[data-block-id]');
+  const formField = block && [...block.querySelectorAll('[data-form-field]')].find((el) => {
+   const box = el.getBoundingClientRect();
+   return event.clientX >= box.left && event.clientX <= box.right && event.clientY >= box.top && event.clientY <= box.bottom;
+  });
+  if (formField && !block.dataset.blockId.includes('.')) {
+   window.getSelection()?.removeAllRanges();
+   post({ type: 'timbrr:formfield', id: block.dataset.blockId, field: formField.dataset.formField });
+   return;
+  }
   const el = event.target.closest?.('[data-image-crop]');
   const id = el?.closest('[data-block-id]')?.dataset.blockId;
   const field = el?.dataset.imageField;
