@@ -1,9 +1,13 @@
 <script setup>
- // A form from the site's Forms (TbForm draws it), under its heading on this
- // page when the block gives one. In the studio's canvas it's a picture of the
- // form: nothing takes a click but the block itself, and a block with no form
- // says so. A block that holds no form and still has its old button words is one
- // from before forms were their own thing (TbFormLegacy).
+ // A form from the site's Forms (TbForm draws it), under the block's heading and
+ // intro: the block's own words, empty for none. A block saved before they
+ // moved here has no `heading` and still draws the form's own title and intro
+ // until scripts/convert-blocks.mjs fills them in. In the studio's canvas it's a
+ // picture of the form (one not yet published is drawn from its draft, marked
+ // Draft form): nothing takes a click but the block itself, and a block with no
+ // form says so. On the site a block whose form isn't live draws nothing. A
+ // block that holds no form and still has its old button words is one from
+ // before forms were their own thing (TbFormLegacy).
  //
  // The 50/50 layout puts the block's own photo and words beside the form, first
  // on small screens. With neither there's no second half, so it draws full
@@ -15,7 +19,8 @@
  const forms = useTimbrrForms();
  const form = computed(() => forms.value[props.data.form] ?? null);
  const legacy = computed(() => !props.data.form && Boolean(props.data.submit_label?.trim()));
- const empty = computed(() => (props.data.form ? "This form isn't published yet." : 'Pick a form in the panel.'));
+ const empty = computed(() => (props.data.form ? "This form isn't here any more. Pick another in the panel." : 'Pick a form in the panel, or make a new one.'));
+ const own = computed(() => typeof props.data.heading === 'string');
 
  // Empty fields aren't drawn, but one being typed into on the canvas stays.
  const shows = useFieldShown();
@@ -35,7 +40,11 @@
     <TbText v-if="heading" :data="data" field="content_heading" tag="h2" class="tb-heading" />
     <TbRich v-if="words" :data="data" field="content_body" class="tb-form__content-body" />
    </div>
-   <TbForm v-if="form" :form="form" :heading="data.headline" :hide-title="data.hide_title" :locked="Boolean(canvas)" />
+   <div v-if="form" class="tb-form__stage">
+    <p v-if="canvas && form.draft" class="tb-form__draft">Draft form</p>
+    <TbForm v-if="own" :form="form" :heading="data.heading" :intro="data.lede ?? ''" :locked="Boolean(canvas)" />
+    <TbForm v-else :form="form" :heading="data.headline" :hide-title="data.hide_title" :locked="Boolean(canvas)" />
+   </div>
    <p v-else class="tb-form__empty">{{ empty }}</p>
   </div>
  </section>
@@ -79,6 +88,21 @@
   .tb-form--content-right .tb-form__content {
    order: 0;
   }
+ }
+
+ .tb-form__stage {
+  min-width: 0;
+ }
+
+ .tb-form__draft {
+  display: inline-block;
+  margin: 0 0 12px;
+  border: 1px solid var(--site-border);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--site-muted);
  }
 
  .tb-form__empty {
