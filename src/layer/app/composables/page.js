@@ -13,6 +13,8 @@
 // the browser alike.
 
 const HEX = /^#[0-9a-f]{6}$/i;
+// A BCP 47 tag, as the studio's Settings stores it (sites.seo.language): <html lang>, WCAG 3.1.1.
+const LANGUAGE = /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/i;
 const DOMAIN = /^(?=.{4,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i;
 const LOCAL = /^(?:localhost|127\.0\.0\.1|\[::1\])$/;
 
@@ -49,6 +51,7 @@ export async function useTimbrrPage(path) {
    details: value.details && typeof value.details === 'object' ? value.details : null,
    brand: normalizeBrand(value.brand),
    overHero: isHeroBleed(blocks.value[0]),
+   language: LANGUAGE.test(value.language ?? '') ? value.language : 'en',
   };
  });
  // On a dev or staging address (the note the server writes says it is one),
@@ -177,7 +180,7 @@ export async function useTimbrrPage(path) {
  });
 
  useHead({
-  htmlAttrs: { lang: 'en' },
+  htmlAttrs: { lang: () => site.value.language },
   link: () => (head.value.canonical ? [{ rel: 'canonical', href: head.value.canonical }] : []),
  });
  useSeoMeta({
@@ -209,12 +212,15 @@ export async function useTimbrrPage(path) {
   window.location.reload();
   return new Promise(() => {});
  }
- // An old address of an entry's: the studio says where it lives now (a
- // 301 on the server, a plain move in the browser). Only a path on this
- // site is followed; anything else is the 404 it came with.
+ // An old address of an entry's, or an old-site picture path the studio
+ // moved into the media library (D20): the studio says where it lives now
+ // (a 301 on the server, a plain move in the browser). Only a path on this
+ // site or a library file's own address is followed; anything else is the
+ // 404 it came with, so the answer can never send a visitor elsewhere.
  const moved = fetched.error.value?.statusCode === 404 ? fetched.error.value.data?.data?.redirect?.to : null;
- if (sitePath(moved) && moved !== address.value) {
-  await nuxtApp.runWithContext(() => navigateTo(moved, { redirectCode: 301, replace: true }));
+ const external = mediaFile(moved);
+ if ((sitePath(moved) || external) && moved !== address.value) {
+  await nuxtApp.runWithContext(() => navigateTo(moved, { redirectCode: 301, replace: true, external }));
   // The browser waits for the move; the server's answer is the 301 itself, whatever renders.
   if (import.meta.client) return new Promise(() => {});
   return { site, page, blocks, style };
@@ -225,6 +231,12 @@ export async function useTimbrrPage(path) {
 
 // A path on this site, never another site's address or a protocol.
 const sitePath = (value) => typeof value === 'string' && /^\/(?![/\\])[a-z0-9/_-]*$/i.test(value) && value.length <= 500;
+
+// A media library file's own address (https://<media host>/<id>/<version>/<variant>,
+// or the studio's /media/ route, over http only on localhost in development),
+// the only absolute target a redirect answer can name.
+const mediaFile = (value) =>
+ typeof value === 'string' && value.length <= 500 && /^(?:https:\/\/[a-z0-9.-]+|http:\/\/localhost)(?::\d+)?(?:\/media)?\/[A-Za-z0-9_-]{16}\/[0-9a-f]{8}\/[a-z0-9]+\.[a-z0-9]+$/.test(value);
 
 // The error page (error.vue) for an address: nothing published there (404)
 // or the studio failing (502). Fatal only in the browser, which is what
@@ -268,8 +280,16 @@ function absolute(src, origin) {
 export function brandStyle(accent, brand) {
  const vars = brandVars(brand);
  if (HEX.test(accent ?? '')) {
-  vars['--site-accent'] = accent;
-  vars['--site-accent-ink'] ??= inkOn(accent);
+  // The brand color is also link and label text on the page and its bands,
+  // and a button's fill under paper ink, so on a light page it's darkened
+  // until it reads 4.5:1 against the darkest of those, whatever the owner
+  // picked. Darkening can't help on a dark page, so there it stays as picked.
+  const page = vars['--site-bg'] ?? '#ffffff';
+  const light = HEX.test(page) && contrastRatio('#000000', page) > contrastRatio('#ffffff', page);
+  const darkest = [page, vars['--site-surface'], '#f7f5ec'].filter((c) => HEX.test(c ?? '')).sort((a, b) => contrastRatio('#000000', a) - contrastRatio('#000000', b))[0];
+  const safe = light ? nudgeAccent(accent, darkest, 4.5) : accent;
+  vars['--site-accent'] = safe;
+  vars['--site-accent-ink'] ??= inkOn(safe);
  }
  return vars;
 }

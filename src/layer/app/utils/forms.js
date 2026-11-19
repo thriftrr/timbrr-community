@@ -104,6 +104,7 @@ export function formFieldError(doc, field, answers, today) {
   soonest.setUTCDate(soonest.getUTCDate() + valid.minDays);
   if (new Date(`${answer}T12:00:00Z`) < soonest) return `Pick a date at least ${valid.minDays} days from today.`;
  }
+ if (valid.pattern === 'postcode' && !/^(?=.*\d)[A-Za-z0-9 -]{3,10}$/.test(answer)) return 'Enter a postcode or ZIP code, like 55408 or SW1A 1AA.';
  if (valid.pattern === 'zip' && !/^\d{5}$/.test(answer)) return 'Enter a 5-digit ZIP code, like 55408.';
  if (valid.pattern === 'digits' && !/^\d+$/.test(answer)) return 'Use numbers only.';
  if (valid.pattern === 'letters' && !/^[A-Za-z\s'’-]+$/.test(answer)) return 'Use letters only.';

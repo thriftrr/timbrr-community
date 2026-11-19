@@ -14,6 +14,8 @@
  const canvas = useCanvas();
  const typing = computed(() => Boolean(canvas) && canvas.editable?.value !== false);
  const moving = computed(() => props.data.scrolling && !typing.value);
+ // A way to stop the strip for anyone who can't hover (2.2.2).
+ const paused = ref(false);
 
  // A logo stands in for the name, so it's described by the name when it has
  // no description of its own.
@@ -32,7 +34,7 @@
 </script>
 
 <template>
- <section class="tb-section tb-logos" :class="[`tb-logos--${data.layout}`, { 'tb-logos--moving': moving }]">
+ <section class="tb-section tb-logos" :class="[`tb-logos--${data.layout}`, { 'tb-logos--moving': moving, 'tb-logos--paused': paused }]">
   <div class="tb-wrap">
    <header v-if="hasHead" class="tb-logos__head">
     <TbText v-if="shows('tagline', data.tagline)" :data="data" field="tagline" tag="p" class="tb-eyebrow" />
@@ -61,6 +63,9 @@
      </ul>
     </div>
    </template>
+   <button v-if="moving && data.items.length" type="button" class="tb-logos__pause" @click="paused = !paused">
+    {{ paused ? 'Play logo scrolling' : 'Pause logo scrolling' }}
+   </button>
   </div>
  </section>
 </template>
@@ -183,9 +188,28 @@
   animation: tb-logos-scroll 36s linear infinite;
  }
 
+ .tb-logos--paused .tb-logos__list,
  .tb-logos__strip:hover .tb-logos__list,
  .tb-logos__strip:focus-within .tb-logos__list {
   animation-play-state: paused;
+ }
+
+ .tb-logos__pause {
+  min-height: 24px;
+  margin-top: 12px;
+  border: 0;
+  padding: 4px 8px;
+  background: none;
+  color: var(--site-muted);
+  font: inherit;
+  font-size: 14px;
+  text-decoration: underline;
+  cursor: pointer;
+ }
+
+ .tb-logos__pause:focus-visible {
+  outline: 2px solid var(--site-accent);
+  outline-offset: 2px;
  }
 
  @keyframes tb-logos-scroll {
@@ -204,7 +228,8 @@
    animation: none;
   }
 
-  .tb-logos--moving .tb-logos__list[aria-hidden] {
+  .tb-logos--moving .tb-logos__list[aria-hidden],
+  .tb-logos__pause {
    display: none;
   }
 

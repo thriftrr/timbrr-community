@@ -38,6 +38,20 @@ export function useTimbrrSite() {
  return inject(TIMBRR_SITE_KEY, null);
 }
 
+// A page has one h1 (WCAG 1.3.1): the first block on it that would draw one
+// (a hero, a video hero, a collection field shown as the heading) draws it;
+// the rest, and every block inside a repeat's cells, draw an h2 that looks
+// the same. TbBlocks decides; a block drawn outside one keeps its h1.
+export const H1_KEY = Symbol('timbrr-h1');
+export function wantsH1(block) {
+ return block?.type === 'hero' || block?.type === 'northwall_video_hero' || (block?.type === 'collection_field' && block.data?.show === 'heading');
+}
+export function useHeadingTag() {
+ const owner = inject(H1_KEY, null);
+ const block = useBlockScope();
+ return computed(() => (!owner || owner.value === block?.id ? 'h1' : 'h2'));
+}
+
 // For blocks: whether an optional field drawn through <TbText> or <TbRich>
 // shows. An empty one doesn't, as on the site, except on the canvas while
 // it's being typed into, so clearing it to start over doesn't take it (and

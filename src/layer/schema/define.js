@@ -40,6 +40,11 @@ export const WIDGETS = [
  // from the collection's own list. The studio's picker also sets `kind` and
  // `from` on the block beside it.
  'collection_field',
+ // A product in the site's connected Shopify store (docs/manifest.md §
+ // Widgets): its handle, picked from a search of the store in the studio.
+ 'shop_product',
+ // A Shopify collection in that store: its handle, picked the same way.
+ 'shop_collection',
  // retired: what the retired content blocks name; drop with them
  'content',
  'content_field',
@@ -224,6 +229,10 @@ export const imageSchema = z.object({
  // How far this placement is zoomed in about its focal point (the studio's
  // crop). Missing is 1: the picture just covers its box.
  zoom: z.number().min(1).max(4).optional(),
+ // Whose alt text this is: 'library' follows the media library's alt on
+ // live pages (the studio fills it in at read time), 'page' is this page's
+ // own and is kept. Missing on values saved before the marker existed.
+ altFrom: z.enum(['library', 'page']).optional(),
 });
 
 // An icon drawn by its paths: each the `d` of one path on a 24 × 24 grid,

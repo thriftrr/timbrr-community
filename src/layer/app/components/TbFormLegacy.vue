@@ -145,7 +145,7 @@
   width: 100%;
   min-width: 0;
   margin: 0;
-  border: 1px solid color-mix(in srgb, var(--site-muted) 12%, var(--site-border));
+  border: 1px solid var(--site-muted);
   border-radius: var(--site-control-radius);
   padding: 11px 14px;
   background: var(--site-bg);
@@ -159,18 +159,19 @@
  }
 
  .tb-form__control::placeholder {
-  color: color-mix(in srgb, var(--site-muted) 78%, var(--site-bg));
+  color: var(--site-muted);
   opacity: 1;
  }
 
  .tb-form__control:hover {
-  border-color: color-mix(in srgb, var(--site-muted) 40%, var(--site-border));
+  border-color: var(--site-body);
  }
 
  .tb-form__control:focus {
   border-color: var(--site-accent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--site-accent) 16%, transparent);
-  outline: 0;
+  outline: 2px solid var(--site-accent);
+  outline-offset: 2px;
  }
 
  /* The message box spans the row and starts a few lines tall. */
@@ -258,7 +259,7 @@
 
  .tb-form__box--hint {
   overflow: hidden;
-  color: color-mix(in srgb, var(--site-muted) 78%, var(--site-bg));
+  color: var(--site-muted);
   white-space: nowrap;
  }
 

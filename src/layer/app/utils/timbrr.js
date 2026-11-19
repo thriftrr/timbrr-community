@@ -36,13 +36,12 @@ export function safeSrc(src) {
  return WEB_SRC.test(value) || (import.meta.dev && LOCAL_SRC.test(value)) ? value : undefined;
 }
 
-// Paper or near-black text on a brand color, by luminance.
+// Paper or near-black text on a brand color, whichever reads better (WCAG 1.4.3).
 export function inkOn(hex) {
  const match = /^#?([0-9a-f]{6})$/i.exec(String(hex ?? '').trim());
  if (!match) return '#f7f5ec';
- const [r, g, b] = [0, 2, 4].map((i) => parseInt(match[1].slice(i, i + 2), 16) / 255);
- const channel = (c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
- return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b) > 0.45 ? '#1f2a22' : '#f7f5ec';
+ const color = `#${match[1].toLowerCase()}`;
+ return contrastRatio('#f7f5ec', color) >= contrastRatio('#1f2a22', color) ? '#f7f5ec' : '#1f2a22';
 }
 
 // The srcset for a photo from the studio's media library. Its address is
@@ -56,11 +55,29 @@ export function inkOn(hex) {
 const MEDIA_WIDTHS = [480, 960, 1600];
 const MEDIA_MASTER = /(?:^|\/)[A-Za-z0-9_-]{16}\/[0-9a-f]{8}\/master\.webp$/;
 
-export function mediaSrcset(src, width) {
+export function mediaSrcset(src, width, delivery) {
  const address = String(src ?? '').split(/[?#]/)[0];
  if (!MEDIA_MASTER.test(address) || !(width > 0)) return '';
+ // Image delivery on (the site answer's `delivery`): Cloudflare resizes the
+ // master at each preset width under the picture's own, and the widest
+ // entry is the picture's width capped at the largest preset.
+ const widths = Array.isArray(delivery?.widths) ? delivery.widths.filter((w) => Number.isInteger(w) && w > 0).sort((a, b) => a - b) : [];
+ if (delivery?.origin && widths.length) {
+  const top = Math.min(Math.round(width), widths.at(-1));
+  return [...widths.filter((w) => w < top), top].map((w) => `${mediaDeliveryUrl(delivery, address, w)} ${w}w`).join(', ');
+ }
  const base = address.slice(0, address.length - 'master.webp'.length);
  const entries = MEDIA_WIDTHS.filter((w) => w < width).map((w) => `${base}w${w}.webp ${w}w`);
  entries.push(`${address} ${Math.round(width)}w`);
  return entries.join(', ');
+}
+
+// A copy of mediaDeliveryUrl in the studio's shared/utils/media.js (keep the
+// two in step): the master through Cloudflare's image transformations at
+// one width. `src` must be a library master; anything else gets null.
+export function mediaDeliveryUrl(delivery, src, width) {
+ const match = /([A-Za-z0-9_-]{16})\/([0-9a-f]{8})\/master\.webp$/.exec(String(src ?? '').split(/[?#]/)[0]);
+ if (!delivery?.origin || !match || !(width > 0)) return null;
+ const origin = String(delivery.origin).replace(/\/$/, '');
+ return `${origin}/cdn-cgi/image/width=${Math.round(width)},quality=${delivery.quality ?? 80},format=auto,fit=scale-down,metadata=none/${match[1]}/${match[2]}/master.webp`;
 }
