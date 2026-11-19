@@ -35,7 +35,7 @@ async function siteState(api, site, relay = '') {
   const res = await fetch(`${api}/api/public/sites/${encodeURIComponent(site)}/epoch`, { headers: { accept: 'application/json', ...(relay ? { 'x-timbrr-relay': relay } : {}) }, signal: AbortSignal.timeout(EPOCH_WAIT) });
   if (res.ok) {
    const body = await res.json();
-   // analytics: what the owner picked ({ on, events, id }); an older studio sends none, which counts nothing.
+   // analytics: what the owner picked ({ on, events, fields, id }); an older studio sends none, which counts nothing.
    state = { epoch: Number(body?.epoch) || 0, analytics: body?.analytics ?? null };
   }
  } catch {
@@ -47,7 +47,7 @@ async function siteState(api, site, relay = '') {
 }
 const siteEpoch = async (api, site, relay) => (await siteState(api, site, relay)).epoch;
 
-// What the owner picked for analytics, as { on, events, id } or null, from the
+// What the owner picked for analytics, as { on, events, fields, id } or null, from the
 // same five-second read as the epoch. The hit route counts only this, so
 // turning analytics off (or off studio-wide) stops counting within seconds,
 // whatever a visitor's open page still says.

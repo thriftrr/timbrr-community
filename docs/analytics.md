@@ -25,8 +25,11 @@ this is the site's half: a script, a route and a binding.
 ## What turns it on
 
 The page. The studio's page route answers `{ site, page, analytics }`, where
-`analytics` is `{ on, events }` and `events` is the kinds the owner picked
-(`view`, `leave`, `seen`, `click`, `heat`, `event`). `useTimbrrPage` loads the
+`analytics` is `{ on, events, fields, id }`. `events` is the kinds the owner picked
+(`view`, `leave`, `seen`, `click`, `heat`, `event`). `fields` is the optional
+details their questions need (`referrer`, `utm`, `country`, `device`, `agent`);
+the hit route writes every other detail empty, whatever the script sent, and a
+studio that sends no `fields` gets none of them. `useTimbrrPage` loads the
 script only when `on` is true and `events` isn't empty, and tells it what to
 send through two attributes on `<html>`:
 
@@ -87,7 +90,7 @@ category), `Sec-GPC: 1`, `DNT: 1`, a request whose `Origin` isn't the site's own
 
 ## The data point
 
-`index1` is the site's id (the studio sends it in the `analytics` answer, `{ on, events, id }`). Blobs, in order: `event`, `visitor`, `path`, `page`,
+`index1` is the site's id (the studio sends it in the `analytics` answer, `{ on, events, fields, id }`). Blobs, in order: `event`, `visitor`, `path`, `page`,
 `block`, `referrer`, `utm_source`, `utm_medium`, `utm_campaign`, `country`,
 `device`, `browser`, `os`, `width`, `kind`, `dest`, `name`. Doubles: `seconds`,
 `depth`, `x`, `y`, `button`. The names are `BLOBS` and `DOUBLES` in

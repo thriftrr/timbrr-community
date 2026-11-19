@@ -161,11 +161,17 @@ export function describeAgent(ua) {
  return { browser, os };
 }
 
-// One event as an Analytics Engine data point.
-export function dataPoint(site, e, { visitor, country, browser, os }) {
- const blobs = { event: e.e, visitor, path: e.p.length > 1 && e.p.endsWith('/') ? e.p.slice(0, -1).toLowerCase() : e.p.toLowerCase(), page: e.g ?? '', block: e.b ?? '', referrer: e.r ?? '', utm_source: e.us ?? '', utm_medium: e.um ?? '', utm_campaign: e.uc ?? '', country, kind: e.k ?? '', dest: e.h ?? '', name: e.n ?? '' };
- if (e.e === 'view' || e.e === 'heat' || e.e === 'click') Object.assign(blobs, { device: deviceOf(e.w), width: widthBand(e.w) });
- if (e.e === 'view') Object.assign(blobs, { browser, os });
+// The optional details a data point may carry (the studio's ANALYTICS_FIELDS):
+// each is written only when the owner picked a question that needs it.
+export const FIELDS = ['referrer', 'utm', 'country', 'device', 'agent'];
+
+// One event as an Analytics Engine data point. `fields` says which optional
+// details are kept; the rest are written empty, whatever the script sent.
+export function dataPoint(site, e, { visitor, country, browser, os }, fields = FIELDS) {
+ const has = (name) => fields.includes(name);
+ const blobs = { event: e.e, visitor, path: e.p.length > 1 && e.p.endsWith('/') ? e.p.slice(0, -1).toLowerCase() : e.p.toLowerCase(), page: e.g ?? '', block: e.b ?? '', referrer: has('referrer') ? (e.r ?? '') : '', utm_source: has('utm') ? (e.us ?? '') : '', utm_medium: has('utm') ? (e.um ?? '') : '', utm_campaign: has('utm') ? (e.uc ?? '') : '', country: has('country') ? country : '', kind: e.k ?? '', dest: e.h ?? '', name: e.n ?? '' };
+ if (e.e === 'view' || e.e === 'heat' || e.e === 'click') Object.assign(blobs, { device: has('device') ? deviceOf(e.w) : '', width: has('agent') ? widthBand(e.w) : '' });
+ if (e.e === 'view' && has('agent')) Object.assign(blobs, { browser, os });
  const doubles = { seconds: e.s ?? 0, depth: e.d ?? 0, x: e.x ?? 0, y: e.y ?? 0, button: e.i ?? 0 };
  return { indexes: [site], blobs: BLOBS.map((name) => blobs[name] ?? ''), doubles: DOUBLES.map((name) => doubles[name]) };
 }
@@ -189,9 +195,11 @@ export function hitInput({ headers = {}, context = {}, previewCookie, fallbackIp
 //   site       the site's slug (only to know there is one); preview, draft: this is a dev address, or the draft cookie came along
 //   headers    the request's, lowercase names; cf: request.cf; ip: the visitor's address
 //   body       the text posted;   getSalt: () => today's salt or null
-//   getConfig  () => the studio's { on, events, id } for this site, or null: only
-//              events the owner picked are written, and nothing when it's off
+//   getConfig  () => the studio's { on, events, fields, id } for this site, or null: only
+//              events the owner picked are written, with only the optional details
+//              (fields) they picked, and nothing when it's off
 //              (or when there is no getConfig, or the studio is too old to say,
+//              or sends no `fields`, which means none of the optional details,
 //              or sends no id: the id is index1 and part of the visitor hash)
 export async function handleHit({ binding, site, preview = false, draft = false, headers = {}, cf, ip, body, getSalt, getConfig }) {
  if (typeof binding?.writeDataPoint !== 'function') return { status: 204, written: 0 };
@@ -205,6 +213,7 @@ export async function handleHit({ binding, site, preview = false, draft = false,
  const salt = await getSalt();
  if (!salt) return { status: 204, written: 0 };
  const who = { visitor: await visitorHash(salt, config.id, ip, headers['user-agent']), country: String(cf?.country ?? headers['cf-ipcountry'] ?? '').slice(0, 2), ...describeAgent(headers['user-agent']) };
- for (const e of picked) binding.writeDataPoint(dataPoint(config.id, e, who));
+ const fields = Array.isArray(config.fields) ? config.fields.filter((name) => FIELDS.includes(name)) : [];
+ for (const e of picked) binding.writeDataPoint(dataPoint(config.id, e, who, fields));
  return { status: 204, written: picked.length };
 }
