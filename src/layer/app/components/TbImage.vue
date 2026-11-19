@@ -43,7 +43,10 @@
   const height = Number(props.image?.height);
   return Number.isInteger(width) && Number.isInteger(height) && width > 0 && height > 0 ? { width, height } : null;
  });
- const srcset = computed(() => (src.value && size.value ? mediaSrcset(src.value, size.value.width) : ''));
+ // The site's image delivery (its answer's `delivery`), when it's on: the
+ // srcset then comes from Cloudflare's resizing; `src` stays the master.
+ const site = useTimbrrSite();
+ const srcset = computed(() => (src.value && size.value ? mediaSrcset(src.value, size.value.width, site?.value?.delivery) : ''));
 
  // Where the subject is, as the crop's anchor. Anything that isn't a pair
  // of numbers leaves the crop centered, which is what object-fit does alone.
