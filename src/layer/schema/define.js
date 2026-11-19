@@ -224,6 +224,10 @@ export const imageSchema = z.object({
  // How far this placement is zoomed in about its focal point (the studio's
  // crop). Missing is 1: the picture just covers its box.
  zoom: z.number().min(1).max(4).optional(),
+ // Whose alt text this is: 'library' follows the media library's alt on
+ // live pages (the studio fills it in at read time), 'page' is this page's
+ // own and is kept. Missing on values saved before the marker existed.
+ altFrom: z.enum(['library', 'page']).optional(),
 });
 
 // An icon drawn by its paths: each the `d` of one path on a 24 × 24 grid,

@@ -162,12 +162,17 @@ async function keep(cache, url, status, body) {
  await cache.put(url, new Response(body, { status, headers })).catch(() => {});
 }
 
-// An old address of an entry's: a 404 whose body says where it lives now
-// (`data.redirect: { to, status }`). Only a path on this site is passed on.
+// An old address of an entry's, or an old-site picture path now in the
+// media library (D19, D20): a 404 whose body says where it lives now
+// (`data.redirect: { to, status }`). Only a path on this site, or a library
+// file's own address, is passed on (the same two checks as
+// app/composables/page.js; keep them in step).
+const MEDIA_FILE = /^(?:https:\/\/[a-z0-9.-]+|http:\/\/localhost)(?::\d+)?(?:\/media)?\/[A-Za-z0-9_-]{16}\/[0-9a-f]{8}\/[a-z0-9]+\.[a-z0-9]+$/;
 function redirectIn(text) {
  try {
   const redirect = JSON.parse(text)?.data?.redirect;
-  return typeof redirect?.to === 'string' && /^\/(?![/\\])[a-z0-9/_-]*$/i.test(redirect.to) && redirect.to.length <= 500 ? { to: redirect.to, status: 301 } : null;
+  const to = typeof redirect?.to === 'string' && redirect.to.length <= 500 ? redirect.to : '';
+  return /^\/(?![/\\])[a-z0-9/_-]*$/i.test(to) || MEDIA_FILE.test(to) ? { to, status: 301 } : null;
  } catch {
   return null;
  }
