@@ -103,6 +103,15 @@ it, so searching the tray still finds it. Why, and how pages move over:
 - `reviews` Google reviews: a rating summary and review cards, copied in by hand.
 - `instagram` Instagram feed: the handle, a Follow button and tiles you pick,
   not a live feed.
+- `studio_demo` Studio demo: a working copy of the Timbrr studio for a page
+  that sells it, on a made-up plumber's site. A side rail opens seven rooms:
+  the page editor, Collections, Library, Forms, Media, People & access and
+  Branding. Visitors add blocks, type, upload, invite and change the brand.
+  Nothing leaves the browser and nothing is saved; Start over gives the room
+  a fresh copy. The brand chosen in Branding shows in the page editor too.
+  "Opens on" picks the first room. On the studio's canvas it holds still, so
+  a click selects the block; it runs in Preview and on the site. The studio
+  needs no change for it (its icon is `monitor`).
 
 **Community** (`owner` set: commissioned by one brand, on every site's
 Community shelf; the type carries the brand's prefix)
