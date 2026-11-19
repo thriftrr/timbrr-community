@@ -135,7 +135,8 @@
    if (at >= 0) step.value = at;
    return;
   }
-  if (!res.ok || !answer?.ok) throw new Error(answer?.message ?? '');
+  // An edge in front of the site can refuse with a page, not JSON, so the status still says what to do.
+  if (!res.ok || !answer?.ok) throw new Error(answer?.message ?? { 413: 'That is too much to send in one go. Use smaller files or shorter answers.', 429: 'Lots of sends right now. Try again in a minute.' }[res.status] ?? '');
   if (answer.after === 'redirect' && typeof answer.to === 'string' && answer.to.startsWith('/') && !answer.to.startsWith('//')) {
    await navigateTo(answer.to);
    return;

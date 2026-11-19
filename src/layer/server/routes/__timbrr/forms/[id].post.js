@@ -28,12 +28,14 @@ export default defineEventHandler(async (event) => {
  const site = preview?.slug ?? String(config.public.site ?? '').trim();
  const api = studioApi(event);
  if (!FORM_ID.test(id) || !site || !/^https?:\/\/[^/]/.test(api)) return answer(event, 404, { statusCode: 404, message: "That form doesn't exist." });
- const most = /^multipart\/form-data/i.test(getHeader(event, 'content-type') ?? '') ? MAX : PLAIN;
- if (Number(getHeader(event, 'content-length') ?? 0) > most) return answer(event, 413, { statusCode: 413, message: 'Those files are too big to send together.' });
+ const files = /^multipart\/form-data/i.test(getHeader(event, 'content-type') ?? '');
+ const most = files ? MAX : PLAIN;
+ const tooBig = { statusCode: 413, message: files ? 'Those files are too big to send together. Try smaller ones.' : 'That is more than this form can take in one go. Shorten your answers and send it again.' };
+ if (Number(getHeader(event, 'content-length') ?? 0) > most) return answer(event, 413, tooBig);
 
  // A body with no length said is read and measured too.
  const body = await readRawBody(event, false);
- if (body && body.length > most) return answer(event, 413, { statusCode: 413, message: 'Those files are too big to send together.' });
+ if (body && body.length > most) return answer(event, 413, tooBig);
  const headers = {
   accept: 'application/json',
   'content-type': getHeader(event, 'content-type') ?? 'application/json',
