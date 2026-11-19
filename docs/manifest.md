@@ -258,16 +258,56 @@ same-site paths). Nothing a page holds becomes markup.
    "component": "BlocksHours", "label": "Hours", "description": "From settings, open-now indicator",
    "category": "dynamic", "icon": "hours",
    // "frame": true on a site_header or site_footer; "advanced": true, "retired": true,
-   // "presets": [ ... ] and "keywords": [ ... ] the same way: left out unless set
+   // "presets": [ ... ], "keywords": [ ... ] and "loads": ["youtube", ...] the same way: left out unless set
    "fields": [ /* as defined */ ],
    "defaults": { /* parsed through the schema: every key present */ },
    "wys": { "headline": [], "items.*.title": [], "items.*.body": [], "note": ["italic"] },
    "schema": { /* JSON Schema 2020-12, from z.toJSONSchema (input side) */ }
   }
  ],
+ "thirdParties": [ /* every service a block can load, below */ ],
+ "siteLoads": ["timbrr_hosting", "timbrr_analytics", "timbrr_draft", "google_fonts"], // loaded by every page
  "collectionHooks": { "format": false, "editor": true } // which kinds of collection hook the site's code has
 }
 ```
+
+### Third parties
+
+`thirdParties` is the list the studio builds a site's "What this site
+collects" from (the studio's `docs/adr/0023-web-analytics.md` § 8). It comes
+from `schema/third-parties.js`; a block says which ones it can load with
+`loads: ['youtube']` in `defineBlock`, and `siteLoads` is what every page
+loads whatever its blocks. A site's list is its blocks' `loads` (the ones on
+its pages) plus `siteLoads`.
+
+```jsonc
+{
+ "id": "vimeo", "name": "Vimeo",
+ "kind": "load",                       // own | load (the page fetches it) | link (a click goes there)
+ "origins": ["player.vimeo.com"],      // "*.x.com" covers subdomains; "anyOrigin": true for an address the owner pastes
+ "what": "…", "collects": "…",         // plain words
+ "processor": "Vimeo.com, Inc.",       // who receives it; no country is stated
+ "cookies": ["vuid", "player", "…"],   // 'none' | a list of names | 'to-be-verified'
+ "source": "https://…"                 // where the cookie statement comes from, and when (see the file)
+}
+```
+
+Every entry says one definite thing about `cookies`: `'none'`, the names the
+service's own documentation lists, or `'to-be-verified'` (the studio shows
+"Cookie list to be verified" and leaves the row out of the policy text).
+`'none'` is allowed only for our own entries (`kind: 'own'`). "May set
+cookies" is refused, because it can't go in a policy. A statement about a
+service we don't run is looked up in its official documentation, with the
+address and date in `source`, never written from memory.
+
+`node layer/scripts/check-embed.mjs` fails the build when an address in the
+layer's code isn't listed, when a block's components can load a service the
+block doesn't declare (by address, or through `embedSrc`, `embedFrame`,
+`useShopRead` or a `Tb*` component the entry names in `via`), when a listed
+service has no cookie statement, and when an address used on every page isn't
+in `siteLoads`. Adding a service is a new entry first. A block the check can't
+see through (a component that reaches an address by a helper that isn't in
+`via`) has to be declared by hand.
 
 `collectionHooks` says whether the site's `collection-hooks/` files (docs/collection-hooks.md)
 format field values and adjust the entry editor. With `editor: true` the

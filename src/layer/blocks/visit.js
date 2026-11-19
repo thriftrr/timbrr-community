@@ -15,6 +15,7 @@ export default defineBlock({
  label: 'Visit',
  description: 'Hours, address, map and phone from Settings',
  category: 'dynamic',
+ loads: ['google_maps'],
  icon: 'visit',
  keywords: ['open', 'opening hours', 'address', 'map', 'directions', 'phone', 'contact', 'find us', 'where'],
  presets: [

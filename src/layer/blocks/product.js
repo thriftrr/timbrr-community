@@ -11,6 +11,7 @@ export default defineBlock({
  label: 'Product',
  description: 'One product from your Shopify store',
  category: 'cta',
+ loads: ['shopify'],
  icon: 'product',
  advanced: true,
  keywords: ['shop', 'shopify', 'buy', 'sell', 'product', 'gift card', 'store', 'checkout'],
