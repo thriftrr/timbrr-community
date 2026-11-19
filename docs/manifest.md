@@ -113,6 +113,24 @@ keys parses them away and ignores them.
 its focal point inside a box that keeps the block's shape. Without it, or at
 1, the picture is the single `<img>` it always was (`scripts/check-image.mjs`).
 
+`altFrom` (`'library'` | `'page'`, optional) says whose alt text it is. The
+studio writes `'library'` when a photo is picked and `'page'` once someone
+types this page's own. The layer only parses it: the studio's public answer
+already puts the library's current alt into a `'library'` value (and into an
+older value with no `altFrom` and no alt), so pages pick up alt written in
+the media library within a few minutes, without a publish. Any other value
+is refused.
+
+**Image delivery.** When the site answer's `site` carries `delivery`
+(`{ origin, widths, quality }`, set up by the Timbrr team; the key is left
+out when it's off), `mediaSrcset` lists Cloudflare resizing addresses
+instead of the stored WebPs: one per `widths` entry under the picture's
+width, then the picture's own width capped at the largest entry, each
+`<origin>/cdn-cgi/image/width=<w>,quality=<q>,format=auto,fit=scale-down,metadata=none/<id>/<version>/master.webp`.
+`src` stays the master, and a pasted address or a non-master `src` gets no
+srcset either way. `mediaDeliveryUrl` in `app/utils/timbrr.js` is a hand
+copy of the studio's; keep the two in step.
+
 **Field flags:** `inline` (drawn through `<TbText>` or `<TbRich>`, so it's
 typed into on the canvas), `link` (a text field that holds an address, like
 a button's `to`: the studio offers this site's pages or an outside

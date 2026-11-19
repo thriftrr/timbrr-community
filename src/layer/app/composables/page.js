@@ -187,12 +187,15 @@ export async function useTimbrrPage(path) {
   window.location.reload();
   return new Promise(() => {});
  }
- // An old address of an entry's: the studio says where it lives now (a
- // 301 on the server, a plain move in the browser). Only a path on this
- // site is followed; anything else is the 404 it came with.
+ // An old address of an entry's, or an old-site picture path the studio
+ // moved into the media library (D20): the studio says where it lives now
+ // (a 301 on the server, a plain move in the browser). Only a path on this
+ // site or a library file's own address is followed; anything else is the
+ // 404 it came with, so the answer can never send a visitor elsewhere.
  const moved = fetched.error.value?.statusCode === 404 ? fetched.error.value.data?.data?.redirect?.to : null;
- if (sitePath(moved) && moved !== address.value) {
-  await nuxtApp.runWithContext(() => navigateTo(moved, { redirectCode: 301, replace: true }));
+ const external = mediaFile(moved);
+ if ((sitePath(moved) || external) && moved !== address.value) {
+  await nuxtApp.runWithContext(() => navigateTo(moved, { redirectCode: 301, replace: true, external }));
   // The browser waits for the move; the server's answer is the 301 itself, whatever renders.
   if (import.meta.client) return new Promise(() => {});
   return { site, page, blocks, style };
@@ -203,6 +206,12 @@ export async function useTimbrrPage(path) {
 
 // A path on this site, never another site's address or a protocol.
 const sitePath = (value) => typeof value === 'string' && /^\/(?![/\\])[a-z0-9/_-]*$/i.test(value) && value.length <= 500;
+
+// A media library file's own address (https://<media host>/<id>/<version>/<variant>,
+// or the studio's /media/ route, over http only on localhost in development),
+// the only absolute target a redirect answer can name.
+const mediaFile = (value) =>
+ typeof value === 'string' && value.length <= 500 && /^(?:https:\/\/[a-z0-9.-]+|http:\/\/localhost)(?::\d+)?(?:\/media)?\/[A-Za-z0-9_-]{16}\/[0-9a-f]{8}\/[a-z0-9]+\.[a-z0-9]+$/.test(value);
 
 // The error page (error.vue) for an address: nothing published there (404)
 // or the studio failing (502). Fatal only in the browser, which is what
