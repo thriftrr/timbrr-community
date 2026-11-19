@@ -43,6 +43,7 @@
  const blocks = ref([]);
  const theme = ref({});
  const site = shallowRef(null); // the site's name, address, menu, details and frames, for its header and footer
+ useHead({ htmlAttrs: { lang: () => site.value?.language ?? 'en' } });
  const forms = useTimbrrForms(); // the forms this page can show, as the site draws them
  // The entries its collection blocks draw, sent by the studio (composables/collections.js).
  // Set from the start, so a Collection list here never asks the site itself.
@@ -102,6 +103,7 @@
    nav: navList(value.nav, 1),
    cta: buttonFrom(value.cta),
    details: detailsFrom(value.details),
+   language: /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/i.test(value.language ?? '') ? value.language : 'en',
    overHero: isHeroBleed(firstBlock),
    // The connected Shopify store ({ domain, token, apiVersion, shopUrl },
    // a public token), or null: the shop blocks read it straight from here.

@@ -128,7 +128,7 @@
   flex: 1;
   min-width: 0;
   margin: 0;
-  border: 1px solid color-mix(in srgb, var(--site-muted) 12%, var(--site-border));
+  border: 1px solid var(--site-muted); /* 3:1 edge, 1.4.11 */
   border-radius: var(--site-control-radius);
   padding: 11px 14px;
   background: var(--site-bg);
@@ -146,7 +146,8 @@
  .tb-collection-search__input:focus {
   border-color: var(--site-accent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--site-accent) 16%, transparent);
-  outline: 0;
+  outline: 2px solid var(--site-accent);
+  outline-offset: 1px;
  }
 
  .tb-collection-search__status {

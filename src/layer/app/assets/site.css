@@ -12,7 +12,7 @@
  --site-heading: #3b2a1b;
  --site-ink: #4a3a2b;
  --site-body: #6b5a48;
- --site-muted: #9a8b66;
+ --site-muted: #716442;
  --site-eyebrow: #8a6d2f;
  --site-bg: #ffffff;
  --site-surface: #fbf8f0;
@@ -53,6 +53,59 @@ body {
  line-height: 1.6;
  color: var(--site-ink);
  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Keyboard and motion (WCAG 2.4.1, 2.4.7, 2.4.11, 2.3.3) ── */
+
+/* The first stop on a page: hidden until it has focus, then over the top. */
+.tb-skip {
+ position: absolute;
+ top: 8px;
+ left: 8px;
+ z-index: 100;
+ padding: 10px 16px;
+ border-radius: var(--site-control-radius);
+ background: var(--site-bg);
+ font-weight: 700;
+ color: var(--site-heading);
+ transform: translateY(-200%);
+}
+
+.tb-skip:focus {
+ transform: none;
+ outline: 2px solid var(--site-accent);
+ outline-offset: 2px;
+}
+
+/* The main landmark takes focus from the skip link; no ring around the page. */
+.tb-page__main:focus {
+ outline: 0;
+}
+
+/* Where nothing else says, focus shows. :where() keeps it as quiet as a
+   default, so any component's own ring wins. */
+:where(a, button, summary, input, select, textarea, [tabindex]):focus-visible {
+ outline: 2px solid var(--site-accent);
+ outline-offset: 2px;
+}
+
+/* A sticky header must not cover what has focus or a link jumps to. */
+html:has(.tb-site-header-shell.is-sticky) {
+ scroll-padding-top: 6rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+ html {
+  scroll-behavior: auto;
+ }
+
+ *,
+ *::before,
+ *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+ }
 }
 
 /* ── Layout ── */

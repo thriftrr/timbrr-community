@@ -182,7 +182,7 @@
  }
 
  .tb-book__day.is-past {
-  opacity: 0.4;
+  color: var(--site-muted);
  }
 
  .tb-book__day.is-today {

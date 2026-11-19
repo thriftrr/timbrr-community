@@ -13,6 +13,8 @@
 // the browser alike.
 
 const HEX = /^#[0-9a-f]{6}$/i;
+// A BCP 47 tag, as the studio's Settings stores it (sites.seo.language): <html lang>, WCAG 3.1.1.
+const LANGUAGE = /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/i;
 const DOMAIN = /^(?=.{4,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i;
 const LOCAL = /^(?:localhost|127\.0\.0\.1|\[::1\])$/;
 
@@ -49,6 +51,7 @@ export async function useTimbrrPage(path) {
    details: value.details && typeof value.details === 'object' ? value.details : null,
    brand: normalizeBrand(value.brand),
    overHero: isHeroBleed(blocks.value[0]),
+   language: LANGUAGE.test(value.language ?? '') ? value.language : 'en',
   };
  });
  // On a dev or staging address (the note the server writes says it is one),
@@ -152,7 +155,7 @@ export async function useTimbrrPage(path) {
  });
 
  useHead({
-  htmlAttrs: { lang: 'en' },
+  htmlAttrs: { lang: () => site.value.language },
   link: () => (head.value.canonical ? [{ rel: 'canonical', href: head.value.canonical }] : []),
  });
  useSeoMeta({
@@ -243,8 +246,16 @@ function absolute(src, origin) {
 export function brandStyle(accent, brand) {
  const vars = brandVars(brand);
  if (HEX.test(accent ?? '')) {
-  vars['--site-accent'] = accent;
-  vars['--site-accent-ink'] ??= inkOn(accent);
+  // The brand color is also link and label text on the page and its bands,
+  // and a button's fill under paper ink, so on a light page it's darkened
+  // until it reads 4.5:1 against the darkest of those, whatever the owner
+  // picked. Darkening can't help on a dark page, so there it stays as picked.
+  const page = vars['--site-bg'] ?? '#ffffff';
+  const light = HEX.test(page) && contrastRatio('#000000', page) > contrastRatio('#ffffff', page);
+  const darkest = [page, vars['--site-surface'], '#f7f5ec'].filter((c) => HEX.test(c ?? '')).sort((a, b) => contrastRatio('#000000', a) - contrastRatio('#000000', b))[0];
+  const safe = light ? nudgeAccent(accent, darkest, 4.5) : accent;
+  vars['--site-accent'] = safe;
+  vars['--site-accent-ink'] ??= inkOn(safe);
  }
  return vars;
 }

@@ -293,12 +293,13 @@ const cleanAccent = (value) => {
 };
 
 // A brand color too pale for a button to show against the page comes back as
-// the nearest darker one that does (3:1). Anything else comes back unchanged.
-export function nudgeAccent(value, page = '#ffffff') {
+// the nearest darker one that does (3:1, or `min`). Anything else comes back
+// unchanged.
+export function nudgeAccent(value, page = '#ffffff', min = 3) {
  const accent = cleanAccent(value);
  let { l, c, h } = hexToOklch(accent);
  let hex = accent;
- while (l > 0.1 && contrastRatio(hex, page) < 3) {
+ while (l > 0.1 && contrastRatio(hex, page) < min) {
   l -= 0.01;
   hex = oklchToHex(l, c, h);
  }

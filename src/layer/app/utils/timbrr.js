@@ -36,13 +36,12 @@ export function safeSrc(src) {
  return WEB_SRC.test(value) || (import.meta.dev && LOCAL_SRC.test(value)) ? value : undefined;
 }
 
-// Paper or near-black text on a brand color, by luminance.
+// Paper or near-black text on a brand color, whichever reads better (WCAG 1.4.3).
 export function inkOn(hex) {
  const match = /^#?([0-9a-f]{6})$/i.exec(String(hex ?? '').trim());
  if (!match) return '#f7f5ec';
- const [r, g, b] = [0, 2, 4].map((i) => parseInt(match[1].slice(i, i + 2), 16) / 255);
- const channel = (c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
- return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b) > 0.45 ? '#1f2a22' : '#f7f5ec';
+ const color = `#${match[1].toLowerCase()}`;
+ return contrastRatio('#f7f5ec', color) >= contrastRatio('#1f2a22', color) ? '#f7f5ec' : '#1f2a22';
 }
 
 // The srcset for a photo from the studio's media library. Its address is

@@ -40,13 +40,14 @@
   return text;
  });
  const worded = computed(() => ['date', 'datetime', 'number', 'range'].includes(entry.value?.kind));
+ const headingTag = useHeadingTag(); // the page's one h1, or an h2 that looks the same
 </script>
 
 <template>
  <section v-if="entry || canvas || data.empty" class="tb-section tb-collection-field" :class="[`tb-collection-field--${data.show}`, entry?.kind === 'image' ? `tb-collection-field--${data.image_size || 'full'}` : '']">
   <div class="tb-wrap">
    <template v-if="entry">
-    <h1 v-if="data.show === 'heading'" class="tb-heading tb-collection-field__heading">{{ words }}</h1>
+    <component :is="headingTag" v-if="data.show === 'heading'" class="tb-heading tb-collection-field__heading">{{ words }}</component>
     <template v-else>
      <p v-if="data.show === 'labeled'" class="tb-eyebrow">{{ entry.label }}</p>
      <div class="tb-collection-field__value">
