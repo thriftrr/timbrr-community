@@ -29,17 +29,20 @@ function event(host, headers = {}) {
 
 // The studio: counts calls, answers from `pages`, can be down.
 const calls = [];
+const sent = []; // headers of each page read
 let down = false;
 let epoch = 1;
 const pages = { '/': 'v1' };
 const tick = () => new Promise((done) => setTimeout(done, 5));
-globalThis.fetch = async (url) => {
+const BM = (n) => `00000000-${String(n).padStart(8, '0')}-00000000-${'0'.repeat(32)}`;
+globalThis.fetch = async (url, init = {}) => {
  calls.push(String(url));
  await tick();
  if (down) return new Response('', { status: 503 });
  const { pathname, searchParams } = new URL(url);
  if (pathname.startsWith('/api/public/hosts/')) return decodeURIComponent(pathname.slice(18)) === 'gym.example.com' ? Response.json({ slug: 'north' }) : new Response('', { status: 404 });
- if (pathname.endsWith('/epoch')) return Response.json({ epoch });
+ if (pathname.endsWith('/epoch')) return Response.json({ epoch, bookmarks: { db: BM(epoch), 'bad name': BM(9), sites_2: 'not one' } });
+ sent.push(init.headers ?? {});
  const body = pages[searchParams.get('path')];
  return body ? Response.json({ site: { name: 'North' }, page: { body } }) : new Response('{}', { status: 404 });
 };
@@ -103,6 +106,11 @@ equal(one.later.length, 1);
 await Promise.all(one.later);
 equal((await fetchPublished(event('x'), 'page?path=%2F')).data.page.body, 'v2');
 equal(calls.filter((url) => url.includes('/page?')).length, 1);
+
+// Each page read starts from the bookmark the epoch was read at (read
+// replicas: no page older than its epoch), and only well-formed ones pass.
+equal(sent.at(-1)['x-db-bookmark-db'], BM(2));
+equal(Object.keys(sent.at(-1)).filter((name) => name.startsWith('x-db-')).length, 1);
 
 // The studio down for two minutes: the page still shows.
 down = true;
