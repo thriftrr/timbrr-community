@@ -158,7 +158,7 @@
    if (e.detail) add('heat', { b: id, x: pc(e.clientX - r.left, r.width), y: pc(e.clientY - r.top, r.height), w: w.innerWidth });
    var a = t.closest('a[href],button');
    if (a && b.contains(a)) {
-    add('click', { b: id, i: [].indexOf.call(b.querySelectorAll('a[href],button'), a), k: a.tagName == 'A' ? 'link' : 'button', h: a.hostname && a.hostname != location.hostname ? a.hostname : '' });
+    add('click', { b: id, i: [].indexOf.call(b.querySelectorAll('a[href],button'), a), k: a.tagName == 'A' ? 'link' : 'button', h: a.hostname && a.hostname != location.hostname ? a.hostname : '', w: w.innerWidth });
    }
   },
   true,

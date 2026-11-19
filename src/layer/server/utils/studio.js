@@ -23,13 +23,16 @@ const EPOCH_WAIT = 2000;
 // so something taken down is gone from this site within seconds, not when a
 // copy runs out. Asked at most every EPOCH_FOR ms per isolate. A studio that
 // can't be reached, or is too old to know, leaves the last one standing.
+// `relay` is the relay secret, sent only by a Worker that can count (it has
+// the TIMBRR_HITS binding and the secret): it is how the studio learns this
+// site doesn't need an update before analytics can be turned on.
 const epochs = new Map(); // site → { epoch, analytics, at }
-async function siteState(api, site) {
+async function siteState(api, site, relay = '') {
  const known = epochs.get(site);
  if (known && Date.now() - known.at < EPOCH_FOR) return known;
  let state = { epoch: known?.epoch ?? 0, analytics: known?.analytics ?? null };
  try {
-  const res = await fetch(`${api}/api/public/sites/${encodeURIComponent(site)}/epoch`, { headers: { accept: 'application/json' }, signal: AbortSignal.timeout(EPOCH_WAIT) });
+  const res = await fetch(`${api}/api/public/sites/${encodeURIComponent(site)}/epoch`, { headers: { accept: 'application/json', ...(relay ? { 'x-timbrr-relay': relay } : {}) }, signal: AbortSignal.timeout(EPOCH_WAIT) });
   if (res.ok) {
    const body = await res.json();
    // analytics: what the owner picked ({ on, events, id }); an older studio sends none, which counts nothing.
@@ -42,13 +45,13 @@ async function siteState(api, site) {
  epochs.set(site, state);
  return state;
 }
-const siteEpoch = async (api, site) => (await siteState(api, site)).epoch;
+const siteEpoch = async (api, site, relay) => (await siteState(api, site, relay)).epoch;
 
 // What the owner picked for analytics, as { on, events, id } or null, from the
 // same five-second read as the epoch. The hit route counts only this, so
 // turning analytics off (or off studio-wide) stops counting within seconds,
 // whatever a visitor's open page still says.
-export const siteAnalytics = async (api, site) => (await siteState(api, site)).analytics;
+export const siteAnalytics = async (api, site, relay) => (await siteState(api, site, relay)).analytics;
 
 // The studio's rule for a domain, and the hosts that are this computer.
 const DOMAIN = /^(?=.{4,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i;
@@ -132,7 +135,8 @@ export async function fetchPublished(event, route) {
  try {
   if (!/^https?:\/\/[^/]/.test(api)) throw new Error('NUXT_TIMBRR_API is not an http(s) address');
   // The copy's key carries the epoch; the studio is asked for the plain address.
-  const key = cache ? `${url}${url.includes('?') ? '&' : '?'}epoch=${await siteEpoch(api, site)}` : url;
+  const counts = typeof event.context.cloudflare?.env?.TIMBRR_HITS?.writeDataPoint === 'function';
+  const key = cache ? `${url}${url.includes('?') ? '&' : '?'}epoch=${await siteEpoch(api, site, counts ? String(config.timbrr?.relaySecret ?? '') : '')}` : url;
   const kept = cache ? await cache.match(key).catch(() => undefined) : undefined;
   const res = kept ?? (await fetch(url, { headers: { accept: 'application/json' }, signal: AbortSignal.timeout(WAIT) }));
   const text = await res.text();

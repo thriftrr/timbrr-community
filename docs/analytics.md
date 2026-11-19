@@ -17,7 +17,10 @@ this is the site's half: a script, a route and a binding.
 - **`TIMBRR_HITS`**: the Analytics Engine binding (dataset `timbrr_hits`),
   declared in `src/starter/wrangler.jsonc`. A Worker without it serves pages as
   before and `hit` does nothing, so a site that hasn't been redeployed simply
-  doesn't count.
+  doesn't count. A Worker that has the binding and `NUXT_RELAY_SECRET` sends
+  the secret as `x-timbrr-relay` on its epoch read; that is how the studio
+  learns the site can count (no secret sent, the studio shows "Needs an update"
+  and turning analytics on only asks for the update).
 
 ## What turns it on
 
@@ -49,7 +52,7 @@ One event per beacon entry; a beacon is a JSON array of up to 10.
 | `view` | `r` referrer host, `us`/`um`/`uc` UTM, `w` window width |
 | `leave` | `s` seconds, `d` scroll depth in bands of 10 |
 | `seen` | `b` block id |
-| `click` | `b` block id, `i` index of the link or button within the block, `k` `link` or `button`, `h` destination host |
+| `click` | `b` block id, `i` index of the link or button within the block, `k` `link` or `button`, `h` destination host, `w` window width (only to name the device) |
 | `heat` | `b` block id, `x` and `y` as 0 to 100 of the block's box, `w` window width |
 | `event` | `n` one of `form_sent`, `shop_handoff`, `video_play`, `booking_open`, `outbound`, `file_download`, `phone_tap`, `email_tap` |
 

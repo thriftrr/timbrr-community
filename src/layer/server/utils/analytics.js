@@ -118,7 +118,7 @@ const SHAPES = {
  view: { r: isHost, us: isPlain, um: isPlain, uc: isPlain, w: int(0, 20000) },
  leave: { s: int(0, 86400), d: (v) => int(0, 100)(v) && v % 10 === 0 },
  seen: { b: isId },
- click: { b: isId, i: int(0, 999), k: (v) => v === 'link' || v === 'button', h: isHost },
+ click: { b: isId, i: int(0, 999), k: (v) => v === 'link' || v === 'button', h: isHost, w: int(0, 20000) },
  heat: { b: isId, x: int(0, 100), y: int(0, 100), w: int(0, 20000) },
  event: { n: (v) => EVENT_NAMES.includes(v) },
 };
@@ -164,7 +164,7 @@ export function describeAgent(ua) {
 // One event as an Analytics Engine data point.
 export function dataPoint(site, e, { visitor, country, browser, os }) {
  const blobs = { event: e.e, visitor, path: e.p.length > 1 && e.p.endsWith('/') ? e.p.slice(0, -1).toLowerCase() : e.p.toLowerCase(), page: e.g ?? '', block: e.b ?? '', referrer: e.r ?? '', utm_source: e.us ?? '', utm_medium: e.um ?? '', utm_campaign: e.uc ?? '', country, kind: e.k ?? '', dest: e.h ?? '', name: e.n ?? '' };
- if (e.e === 'view' || e.e === 'heat') Object.assign(blobs, { device: deviceOf(e.w), width: widthBand(e.w) });
+ if (e.e === 'view' || e.e === 'heat' || e.e === 'click') Object.assign(blobs, { device: deviceOf(e.w), width: widthBand(e.w) });
  if (e.e === 'view') Object.assign(blobs, { browser, os });
  const doubles = { seconds: e.s ?? 0, depth: e.d ?? 0, x: e.x ?? 0, y: e.y ?? 0, button: e.i ?? 0 };
  return { indexes: [site], blobs: BLOBS.map((name) => blobs[name] ?? ''), doubles: DOUBLES.map((name) => doubles[name]) };

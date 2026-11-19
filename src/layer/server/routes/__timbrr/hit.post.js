@@ -30,7 +30,7 @@ export default defineEventHandler(async (event) => {
   ...hitInput({ headers: getHeaders(event), context: event.context, previewCookie: PREVIEW_COOKIE, fallbackIp: getRequestIP(event) ?? '' }),
   body: await readRawBody(event, 'utf8'),
   getSalt: () => fetchSalt({ api: studioApi(event), secret: String(config.timbrr?.relaySecret ?? '') }),
-  getConfig: () => siteAnalytics(studioApi(event), site),
+  getConfig: () => siteAnalytics(studioApi(event), site, String(config.timbrr?.relaySecret ?? '')),
  });
  setResponseStatus(event, status);
  return status === 204 ? null : { statusCode: status, message: 'Not understood.' };
