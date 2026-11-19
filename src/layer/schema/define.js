@@ -40,6 +40,11 @@ export const WIDGETS = [
  // from the collection's own list. The studio's picker also sets `kind` and
  // `from` on the block beside it.
  'collection_field',
+ // A product in the site's connected Shopify store (docs/manifest.md §
+ // Widgets): its handle, picked from a search of the store in the studio.
+ 'shop_product',
+ // A Shopify collection in that store: its handle, picked the same way.
+ 'shop_collection',
  // retired: what the retired content blocks name; drop with them
  'content',
  'content_field',

@@ -103,6 +103,9 @@
    cta: buttonFrom(value.cta),
    details: detailsFrom(value.details),
    overHero: isHeroBleed(firstBlock),
+   // The connected Shopify store ({ domain, token, apiVersion, shopUrl },
+   // a public token), or null: the shop blocks read it straight from here.
+   shop: shopConfig(value.shop),
    frame: {
     header: frameFrom(value.frame?.header, headerData),
     footer: frameFrom(value.frame?.footer, footerData),
