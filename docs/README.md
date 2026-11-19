@@ -123,7 +123,10 @@ North Wall, a climbing gym:
   either side. `without: ['divider']` keeps "Line above" out of its inspector.
 - `northwall_embed` Embed: another service's page (a booking calendar, a
   schedule, a shop) in a sandboxed frame. Only the address is kept from what's
-  pasted, so a pasted script never runs on the site.
+  pasted, so a pasted script never runs on the site, and only from a listed
+  service (`EMBED_HOSTS` in `app/utils/blocks.js`: Rock Gym Pro, Calendly,
+  YouTube, Vimeo, Google Calendar and Docs, and a few like them). Anything
+  else draws nothing on the site; the Timbrr team adds a service on request.
 - `northwall_calculator` Price calculator: how many, tick-box extras, and the
   price they come to. Nothing is charged; its button goes wherever signing up
   happens.

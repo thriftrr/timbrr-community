@@ -28,6 +28,10 @@ export default defineNuxtConfig({
    // Developers), for the site's server to call the studio's developer API,
    // e.g. checkFieldPassword (server/utils/timbrr-api.js). Never sent to a browser.
    apiKey: '',
+   // NUXT_TIMBRR_SCRIPT_POLICY=enforce: refuse any script but the site's own
+   // files and its marked inline ones (runtime/canvas-headers.js). Set for
+   // timbrr.app's marketing site, which shares its origin with the studio.
+   scriptPolicy: '',
   },
   public: {
    // NUXT_PUBLIC_SITE: this site's slug in the studio.

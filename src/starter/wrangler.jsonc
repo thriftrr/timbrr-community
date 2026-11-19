@@ -30,7 +30,10 @@
    "vars": {
     "NUXT_PUBLIC_SITE": "timbrr",
     "NUXT_PUBLIC_STUDIO_ORIGIN": "https://timbrr.app",
-    "NUXT_TIMBRR_API": "https://timbrr.app"
+    "NUXT_TIMBRR_API": "https://timbrr.app",
+    // Same origin as the studio, so a script that got into a page here
+    // would run beside studio sessions: enforce script-src 'self'.
+    "NUXT_TIMBRR_SCRIPT_POLICY": "enforce"
    }
   },
   // Every launch domain: the same build again, with no site set. A domain

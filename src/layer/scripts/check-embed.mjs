@@ -12,8 +12,10 @@ equal(safeHref('/events/open-day'), '/events/open-day');
 const RGP = 'https://app.rockgympro.com/b/s/?lk=abc123&bw=6f290f42e9fb4e12926bdb594e672d2a';
 
 // An address alone, or the first one in a pasted embed code.
-equal(embedFrame('https://example.com/widget?a=1'), 'https://example.com/widget?a=1');
-equal(embedFrame('<iframe src="https://example.com/x?a=1&amp;b=2" width="100%"></iframe>'), 'https://example.com/x?a=1&b=2');
+equal(embedFrame('https://calendly.com/widget?a=1'), 'https://calendly.com/widget?a=1');
+equal(embedFrame('<iframe src="https://www.youtube.com/embed/x?a=1&amp;b=2" width="100%"></iframe>'), 'https://www.youtube.com/embed/x?a=1&b=2');
+// Only a listed service: an unknown host, or one that only ends like a listed one, isn't framed.
+for (const bad of ['https://example.com/widget', 'https://evilcalendly.com/x', 'https://calendly.com.evil.example/x']) equal(embedFrame(bad), undefined, bad);
 // A script never reaches the page: only its address is read, and Rock Gym
 // Pro's script address becomes the page for the same widget.
 equal(embedFrame(`<script src="${RGP}"></script><script>alert(1)</script>`), 'https://app.rockgympro.com/b/?bw=6f290f42e9fb4e12926bdb594e672d2a');
