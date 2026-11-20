@@ -33,6 +33,9 @@ export const WIDGETS = [
  'code',
  'hours',
  'table',
+ // What a Split holds: its columns, each a list of blocks (docs/sub-blocks.md). The
+ // studio draws the list of what each column holds, to reorder or remove.
+ 'blocks',
  // What a Collection list draws from (docs/README.md § Collections): { collection, sort,
  // dir, limit, filter, show, value, related }, picked in the studio.
  'collection',
@@ -129,6 +132,10 @@ const lookFields = [
 //              the build when a block uses one it didn't list
 //  without     look fields this block has no use for (['divider']); the
 //              key stays in its data, the inspector just doesn't offer it
+//  inside      true | 'wide': the block may sit in a Split's column (docs/sub-blocks.md);
+//              'wide' only in a column that is half the page or more. Missing is no.
+//  insideWithout  field keys not offered in a column (['layout'], one that needs the
+//              page's width); the look fields are never offered there
 export function defineBlock(definition) {
  if (definition.frame || definition.retired) return definition;
  return {
