@@ -14,6 +14,7 @@ export default defineBlock({
  label: 'Collection list',
  description: 'Shows entries from a collection',
  category: 'dynamic',
+ loads: ['youtube', 'vimeo', 'openstreetmap'],
  icon: 'feed',
  keywords: ['collections', 'entries', 'list', 'events', 'posts', 'blog', 'directory', 'collection', 'carousel', 'filter', 'related'],
  schema: z.object({

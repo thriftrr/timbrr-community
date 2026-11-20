@@ -36,29 +36,42 @@ function once(key, work) {
 // the edge for as long, so a data center asks about once every five seconds
 // however many isolates it runs. A studio that can't be reached, or is too
 // old to know, leaves the last one standing.
-const epochs = new Map(); // site → { epoch, at }
-async function siteEpoch(api, site, cache) {
+// `relay` is the relay secret, sent only by a Worker that can count (it has
+// the TIMBRR_HITS binding and the secret): it is how the studio learns this
+// site doesn't need an update before analytics can be turned on.
+const epochs = new Map(); // site → { epoch, analytics, at }
+async function siteState(api, site, relay = '', cache) {
  const known = epochs.get(site);
- if (known && Date.now() - known.at < EPOCH_FOR) return known.epoch;
+ if (known && Date.now() - known.at < EPOCH_FOR) return known;
  return once(`epoch:${api}:${site}`, async () => {
   const url = `${api}/api/public/sites/${encodeURIComponent(site)}/epoch`;
-  let epoch = known?.epoch ?? 0;
+  let state = { epoch: known?.epoch ?? 0, analytics: known?.analytics ?? null };
   try {
    const kept = cache ? await cache.match(url).catch(() => undefined) : undefined;
-   const res = kept ?? (await fetch(url, { headers: { accept: 'application/json' }, signal: AbortSignal.timeout(EPOCH_WAIT) }));
+   const res = kept ?? (await fetch(url, { headers: { accept: 'application/json', ...(relay ? { 'x-timbrr-relay': relay } : {}) }, signal: AbortSignal.timeout(EPOCH_WAIT) }));
    if (res.ok) {
     const text = await res.text();
-    epoch = Number(JSON.parse(text)?.epoch) || 0;
+    const body = JSON.parse(text);
+    // analytics: what the owner picked ({ on, events, fields, id }); an older studio sends none, which counts nothing.
+    state = { epoch: Number(body?.epoch) || 0, analytics: body?.analytics ?? null };
     if (cache && !kept) await cache.put(url, new Response(text, { headers: { 'content-type': 'application/json', 'cache-control': `public, max-age=${EPOCH_FOR / 1000}` } })).catch(() => {});
    }
   } catch {
    // keep what we had
   }
   if (epochs.size > 5000) epochs.clear();
-  epochs.set(site, { epoch, at: Date.now() });
-  return epoch;
+  state.at = Date.now();
+  epochs.set(site, state);
+  return state;
  });
 }
+const siteEpoch = async (api, site, relay, cache) => (await siteState(api, site, relay, cache)).epoch;
+
+// What the owner picked for analytics, as { on, events, fields, id } or null, from the
+// same five-second read as the epoch. The hit route counts only this, so
+// turning analytics off (or off studio-wide) stops counting within seconds,
+// whatever a visitor's open page still says.
+export const siteAnalytics = async (api, site, relay) => (await siteState(api, site, relay)).analytics;
 
 // The studio's rule for a domain, and the hosts that are this computer.
 export const DOMAIN = /^(?=.{4,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i;
@@ -144,7 +157,8 @@ export async function fetchPublished(event, route) {
   if (!cache) return read(await ask(url));
   // The copy's key carries the epoch; the studio is asked for the plain
   // address, and that plain address also keeps a day-long copy.
-  const epoch = await siteEpoch(api, site, cache);
+  const counts = typeof event.context.cloudflare?.env?.TIMBRR_HITS?.writeDataPoint === 'function';
+  const epoch = await siteEpoch(api, site, counts ? String(config.timbrr?.relaySecret ?? '') : '', cache);
   const key = `${url}${url.includes('?') ? '&' : '?'}epoch=${epoch}`;
   const kept = await cache.match(key).catch(() => undefined);
   if (kept) return read({ status: kept.status, text: await kept.text() });

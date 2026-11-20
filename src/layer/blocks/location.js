@@ -9,6 +9,7 @@ export default defineBlock({
  label: 'Location',
  description: 'Address, map, directions',
  category: 'dynamic',
+ loads: ['google_maps'],
  icon: 'location',
  retired: true,
  schema: z.object({

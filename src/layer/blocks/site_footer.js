@@ -10,6 +10,7 @@ export default defineBlock({
  label: 'Footer',
  description: 'The band that closes every page',
  category: 'layout',
+ loads: ['turnstile'],
  icon: 'site_footer',
  frame: true,
  schema: footerSchema,

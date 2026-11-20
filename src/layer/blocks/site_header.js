@@ -12,6 +12,7 @@ export default defineBlock({
  label: 'Header',
  description: 'The bar across the top of every page',
  category: 'layout',
+ loads: ['turnstile'],
  icon: 'site_header',
  frame: true,
  schema: headerSchema,

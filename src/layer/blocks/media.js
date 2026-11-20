@@ -12,6 +12,7 @@ export default defineBlock({
  label: 'Media',
  description: 'One image or video, full width or contained',
  category: 'content',
+ loads: ['youtube', 'vimeo'],
  icon: 'media',
  keywords: ['image', 'photo', 'picture', 'video', 'youtube', 'vimeo', 'embed'],
  schema: z.object({

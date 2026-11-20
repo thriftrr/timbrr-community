@@ -15,6 +15,7 @@ export default defineBlock({
  label: 'Studio demo',
  description: 'A working copy of the studio visitors can try',
  category: 'content',
+ loads: ['google_fonts'],
  icon: 'monitor',
  advanced: true,
  keywords: ['demo', 'try it', 'editor', 'studio', 'product tour', 'sandbox', 'interactive', 'screenshot'],

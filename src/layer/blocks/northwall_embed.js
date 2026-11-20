@@ -11,6 +11,7 @@ export default defineBlock({
  label: 'Embed',
  description: 'A booking calendar, schedule or shop from another service',
  category: 'dynamic',
+ loads: ['rock_gym_pro', 'pasted_embed'],
  icon: 'embed',
  owner: 'North Wall',
  keywords: ['widget', 'iframe', 'calendar', 'schedule', 'booking', 'rock gym pro', 'gift cards', 'third party'],

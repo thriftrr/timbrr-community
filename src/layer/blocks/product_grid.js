@@ -10,6 +10,7 @@ export default defineBlock({
  label: 'Product grid',
  description: 'Products from a Shopify collection',
  category: 'dynamic',
+ loads: ['shopify'],
  icon: 'product_grid',
  advanced: true,
  keywords: ['shop', 'shopify', 'buy', 'sell', 'products', 'store', 'merch', 'collection'],

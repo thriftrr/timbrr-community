@@ -23,6 +23,7 @@ export default defineBlock({
  label: 'Form',
  description: 'Contact, newsletter signup, quote request',
  category: 'dynamic',
+ loads: ['turnstile'],
  icon: 'form',
  keywords: ['contact', 'email', 'newsletter', 'signup', 'sign up', 'quote', 'estimate', 'inquiry', 'catering', 'booking'],
  schema: z.object({
