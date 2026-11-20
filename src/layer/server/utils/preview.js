@@ -15,15 +15,17 @@ const WAIT = 8000; // ms the studio gets to answer
 // Nuxt's own requests for a page's data arrive without the visitor's Host,
 // so the middleware passes the host along in a header. A visitor can send
 // that header too, so it only counts beside this isolate's own random key,
-// which Nuxt's requests carry and nobody outside ever sees.
+// which Nuxt's requests carry and nobody outside ever sees. Made on first use:
+// Workers refuse random values in global scope (error 10021 at deploy).
 const INTERNAL_HEADER = 'x-timbrr-internal';
-const INTERNAL = globalThis.crypto.randomUUID();
+let internal;
+const internalKey = () => (internal ??= globalThis.crypto.randomUUID());
 export function passHost(event, header, host) {
  event.node.req.headers[header] = host;
- event.node.req.headers[INTERNAL_HEADER] = INTERNAL;
+ event.node.req.headers[INTERNAL_HEADER] = internalKey();
 }
 export function passedHost(event, header) {
- return getHeader(event, INTERNAL_HEADER) === INTERNAL ? getHeader(event, header) : '';
+ return getHeader(event, INTERNAL_HEADER) === internalKey() ? getHeader(event, header) : '';
 }
 
 // The address this request came in on, as { slug, kind }, or null for any
