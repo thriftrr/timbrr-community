@@ -33,6 +33,27 @@ function checkDrawnShown(blocks) {
  }
 }
 
+// Fields that became rich text (FB-133) must still take the plain string they
+// held before, and a rich document: [type, path to the field, in data].
+const OLD_PLAIN = [
+ ['visit', ['custom', 'note']],
+ ['text_club', ['consent']],
+ ['form', ['lede']],
+];
+
+function checkOldPlainStrings(definitions) {
+ for (const [type, path] of OLD_PLAIN) {
+  const { def } = definitions.find((entry) => entry.def.type === type);
+  const wrap = (value) => path.reduceRight((inner, key) => ({ [key]: inner }), value);
+  const doc = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Hi', marks: [{ type: 'bold' }] }] }] };
+  for (const value of ['Plain words', doc]) {
+   const data = path.length > 1 ? { [path[0]]: wrap(value)[path[0]] } : wrap(value);
+   const result = def.schema.safeParse({ ...def.defaults, ...data });
+   if (!result.success) throw new Error(`${type}.${path.join('.')} no longer takes ${typeof value === 'string' ? 'a plain string' : 'a rich document'}: ${result.error.message.slice(0, 200)}`);
+  }
+ }
+}
+
 const layerDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
 const files = args.length
@@ -55,6 +76,7 @@ try {
   console.log(`ok  ${block.type.padEnd(16)} ${block.category.padEnd(8)} ${block.fields.length} fields  ${block.label}`);
  }
  checkDrawnShown(manifest.blocks);
+ if (!args.length) checkOldPlainStrings(definitions);
 } catch (error) {
  console.error(`FAIL ${error.message}`);
  process.exit(1);

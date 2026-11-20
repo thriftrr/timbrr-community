@@ -14,7 +14,7 @@
  const props = defineProps({
   form: { type: Object, required: true },
   heading: { type: String, default: '' },
-  intro: { type: String, default: null },
+  intro: { type: [String, Object], default: null }, // rich text, or the plain words an older block or the form held
   hideTitle: { type: Boolean, default: false },
   locked: { type: Boolean, default: false },
   compact: { type: Boolean, default: false },
@@ -43,6 +43,7 @@
  const noHeading = computed(() => (own.value ? !title.value : props.hideTitle || props.form.hideHeader === true));
  const label = computed(() => (own.value ? props.form.title : title.value));
  const lede = computed(() => (own.value ? props.intro : props.form.hideHeader ? '' : props.form.intro));
+ const hasLede = computed(() => hasWords(lede.value));
  const span = (field) => (props.form.advanced && !props.compact ? { half: 6, third: 4 }[field.width] ?? 12 : 12);
  const fieldId = (field) => `${uid}-${field.id}`;
  // A field's hint and error, which a screen reader reads with it.
@@ -204,7 +205,7 @@
   <form v-if="!sent" novalidate :aria-label="noHeading ? label : undefined" @submit.prevent="last ? submit() : next()">
    <template v-if="!compact">
     <h2 v-if="title && !noHeading" class="tb-heading tb-form__title">{{ title }}</h2>
-    <p v-if="lede" class="tb-form__lede">{{ lede }}</p>
+    <TbRich v-if="hasLede" :doc="lede" class="tb-form__lede" />
    </template>
 
    <div v-if="steps.length > 1" class="tb-form__progress">
@@ -320,7 +321,14 @@
   font-size: clamp(16px, 0.4vw + 14px, 17px);
   line-height: 1.6;
   color: var(--site-body);
-  white-space: pre-line;
+ }
+
+ .tb-form__lede p {
+  margin: 0;
+ }
+
+ .tb-form__lede p + p {
+  margin-top: 0.5em;
  }
 
  .tb-form__progress {

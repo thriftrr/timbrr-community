@@ -62,7 +62,7 @@
      <TbText :data="data" field="submit_label" />
     </component>
    </div>
-   <TbText v-if="shows('consent', data.consent)" :data="data" field="consent" tag="p" class="tb-text-club__consent" multiline />
+   <TbRich v-if="shows('consent', data.consent)" :data="data" field="consent" class="tb-text-club__consent" />
   </div>
  </section>
 </template>
@@ -170,6 +170,13 @@
   font-size: 12.5px;
   line-height: 1.5;
   color: var(--site-muted);
-  white-space: pre-line;
+ }
+
+ .tb-text-club__consent p {
+  margin: 0;
+ }
+
+ .tb-text-club__consent p + p {
+  margin-top: 0.5em;
  }
 </style>

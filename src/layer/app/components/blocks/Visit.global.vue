@@ -23,7 +23,9 @@
 
  const phone = computed(() => text(custom.value.phone) || text(details.value?.phone));
  const email = computed(() => text(custom.value.email) || text(details.value?.email));
- const note = computed(() => text(custom.value.note) || text(details.value?.note));
+ // The block's note is rich text (or a plain string saved before it was); Site details' is plain.
+ const note = computed(() => (hasWords(custom.value.note) ? custom.value.note : text(details.value?.note)));
+ const hasNote = computed(() => hasWords(note.value));
 
  // Two lines: the street, then the city, region and postal code.
  const address = computed(() => {
@@ -63,7 +65,7 @@
  const areas = computed(() => props.data.areas.map((item, index) => ({ item, index })).filter(({ item, index }) => shows(`areas.${index}.title`, item.title)));
  const hasArea = computed(() => areas.value.length > 0 || shows('area_headline', props.data.area_headline) || shows('area_body', props.data.area_body));
 
- const hasWords = computed(() => showAddress.value || showPhone.value || showEmail.value || Boolean(note.value) || links.value.length > 0);
+ const hasWords = computed(() => showAddress.value || showPhone.value || showEmail.value || hasNote.value || links.value.length > 0);
  const hasSide = computed(() => showHours.value || showMap.value);
  // Nothing to say at all, on the canvas: where to go to fix that.
  const empty = computed(() => Boolean(canvas) && !hasWords.value && !hasSide.value && !hasArea.value);
@@ -104,7 +106,7 @@
       <li v-if="showPhone"><a :href="telHref(phone)" class="tb-visit__link">{{ phone }}</a></li>
       <li v-if="showEmail"><a :href="mailHref(email)" class="tb-visit__link">{{ email }}</a></li>
      </ul>
-     <p v-if="note" class="tb-visit__note">{{ note }}</p>
+     <TbRich v-if="hasNote" :doc="note" class="tb-visit__note" />
      <ul v-if="links.length" class="tb-visit__links" role="list">
       <li v-for="{ item, index, href, rel } in links" :key="index">
        <a :href="href" :rel="rel" class="tb-visit__social">
@@ -258,7 +260,14 @@
   font-size: 15px;
   line-height: 1.55;
   color: var(--site-muted);
-  white-space: pre-line;
+ }
+
+ .tb-visit__note p {
+  margin: 0;
+ }
+
+ .tb-visit__note p + p {
+  margin-top: 0.5em;
  }
 
  .tb-visit__directions {

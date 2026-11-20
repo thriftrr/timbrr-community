@@ -88,7 +88,7 @@ export default defineBlock({
      .array(z.object({ title: z.string().max(40).default(''), body: z.string().max(60).default('') }))
      .max(10)
      .default([]),
-    note: z.string().max(1000).default(''),
+    note: richTextSchema.default(richText('')),
     map_url: z.string().max(2000).default(''),
    })
    .prefault({}),
@@ -160,7 +160,7 @@ export default defineBlock({
       { key: 'body', label: 'Hours', widget: 'text', placeholder: '9:00 am – 5:00 pm' },
      ],
     },
-    { key: 'note', label: 'Note', widget: 'textarea' },
+    { key: 'note', label: 'Note', widget: 'html' },
     { key: 'map_url', label: 'Map link', widget: 'text', link: true, when: { '^show': ['address', 'map'] } },
    ],
   },
