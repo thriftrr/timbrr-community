@@ -15,6 +15,8 @@ import {
  megaColumns,
  navItem,
  navList,
+ paletteVar,
+ socialLinks,
  telHref,
  upgradeFooter,
  upgradeHeader,
@@ -166,12 +168,43 @@ const GROUPS = {
   equal(mended.primary.label, 'Keep');
   // A header from before the look draws as it always did; a bad look value
   // falls back on its own.
-  deepEqual(headerData({ layout: 'left' }).look, { background: 'light', height: 'regular', edge: 'line', button: 'filled', logo: 'medium' });
+  deepEqual(headerData({ layout: 'left' }).look, { background: 'light', height: 'regular', edge: 'line', button: 'filled', logo: 'medium', colors: { bg: '', ink: '', button: '', buttonInk: '' }, font: '' });
   const look = headerData({ look: { background: 'brand', height: 'huge' } }).look;
   equal(look.background, 'brand');
   equal(look.height, 'regular');
   equal(footerData({ layout: 'slim', social: [{ network: 'myspace', to: 'https://x.test' }, { network: 'x', to: 'https://x.test' }] }).social[1].network, 'x');
   equal(footerData({ style: 'slim', legal: 'x' }).layout, 'slim');
+ },
+
+ 'palette colors and font': () => {
+  // Only Branding's own keys survive; anything else shows the default.
+  const colors = headerData({ look: { colors: { bg: 'dark', ink: 'darkInk', button: 'accent', buttonInk: 'neon' }, font: 'display' } }).look;
+  deepEqual(colors.colors, { bg: 'dark', ink: 'darkInk', button: 'accent', buttonInk: '' });
+  equal(colors.font, 'display');
+  equal(headerData({ look: { font: 'mono' } }).look.font, '');
+  equal(paletteVar('heading'), 'var(--site-heading)');
+  equal(paletteVar('accentInk'), 'var(--site-accent-ink)');
+  equal(paletteVar('url(x)'), '');
+  equal(paletteVar(''), '');
+  deepEqual(footerData({ look: { colors: { bg: 'surface', ink: 'heading' }, font: 'body' } }).look, { colors: { bg: 'surface', ink: 'heading' }, font: 'body' });
+  deepEqual(footerData({}).look, { colors: { bg: '', ink: '' }, font: '' });
+ },
+
+ 'social icons': () => {
+  // Site details' addresses, in the networks' order; a footer's old list only
+  // fills in what Site details lacks.
+  const details = { social: { tiktok: 'https://tiktok.com/@a', instagram: 'https://instagram.com/a' } };
+  deepEqual(socialLinks(details).map((row) => row.network), ['instagram', 'tiktok']);
+  equal(socialLinks(details)[0].href, 'https://instagram.com/a');
+  const merged = socialLinks(details, [{ network: 'instagram', to: 'https://instagram.com/old' }, { network: 'x', to: 'https://x.com/old' }]);
+  deepEqual(merged.map((row) => `${row.network} ${row.href}`), ['instagram https://instagram.com/a', 'x https://x.com/old', 'tiktok https://tiktok.com/@a']);
+  deepEqual(socialLinks(null), []);
+  deepEqual(socialLinks({ social: 'nope' }, 'nope'), []);
+  // The switches: off by default; a footer not converted yet has none.
+  equal(headerData({}).showSocial, false);
+  equal(footerData({}).showSocial, undefined);
+  equal(footerData({ showSocial: true }).showSocial, true);
+  equal(footerData({ social: [{ network: 'x', to: 'https://x.com/a' }] }).social.length, 1);
  },
 
  'megaColumns': () => {

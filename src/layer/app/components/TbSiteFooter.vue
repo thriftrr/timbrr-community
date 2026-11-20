@@ -15,40 +15,11 @@
  // way. Links go through safeHref, and a page on this site through the
  // router, as in the header.
  import { NuxtLink } from '#components';
- import { addressLines, footerData, footerFromSite, groupHours, telHref } from '../../schema/frames.js';
+ import { addressLines, footerData, footerFromSite, groupHours, paletteVar, socialLinks, telHref } from '../../schema/frames.js';
 
  const props = defineProps({
   site: { type: Object, required: true }, // { name, domain, nav: NavItem[], details?, frame?: { footer } }
  });
-
- // Drawn from one path each, filled or stroked to suit the mark.
- const NETWORKS = {
-  instagram: {
-   label: 'Instagram',
-   line: true,
-   path: 'M7.5 3h9A4.5 4.5 0 0 1 21 7.5v9a4.5 4.5 0 0 1-4.5 4.5h-9A4.5 4.5 0 0 1 3 16.5v-9A4.5 4.5 0 0 1 7.5 3zM12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM17.25 6.75h.01',
-  },
-  facebook: {
-   label: 'Facebook',
-   path: 'M13.5 21v-7.5H16l.5-3h-3V8.6c0-.9.3-1.6 1.6-1.6h1.6V4.3c-.3 0-1.2-.1-2.3-.1-2.3 0-3.9 1.4-3.9 4v2.3H8v3h2.5V21z',
-  },
-  x: {
-   label: 'X',
-   path: 'M17.5 3h3.1l-6.8 7.8L21.8 21h-6.3l-4.9-6.4L5 21H1.9l7.3-8.3L1.5 3H8l4.4 5.8zm-1.1 16.2h1.7L7 4.7H5.1z',
-  },
-  youtube: {
-   label: 'YouTube',
-   path: 'M22 8.2a3 3 0 0 0-2.1-2.1C18 5.6 12 5.6 12 5.6s-6 0-7.9.5A3 3 0 0 0 2 8.2 31 31 0 0 0 1.5 12a31 31 0 0 0 .5 3.8 3 3 0 0 0 2.1 2.1c1.9.5 7.9.5 7.9.5s6 0 7.9-.5a3 3 0 0 0 2.1-2.1 31 31 0 0 0 .5-3.8 31 31 0 0 0-.5-3.8zM10 15V9l5.2 3z',
-  },
-  linkedin: {
-   label: 'LinkedIn',
-   path: 'M5 3.5a2 2 0 1 1 0 4 2 2 0 0 1 0-4zM3.3 9h3.4v11.5H3.3zM9 9h3.3v1.6h.1c.5-.9 1.6-1.9 3.4-1.9 3.6 0 4.2 2.4 4.2 5.4v6.4h-3.4v-5.7c0-1.4 0-3.1-1.9-3.1s-2.2 1.5-2.2 3v5.8H9z',
-  },
-  tiktok: {
-   label: 'TikTok',
-   path: 'M16.6 3c.3 2.2 1.6 3.6 3.9 3.8v3.1c-1.4.1-2.6-.3-3.9-1.1v5.9c0 3.7-2.7 6.3-6.1 6.3s-6-2.7-6-5.9c0-3.7 3.1-6.4 7-5.8v3.3c-1.9-.4-3.6.7-3.6 2.5 0 1.5 1.1 2.7 2.7 2.7 1.7 0 2.6-1.1 2.6-3V3z',
-  },
- };
 
  const chosen = computed(() => props.site.frame?.footer);
  const footer = computed(() => {
@@ -81,11 +52,27 @@
   return linked(row);
  });
 
- const social = computed(() =>
-  (footer.value?.social ?? [])
-   .map((row) => ({ ...NETWORKS[row.network], network: row.network, href: safeHref(row.to) }))
-   .filter((row) => row.href),
- );
+ // The icons come from Site details (FB-122), when the switch is on. A footer
+ // not converted yet has no switch and follows its own old list, which is
+ // drawn with Site details' until convert-blocks has moved it there.
+ const social = computed(() => {
+  const legacy = footer.value?.social ?? [];
+  if (!(footer.value?.showSocial ?? legacy.length > 0)) return [];
+  return socialLinks(props.site.details, legacy)
+   .map((row) => ({ ...row, href: safeHref(row.href) }))
+   .filter((row) => row.href);
+ });
+
+ // The footer's own colors and font, from the palette (FB-123): the band's
+ // two colors (--tb-foot-bg and --tb-foot-ink, which start as the dark band's)
+ // are set on the footer itself, so every rule under it follows.
+ const look = computed(() => {
+  const { colors, font } = footer.value?.look ?? { colors: {}, font: '' };
+  const style = {};
+  if (paletteVar(colors.bg)) style['--tb-foot-bg'] = paletteVar(colors.bg);
+  if (paletteVar(colors.ink)) style['--tb-foot-ink'] = paletteVar(colors.ink);
+  return { style, font };
+ });
 
  // From Site details, each only when its switch is on and there's something
  // to show.
@@ -125,7 +112,7 @@
 </script>
 
 <template>
- <footer v-if="footer" class="tb-site-footer" :class="[`tb-site-footer--${footer.layout}`, { 'tb-site-footer--floating': floating }]">
+ <footer v-if="footer" class="tb-site-footer" :class="[`tb-site-footer--${footer.layout}`, look.font && `tb-site-footer--font-${look.font}`, { 'tb-site-footer--floating': floating }]" :style="look.style">
   <component :is="floating.link.is" v-if="floating" :to="floating.link.to" :href="floating.link.href" class="tb-site-float">{{ floating.label }}</component>
   <div v-if="newsletter" class="tb-site-footer__newsletter">
    <div class="tb-wrap tb-site-footer__newsletter-row">
@@ -203,8 +190,19 @@
     links in columns, then a ruled-off line of small print. Every color is
     the dark band's ink mixed down, so it reads on whatever --site-dark is. */
  .tb-site-footer {
-  background: var(--site-dark);
-  color: color-mix(in srgb, var(--site-dark-ink) 70%, var(--site-muted));
+  --tb-foot-bg: var(--site-dark);
+  --tb-foot-ink: var(--site-dark-ink);
+  background: var(--tb-foot-bg);
+  color: color-mix(in srgb, var(--tb-foot-ink) 70%, var(--site-muted));
+ }
+
+ /* Which of the brand's two text fonts it's set in (look.font). */
+ .tb-site-footer--font-display {
+  font-family: var(--site-font-display);
+ }
+
+ .tb-site-footer--font-body {
+  font-family: var(--site-font-body);
  }
 
  /* The floating button: the brand color in the bottom corner of the screen,
@@ -288,7 +286,7 @@
  }
 
  .tb-site-footer__newsletter {
-  border-bottom: 1px solid color-mix(in srgb, var(--site-dark-ink) 12%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--tb-foot-ink) 12%, transparent);
  }
 
  .tb-site-footer__newsletter-row {
@@ -307,7 +305,7 @@
   font-size: 20px;
   font-weight: var(--site-heading-weight);
   line-height: 1.25;
-  color: var(--site-dark-ink);
+  color: var(--tb-foot-ink);
  }
 
  .tb-site-footer__button {
@@ -315,13 +313,13 @@
   flex: none;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
+  border-radius: var(--site-control-radius);
   padding: 10px 16px;
-  background: var(--site-dark-ink);
+  background: var(--tb-foot-ink);
   font-size: 14px;
   font-weight: 700;
   line-height: 1.2;
-  color: var(--site-dark);
+  color: var(--tb-foot-bg);
   text-decoration: none;
   transition: filter 120ms ease;
  }
@@ -347,7 +345,7 @@
   font-weight: var(--site-heading-weight);
   line-height: 1.2;
   letter-spacing: -0.01em;
-  color: var(--site-dark-ink);
+  color: var(--tb-foot-ink);
   text-decoration: none;
   overflow-wrap: anywhere;
  }
@@ -367,14 +365,14 @@
   justify-content: center;
   width: 36px;
   height: 36px;
-  border-radius: 8px;
+  border-radius: var(--site-control-radius);
   color: inherit;
   transition: color 120ms ease;
  }
 
  .tb-site-footer__network:hover {
-  background: color-mix(in srgb, var(--site-dark-ink) 12%, transparent);
-  color: var(--site-dark-ink);
+  background: color-mix(in srgb, var(--tb-foot-ink) 12%, transparent);
+  color: var(--tb-foot-ink);
  }
 
  .tb-site-footer__nav {
@@ -395,7 +393,7 @@
   font-size: 11.5px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: color-mix(in srgb, var(--site-eyebrow) 55%, var(--site-dark-ink));
+  color: color-mix(in srgb, var(--site-eyebrow) 55%, var(--tb-foot-ink));
  }
 
  .tb-site-footer__links {
@@ -418,15 +416,15 @@
 
  a.tb-site-footer__link:hover,
  .tb-site-footer__name:hover {
-  color: var(--site-dark-ink);
+  color: var(--tb-foot-ink);
   text-decoration: underline;
   text-underline-offset: 3px;
  }
 
  .tb-site-footer a:focus-visible {
-  outline: 2px solid var(--site-dark-ink);
+  outline: 2px solid var(--tb-foot-ink);
   outline-offset: 3px;
-  border-radius: 4px;
+  border-radius: calc(var(--site-radius) / 3);
  }
 
  /* What Site details has: one more column in the row. */
@@ -466,10 +464,10 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 6px 24px;
-  border-top: 1px solid color-mix(in srgb, var(--site-dark-ink) 12%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--tb-foot-ink) 12%, transparent);
   padding-block: 16px 20px;
   font-size: 12.5px;
-  color: color-mix(in srgb, var(--site-dark-ink) 62%, var(--site-dark));
+  color: color-mix(in srgb, var(--tb-foot-ink) 62%, var(--tb-foot-bg));
  }
 
  .tb-site-footer__legal-links {

@@ -24,7 +24,7 @@
  // what sticks, and a see-through header's shell takes up no room, so the
  // hero runs up behind the header.
  import { NuxtLink } from '#components';
- import { headerData, headerFromSite, megaColumns, telHref } from '../../schema/frames.js';
+ import { headerData, headerFromSite, megaColumns, paletteVar, socialLinks, telHref } from '../../schema/frames.js';
 
  const props = defineProps({
   site: { type: Object, required: true }, // { name, domain, nav: NavItem[], cta?: NavItem, details?, overHero?, frame?: { header } }
@@ -91,6 +91,40 @@
    set.phone.on && phone.value && { key: 'phone', text: phone.value, link: linkTo({ to: dial.value }) },
    set.language.on && { key: 'language', text: set.language.label.trim() || 'EN', link: linkTo(set.language) },
   ].filter(Boolean);
+ });
+
+ // The site's social icons, from Site details, when the header's switch is on
+ // (FB-122). On the bar beside the icons, and in the menu on a phone.
+ const socials = computed(() =>
+  header.value?.showSocial
+   ? socialLinks(props.site.details)
+     .map((row) => ({ ...row, href: safeHref(row.href) }))
+     .filter((row) => row.href)
+   : [],
+ );
+
+ // The look's palette colors and font (FB-123). Any color chosen turns the bar
+ // into a custom one: what's left unchosen keeps what `background` gives.
+ // Everything is a var() of a Branding key, so it follows Branding, and the
+ // header's own --tb-* names never refer to themselves.
+ const PRESET = { light: ['var(--site-bg)', 'var(--site-heading)'], brand: ['var(--site-accent)', 'var(--site-accent-ink)'], dark: ['var(--site-dark)', 'var(--site-dark-ink)'] };
+ const palette = computed(() => {
+  const look = header.value?.look;
+  const colors = look?.colors ?? {};
+  const [presetBg, presetInk] = PRESET[look?.background] ?? PRESET.light;
+  const bg = paletteVar(colors.bg);
+  const ink = paletteVar(colors.ink);
+  const button = paletteVar(colors.button);
+  const style = {};
+  if (bg || ink) {
+   style['--tb-look-bg'] = bg || presetBg;
+   style['--tb-look-ink'] = ink || presetInk;
+  }
+  if (button) {
+   style['--tb-btn-bg'] = button;
+   style['--tb-btn-ink'] = paletteVar(colors.buttonInk) || 'var(--site-accent-ink)';
+  }
+  return { style, custom: Boolean(bg || ink), button: Boolean(button), font: look?.font ?? '' };
  });
 
  // What stays on the bar on a phone. The button layout always has its button
@@ -331,7 +365,8 @@
   <header
    ref="bar"
    class="tb-site-header"
-   :class="[`tb-site-header--${layout}`, `tb-site-header--menu-${header.menuAt ?? 'left'}`, `tb-site-header--phone-${header.phone.style}`, `tb-site-header--bg-${header.look.background}`, `tb-site-header--height-${header.look.height}`, `tb-site-header--edge-${header.look.edge}`, `tb-site-header--cta-${header.look.button}`, `tb-site-header--logo-${header.look.logo}`, { 'is-live': live, 'is-clear': clear, 'is-bare': bare, 'is-away': away, 'is-crowded': crowded }]"
+   :class="[`tb-site-header--${layout}`, `tb-site-header--menu-${header.menuAt ?? 'left'}`, `tb-site-header--phone-${header.phone.style}`, palette.custom ? 'tb-site-header--bg-custom' : `tb-site-header--bg-${header.look.background}`, palette.button && 'tb-site-header--btn-custom', palette.font && `tb-site-header--font-${palette.font}`, `tb-site-header--height-${header.look.height}`, `tb-site-header--edge-${header.look.edge}`, `tb-site-header--cta-${header.look.button}`, `tb-site-header--logo-${header.look.logo}`, { 'is-live': live, 'is-clear': clear, 'is-bare': bare, 'is-away': away, 'is-crowded': crowded }]"
+   :style="palette.style"
    @click="onClick"
    @focusin="hidden = false"
   >
@@ -411,7 +446,7 @@
      </ul>
     </nav>
 
-    <div v-if="layout !== 'button' && icons.length" class="tb-site-header__icons">
+    <div v-if="layout !== 'button' && (icons.length || socials.length)" class="tb-site-header__icons">
      <component :is="icon.link.is" v-for="icon in icons" :key="icon.key" :to="icon.link.to" :href="icon.link.href" class="tb-site-header__icon" :aria-label="icon.label">
       <svg v-if="icon.key === 'search'" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
        <circle cx="7" cy="7" r="5" />
@@ -423,6 +458,15 @@
       </svg>
       <template v-else>{{ icon.text }}</template>
      </component>
+     <ul v-if="socials.length" class="tb-site-header__social">
+      <li v-for="row in socials" :key="row.network">
+       <a class="tb-site-header__network" :href="row.href" :aria-label="row.label">
+        <svg width="16" height="16" viewBox="0 0 24 24" :fill="row.line ? 'none' : 'currentColor'" :stroke="row.line ? 'currentColor' : 'none'" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+         <path :d="row.path" />
+        </svg>
+       </a>
+      </li>
+     </ul>
     </div>
 
     <div v-if="primary || (secondary && layout !== 'button')" class="tb-site-header__buttons">
@@ -504,7 +548,16 @@
        </div>
       </div>
 
-      <div v-if="utility.length || menuIcons.length || secondary || (primary && layout !== 'button')" class="tb-site-header__sheet-foot">
+      <div v-if="utility.length || menuIcons.length || socials.length || secondary || (primary && layout !== 'button')" class="tb-site-header__sheet-foot">
+       <ul v-if="socials.length" class="tb-site-header__social tb-site-header__social--sheet">
+        <li v-for="row in socials" :key="row.network">
+         <a class="tb-site-header__network" :href="row.href" :aria-label="row.label">
+          <svg width="18" height="18" viewBox="0 0 24 24" :fill="row.line ? 'none' : 'currentColor'" :stroke="row.line ? 'currentColor' : 'none'" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+           <path :d="row.path" />
+          </svg>
+         </a>
+        </li>
+       </ul>
        <ul v-if="utility.length || menuIcons.length" class="tb-site-header__sheet-links">
         <li v-for="(entry, index) in utility" :key="index">
          <component :is="entry.link.is" :to="entry.link.to" :href="entry.link.href" class="tb-site-header__sheet-link">{{ entry.label }}</component>
@@ -781,12 +834,44 @@
   color: var(--site-heading);
  }
 
+ /* The site's social icons (FB-122): a row of marks beside the other icons,
+    and a row of their own over the phone menu's links. */
+ .tb-site-header__social {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+ }
+
+ .tb-site-header__network {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--site-control-radius);
+  color: var(--site-body);
+  transition: color 120ms ease;
+ }
+
+ .tb-site-header__network:hover {
+  background: var(--site-surface);
+  color: var(--site-heading);
+ }
+
+ .tb-site-header__social--sheet {
+  gap: 4px;
+  margin-bottom: 4px;
+ }
+
  .tb-site-header__cta {
   display: inline-flex;
   flex: none;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
+  border-radius: var(--site-control-radius);
   padding: 9px 15px;
   background: var(--site-accent);
   font-size: 14px;
@@ -817,7 +902,7 @@
  }
 
  .tb-site-header__cta:focus-visible {
-  border-radius: 8px;
+  border-radius: var(--site-control-radius);
  }
 
  /* An item's own links: a list under it, or a big menu across the whole
@@ -833,7 +918,7 @@
   min-width: 220px;
   margin: 0;
   border: 1px solid var(--site-border);
-  border-radius: 10px;
+  border-radius: var(--site-radius);
   padding: 6px;
   background: var(--site-bg);
   box-shadow: 0 10px 30px color-mix(in srgb, var(--site-heading) 12%, transparent);
@@ -877,7 +962,7 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  border-radius: 6px;
+  border-radius: calc(var(--site-radius) / 2);
   padding: 9px 12px;
   font-size: 14px;
   font-weight: 600;
@@ -1097,7 +1182,7 @@
   gap: 8px;
   min-height: 44px;
   border: 1px solid var(--site-border);
-  border-radius: 8px;
+  border-radius: var(--site-control-radius);
   padding: 8px 12px;
   font-size: 14px;
   font-weight: 600;
@@ -1506,7 +1591,7 @@
 
  /* The page's own colors are kept for what opens out of the bar: the
     dropdowns and the phone menu stay on the page's background. */
- :is(.tb-site-header--bg-brand, .tb-site-header--bg-dark):not(.is-clear, .is-bare) {
+ :is(.tb-site-header--bg-brand, .tb-site-header--bg-dark, .tb-site-header--bg-custom):not(.is-clear, .is-bare) {
   --tb-page-accent: var(--site-accent);
   --tb-page-accent-ink: var(--site-accent-ink);
   --tb-page-heading: var(--site-heading);
@@ -1517,7 +1602,7 @@
   background: var(--tb-look-bg);
  }
 
- :is(.tb-site-header--bg-brand, .tb-site-header--bg-dark):not(.is-clear, .is-bare) :is(.tb-site-header__bar, .tb-site-header__utility) {
+ :is(.tb-site-header--bg-brand, .tb-site-header--bg-dark, .tb-site-header--bg-custom):not(.is-clear, .is-bare) :is(.tb-site-header__bar, .tb-site-header__utility) {
   --site-heading: var(--tb-look-ink);
   --site-body: var(--tb-look-ink);
   --site-muted: color-mix(in srgb, var(--tb-look-ink) 78%, transparent);
@@ -1532,7 +1617,7 @@
   --site-accent-ink: var(--tb-look-bg);
  }
 
- :where(.tb-site-header--bg-brand, .tb-site-header--bg-dark):not(.is-clear, .is-bare) :where(.tb-site-header__panel, .tb-site-header__sheet) {
+ :where(.tb-site-header--bg-brand, .tb-site-header--bg-dark, .tb-site-header--bg-custom):not(.is-clear, .is-bare) :where(.tb-site-header__panel, .tb-site-header__sheet) {
   --site-accent: var(--tb-page-accent);
   --site-accent-ink: var(--tb-page-accent-ink);
   --site-heading: var(--tb-page-heading);
@@ -1540,5 +1625,33 @@
   --site-muted: var(--tb-page-muted);
   --site-border: var(--tb-page-border);
   --site-surface: var(--tb-page-surface);
+ }
+
+ /* Palette colors (look.colors, FB-123). The bar's own colors come from the
+    inline --tb-look-* the component sets; the main button takes its own pair
+    (--tb-btn-*), and a button the brand color sits on can't be the brand
+    color too, so it turns over as it does on the Brand background. */
+ .tb-site-header--bg-custom:not(.tb-site-header--btn-custom) .tb-site-header__bar {
+  --site-accent: var(--tb-look-ink);
+  --site-accent-ink: var(--tb-look-bg);
+ }
+
+ .tb-site-header--btn-custom:not(.is-clear, .is-bare) .tb-site-header__cta:not(.tb-site-header__cta--outline) {
+  background: var(--tb-btn-bg);
+  color: var(--tb-btn-ink);
+ }
+
+ .tb-site-header--btn-custom.tb-site-header--cta-outline:not(.is-clear, .is-bare) .tb-site-header__cta[data-tb-button='primary'] {
+  background: transparent;
+  color: var(--tb-btn-bg);
+ }
+
+ /* Which of the brand's two text fonts the bar and its menus are set in. */
+ .tb-site-header--font-display {
+  font-family: var(--site-font-display);
+ }
+
+ .tb-site-header--font-body {
+  font-family: var(--site-font-body);
  }
 </style>
