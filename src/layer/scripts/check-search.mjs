@@ -4,8 +4,8 @@
 //   node layer/scripts/check-search.mjs
 import { deepEqual, equal } from 'node:assert/strict';
 
-const { siteSearchParams, tidyWords, emptySiteSearch } = await import('../server/utils/site-search.js');
-const { searchSettings, slugWords, kindName, groupHits, dateTile, recentSearches, rememberSearch, forgetSearch } = await import('../app/utils/search.js');
+const { siteSearchParams, tidyWords, emptySiteSearch, relaySearchNote } = await import('../server/utils/site-search.js');
+const { searchSettings, slugWords, kindName, groupHits, dateTile, recentSearches, rememberSearch, forgetSearch, sendSearchNote, handOverSearch, takeHandedSearch } = await import('../app/utils/search.js');
 
 // ── What the studio is asked ──
 equal(tidyWords('  Day   PASS '), 'day pass');
@@ -53,5 +53,47 @@ deepEqual(rememberSearch('boulder'), []);
 kept.set('tb-search-recent', '{"not":"a list"}');
 globalThis.localStorage = { getItem: (key) => kept.get(key) ?? null, setItem: () => {} };
 deepEqual(recentSearches(), []);
+
+// ── Settled searches and opened results, passed on to the studio ──
+const posts = [];
+const studio = async (url, init) => {
+ posts.push({ url, method: init.method, headers: init.headers, body: JSON.parse(init.body) });
+ return new Response('{"ok":true}', { status: url.includes('/nosearch/') ? 404 : 200 });
+};
+equal(await relaySearchNote({ api: 'http://studio.test', site: 'north', action: 'log', q: '  Day  Pass ', visitor: '203.0.113.9', relay: 's3', fetch: studio }), true);
+deepEqual(posts.at(-1), { url: 'http://studio.test/api/public/sites/north/search/log', method: 'POST', headers: { accept: 'application/json', 'content-type': 'application/json', 'x-timbrr-visitor': '203.0.113.9', 'x-timbrr-relay': 's3' }, body: { q: 'day pass' } });
+equal(await relaySearchNote({ api: 'http://studio.test', site: 'north', action: 'opened', q: 'boulder', fetch: studio }), true);
+equal(posts.at(-1).url, 'http://studio.test/api/public/sites/north/search/opened');
+equal(posts.at(-1).headers['x-timbrr-visitor'], undefined);
+const before = posts.length;
+// Nothing goes for an unknown action, under two letters, no site or no studio address.
+equal(await relaySearchNote({ api: 'http://studio.test', site: 'north', action: 'delete', q: 'boulder', fetch: studio }), false);
+equal(await relaySearchNote({ api: 'http://studio.test', site: 'north', action: 'log', q: ' b ', fetch: studio }), false);
+equal(await relaySearchNote({ api: 'http://studio.test', site: '', action: 'log', q: 'boulder', fetch: studio }), false);
+equal(await relaySearchNote({ api: 'javascript:x', site: 'north', action: 'log', q: 'boulder', fetch: studio }), false);
+equal(posts.length, before);
+// Search off there (a 404), or the studio down: false, never thrown.
+equal(await relaySearchNote({ api: 'http://studio.test', site: 'nosearch', action: 'log', q: 'boulder', fetch: studio }), false);
+equal(await relaySearchNote({ api: 'http://studio.test', site: 'north', action: 'log', q: 'boulder', fetch: async () => { throw new Error('down'); } }), false);
+
+// In the browser: a beacon, else a keepalive fetch; nothing under two letters.
+const beacons = [];
+const fetches = [];
+Object.defineProperty(globalThis, 'navigator', { value: { sendBeacon: (to, blob) => (beacons.push(to), blob.type === 'application/json') }, configurable: true });
+globalThis.fetch = async (to, init) => (fetches.push([to, init.keepalive, init.body]), new Response(null, { status: 204 }));
+sendSearchNote('log', ' boulder ');
+sendSearchNote('opened', 'b');
+deepEqual(beacons, ['/__timbrr/search/log']);
+Object.defineProperty(globalThis, 'navigator', { value: { sendBeacon: () => false }, configurable: true });
+sendSearchNote('opened', 'boulder');
+deepEqual(fetches, [['/__timbrr/search/opened', true, '{"q":"boulder"}']]);
+
+// The pop-up hands /search a search it already logged, once.
+handOverSearch('Boulder ');
+equal(takeHandedSearch('boulder'), true);
+equal(takeHandedSearch('boulder'), false);
+handOverSearch('boulder');
+equal(takeHandedSearch('hours'), false);
+equal(takeHandedSearch('boulder'), false);
 
 console.log('check-search: ok');

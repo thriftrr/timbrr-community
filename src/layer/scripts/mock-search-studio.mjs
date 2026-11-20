@@ -15,10 +15,10 @@ const HITS = [
  { kind: 'page', kindName: 'Page', title: 'Day pass prices', path: '/prices', summary: 'A day pass, a 10-visit punch card or a membership. Gear rental included.' },
  { kind: 'page', kindName: 'Page', title: 'Hours', path: '/hours', summary: 'Open every day from 6 am. Holiday hours are posted a week ahead.' },
  { kind: 'page', kindName: 'Page', title: 'Kids climbing', path: '/kids', summary: 'Climbing team, birthday parties and after-school boulder club.', image: img('kids') },
- { kind: 'classes', kindName: 'Class', title: 'Intro to bouldering', path: '/classes/intro', summary: 'Your first hour on the wall: falling, footwork and reading a problem.', date: '2026-11-24T18:00:00Z', values: { level: 'beginner' } },
- { kind: 'classes', kindName: 'Class', title: 'Bouldering technique', path: '/classes/technique', summary: 'Heel hooks, drop knees and flagging for climbers who boulder V2 and up.', date: '2026-11-26T18:00:00Z', values: { level: 'intermediate' } },
- { kind: 'classes', kindName: 'Class', title: 'Lead climbing', path: '/classes/lead', summary: 'Clip, fall and belay on lead. Bring your own harness.', date: '2026-12-02T18:00:00Z', values: { level: 'advanced' } },
- { kind: 'classes', kindName: 'Class', title: 'Youth boulder club', path: '/classes/youth', summary: 'Ages 8 to 14, every Tuesday. Shoes and chalk included.', date: '2026-12-03T22:00:00Z', values: { level: 'beginner' } },
+ { kind: 'classes', kindName: 'Class', title: 'Intro to bouldering', path: '/classes/intro', summary: 'Your first hour on the wall: falling, footwork and reading a problem.', date: '2026-11-24T18:00:00Z', values: { level: ['beginner'] } },
+ { kind: 'classes', kindName: 'Class', title: 'Bouldering technique', path: '/classes/technique', summary: 'Heel hooks, drop knees and flagging for climbers who boulder V2 and up.', date: '2026-11-26T18:00:00Z', values: { level: ['intermediate'] } },
+ { kind: 'classes', kindName: 'Class', title: 'Lead climbing', path: '/classes/lead', summary: 'Clip, fall and belay on lead. Bring your own harness.', date: '2026-12-02T18:00:00Z', values: { level: ['advanced'] } },
+ { kind: 'classes', kindName: 'Class', title: 'Youth boulder club', path: '/classes/youth', summary: 'Ages 8 to 14, every Tuesday. Shoes and chalk included.', date: '2026-12-03T22:00:00Z', values: { level: ['beginner'] } },
  { kind: 'events', kindName: 'Event', title: 'Boulder bash comp', path: '/events/bash', summary: 'Our winter bouldering competition, with a kids category.', image: img('comp'), date: '2026-12-13T16:00:00Z' },
  { kind: 'events', kindName: 'Event', title: 'Film night: The Dawn Wall', path: '/events/film', summary: 'Popcorn, a big screen and a climbing film.', date: '2026-12-05T01:00:00Z' },
 ].map((hit, at) => ({ id: `h${at}`, values: {}, image: null, date: null, ...hit }));
@@ -56,13 +56,13 @@ function search(params) {
  const matched = (partial ? HITS.filter((hit) => words.some((word) => starts(`${hit.title} ${hit.summary}`, word))) : all).slice(0, 50);
  const kinds = params.getAll('kind');
  const levels = params.getAll('level');
- let shown = matched.filter((hit) => (!kinds.length || kinds.includes(hit.kind)) && (!levels.length || levels.includes(hit.values.level)));
+ let shown = matched.filter((hit) => (!kinds.length || kinds.includes(hit.kind)) && (!levels.length || hit.values.level?.some((level) => levels.includes(level))));
  if (params.get('sort') === 'newest') shown = [...shown].sort((a, b) => String(b.date ?? '').localeCompare(String(a.date ?? '')));
  const per = Number(params.get('per') ?? 20);
  const page = Number(params.get('page') ?? 1);
  const facets = { kind: {}, level: Object.fromEntries(LEVELS.map((level) => [level, 0])) };
  for (const hit of matched) facets.kind[hit.kind] = (facets.kind[hit.kind] ?? 0) + 1;
- for (const hit of matched.filter((one) => !kinds.length || kinds.includes(one.kind))) if (hit.values.level) facets.level[hit.values.level]++;
+ for (const hit of matched.filter((one) => !kinds.length || kinds.includes(one.kind))) for (const level of hit.values.level ?? []) facets.level[level]++;
  const didYouMean = matched.length ? null : (words.map((word) => VOCAB.filter((known) => known[0] === word[0] && Math.abs(known.length - word.length) <= 2 && distance(known, word) <= 2)[0] ?? word).join(' ') || null);
  return {
   site: { slug: 'demo' },

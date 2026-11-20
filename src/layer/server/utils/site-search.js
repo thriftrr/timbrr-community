@@ -38,3 +38,25 @@ export function siteSearchParams(asked) {
 
 // The answer to a search too short to send: nothing found, without asking.
 export const emptySiteSearch = (q) => ({ query: q, total: 0, page: 1, pages: 1, didYouMean: null, partial: false, hits: [], facets: {} });
+
+// A settled search (`log`) or a result opened from one (`opened`), passed on
+// to the studio's POST …/search/<action> as { q }. The studio counts it only
+// on sites with Analytics and keeps nothing about the visitor; the visitor's
+// address goes along only so its per-visitor limit holds, as with a form.
+// Never throws: the browser sent it and forgot it. True when the studio took it.
+export const SEARCH_NOTES = ['log', 'opened'];
+export async function relaySearchNote({ api, site, action, q, visitor = '', relay = '', fetch = globalThis.fetch }) {
+ const words = tidyWords(q);
+ if (!SEARCH_NOTES.includes(action) || words.length < 2 || !site || !/^https?:\/\/[^/]/.test(api)) return false;
+ try {
+  const res = await fetch(`${api}/api/public/sites/${encodeURIComponent(site)}/search/${action}`, {
+   method: 'POST',
+   headers: { accept: 'application/json', 'content-type': 'application/json', ...(visitor ? { 'x-timbrr-visitor': visitor } : {}), ...(relay ? { 'x-timbrr-relay': relay } : {}) },
+   body: JSON.stringify({ q: words }),
+   signal: AbortSignal.timeout(5000),
+  });
+  return res.ok;
+ } catch {
+  return false;
+ }
+}

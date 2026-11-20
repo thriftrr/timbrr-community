@@ -40,7 +40,7 @@
  const email = computed(() => String(site.value.details?.email ?? '').trim());
 
  // The filters: kind first, then each of the owner's. A value with nothing
- // in it stays, greyed out, unless it's picked (so it can be unpicked).
+ // in it stays, greyed out, and can still be picked; a picked value always shows.
  const filters = computed(() => {
   const facets = found.value?.facets ?? {};
   const names = (key) => (key === 'kind' ? 'Kind' : slugWords(key.includes('.') ? key.split('.').pop() : key));
@@ -66,7 +66,14 @@
   navigateTo({ path: '/search', query });
  }
  const at = (n) => ({ path: '/search', query: { ...route.query, page: n > 1 ? String(n) : undefined } });
- const opened = () => rememberSearch(q.value);
+ function opened() {
+  rememberSearch(q.value);
+  sendSearchNote('opened', q.value);
+ }
+ // Each search this page loads is logged once (the pop-up's own already was).
+ const log = (words) => words.length >= 2 && !takeHandedSearch(words) && sendSearchNote('log', words);
+ onMounted(() => log(q.value));
+ watch(q, log);
 
  const title = computed(() => [q.value ? `Search: ${q.value}` : 'Search', site.value.name].filter(Boolean).join(' · '));
  useHead({ link: [{ rel: 'canonical', href: `${here.origin}/search` }], htmlAttrs: { 'data-tb-p': '/search' } });
@@ -95,7 +102,7 @@
        <fieldset v-for="filter in filters" :key="filter.key" class="tb-search-page__filter">
         <legend>{{ filter.name }}</legend>
         <label v-for="item in filter.values" :key="item.value" class="tb-search-page__check" :class="{ 'is-empty': !item.n }">
-         <input type="checkbox" :name="filter.key" :value="item.value" :checked="item.on" :disabled="!item.n && !item.on" />
+         <input type="checkbox" :name="filter.key" :value="item.value" :checked="item.on" />
          <span>{{ item.label }}</span>
          <span class="tb-search-page__n">{{ item.n }}</span>
         </label>
@@ -255,9 +262,9 @@
   accent-color: var(--site-accent);
  }
 
+ /* Nothing there under the other picks: greyed, but still pickable (a value's own filter is an OR). */
  .tb-search-page__check.is-empty {
   color: var(--site-muted);
-  cursor: default;
  }
 
  .tb-search-page__n {

@@ -71,3 +71,28 @@ export const rememberSearch = (words) => {
  return q.length >= 2 ? keepRecent([q, ...recentSearches().filter((one) => one.toLowerCase() !== q.toLowerCase())]) : recentSearches();
 };
 export const forgetSearch = (words) => keepRecent(recentSearches().filter((one) => one !== words));
+
+// Tell the site a search settled (`log`) or a result was opened (`opened`):
+// sent and forgotten, and it still goes when the page is being left.
+export function sendSearchNote(action, words) {
+ const q = String(words ?? '').trim().slice(0, 100);
+ if (q.length < 2) return;
+ const body = JSON.stringify({ q });
+ const to = `/__timbrr/search/${action}`;
+ try {
+  if (navigator.sendBeacon?.(to, new Blob([body], { type: 'application/json' }))) return;
+ } catch {
+  // fall through
+ }
+ fetch(to, { method: 'POST', headers: { 'content-type': 'application/json' }, body, keepalive: true }).catch(() => {});
+}
+
+// The pop-up handing a search it already logged to /search, so that loading
+// /search doesn't log it a second time. Taken once.
+let handed = '';
+export const handOverSearch = (words) => (handed = String(words ?? '').trim().toLowerCase());
+export function takeHandedSearch(words) {
+ const same = handed !== '' && handed === String(words ?? '').trim().toLowerCase();
+ handed = '';
+ return same;
+}

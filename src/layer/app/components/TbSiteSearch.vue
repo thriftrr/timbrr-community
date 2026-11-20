@@ -60,11 +60,24 @@
 
  let timer = null;
  let asked = 0;
+ // A search is logged once it settles: a second with no typing, or a result
+ // opened. Once per words in each opening of the pop-up.
+ let settling = null;
+ let logged = new Set();
+ function settle() {
+  clearTimeout(settling);
+  const q = words.value.toLowerCase();
+  if (q.length < 2 || logged.has(q)) return;
+  logged.add(q);
+  sendSearchNote('log', q);
+ }
  watch(words, (value, before) => {
   if (value === before) return;
   active.value = -1;
   kind.value = '';
   clearTimeout(timer);
+  clearTimeout(settling);
+  if (asking.value) settling = setTimeout(settle, 1000);
   if (!asking.value) {
    asked++;
    answer.value = counts.value = null;
@@ -102,6 +115,7 @@
   if (!dialog.value || dialog.value.open) return;
   opener = from ?? document.activeElement;
   typed.value = '';
+  logged = new Set();
   recent.value = recentSearches();
   dialog.value.showModal();
   input.value?.focus();
@@ -114,6 +128,7 @@
  // After any close (Escape, Cancel, a click outside, a result): focus goes back.
  function closed() {
   clearTimeout(timer);
+  clearTimeout(settling);
   if (opener?.isConnected) opener.focus({ preventScroll: true });
   opener = null;
  }
@@ -130,7 +145,17 @@
   close();
   navigateTo(to);
  }
- const openHit = (hit) => (safeHref(hit?.path)?.startsWith('/') ? go(hit.path) : null);
+ function openHit(hit) {
+  if (!safeHref(hit?.path)?.startsWith('/')) return;
+  settle();
+  sendSearchNote('opened', words.value);
+  go(hit.path);
+ }
+ // To /search, which logs the search as it loads, unless it was logged here already.
+ function goSeeAll() {
+  if (logged.has(words.value.toLowerCase())) handOverSearch(words.value);
+  go(seeAll.value);
+ }
  const search = (value) => {
   typed.value = value;
   input.value?.focus();
@@ -148,7 +173,7 @@
   } else if (event.key === 'Enter') {
    event.preventDefault();
    if (active.value >= 0 && flat.value[active.value]) openHit(flat.value[active.value]);
-   else if (asking.value) go(seeAll.value);
+   else if (asking.value) goSeeAll();
   }
  }
 
@@ -164,6 +189,7 @@
  onBeforeUnmount(() => {
   document.removeEventListener('keydown', slash);
   clearTimeout(timer);
+  clearTimeout(settling);
  });
 </script>
 
@@ -262,7 +288,7 @@
 
   <div v-if="found && total" class="tb-search__foot">
    <span class="tb-search__hints" aria-hidden="true"><kbd>↑</kbd><kbd>↓</kbd> to move <kbd>↵</kbd> to open</span>
-   <NuxtLink :to="seeAll" class="tb-search__all" @click.prevent="go(seeAll)">See all {{ total }} results <span aria-hidden="true">→</span></NuxtLink>
+   <NuxtLink :to="seeAll" class="tb-search__all" @click.prevent="goSeeAll">See all {{ total }} results <span aria-hidden="true">→</span></NuxtLink>
   </div>
   <p class="tb-search__said" role="status" aria-live="polite">{{ said }}</p>
  </dialog>
