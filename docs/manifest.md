@@ -70,6 +70,7 @@ For a particular kind of value:
 | `code` | a pasted snippet, as text | `placeholder` |
 | `hours` | a week of opening hours, as the site's details keep them: seven rows, Monday first, each `{ closed, open, close }`; `[]` while unset | |
 | `table` | a grid of cells: `{ align, rows, header_row, header_col }` (`tableSchema` in `schema/define.js`; below) | |
+| `blocks` | a Split's columns: a list of lists of blocks, `[[{ id, type, data }]]` (docs/sub-blocks.md). The studio draws what each column holds, to open, reorder or remove; blocks go in by dragging onto the page. The schema must be a list of lists | |
 | `shop_product` | a product in the site's connected Shopify store: its handle, `''` while unset. The studio's picker searches the store | |
 | `shop_collection` | a Shopify collection in that store: its handle, `''` while unset, picked the same way | |
 
@@ -98,7 +99,21 @@ options, that every icon option but "none" has paths, and that a `tags`
 field's schema is a list of text (or, with `of`, of objects with that key).
 
 A new widget ships in the studio first: a studio refuses a manifest with a
-widget it doesn't have.
+widget it doesn't have. **`blocks` is new (2026-11-19, the Split block), so the
+studio deploys first.**
+
+**In a column** (`docs/sub-blocks.md`). A definition says `inside: true`, or
+`inside: 'wide'` for a block that only goes in a column that is half the page
+or more, or nothing: a block opts in, and says what its compact form is. It may
+also list `insideWithout`, keys of fields the studio leaves out of its inspector
+in a column (a layout that needs the page's width). The look fields
+(Background, Space above and below, Line above) are never offered there. In a
+column a block's root gets `tb-in-column` (and `tb-in-column--wide`) in place of
+its look classes, and `useBlockPlace()` says `'page'`, `'column'` or
+`'column-wide'`. Both keys are in the manifest, left out unless set; a build
+refuses a frame or retired block with `inside`, or an `insideWithout` naming a
+field it doesn't have. A `buttons` option may carry `bars`, a list of shares
+(`[35, 65]`), which the studio draws as little bars (the Split's ratio).
 
 **An image** is `{ src, alt }` at least: `src` is an https address or a
 path on the site, `alt` what it shows. One picked from the studio's media
@@ -277,14 +292,14 @@ same-site paths). Nothing a page holds becomes markup.
   { "name": "bur-oak-site", "version": "0.0.0", "tier": "private" },
   { "name": "@timbrr/community", "version": "0.1.0", "tier": "community" }
  ],
- "widgets": ["text", "textarea", "html", "select", "buttons", "items", "image", "nav", "switch", "group", "form", "stepper", "number", "range", "date", "time", "checks", "color", "icon", "tags", "code", "hours", "table", "collection", "collection_field", "shop_product", "shop_collection", "content", "content_field"],
+ "widgets": ["text", "textarea", "html", "select", "buttons", "items", "image", "nav", "switch", "group", "form", "stepper", "number", "range", "date", "time", "checks", "color", "icon", "tags", "code", "hours", "table", "blocks", "collection", "collection_field", "shop_product", "shop_collection", "content", "content_field"],
  "blocks": [
   {
    "type": "hours", "tier": "base", "owner": null, "layer": "@timbrr/community",
    "component": "BlocksHours", "label": "Hours", "description": "From settings, open-now indicator",
    "category": "dynamic", "icon": "hours",
    // "frame": true on a site_header or site_footer; "advanced": true, "retired": true,
-   // "presets": [ ... ], "keywords": [ ... ] and "loads": ["youtube", ...] the same way: left out unless set
+   // "presets": [ ... ], "keywords": [ ... ], "loads": ["youtube", ...], "inside": true | "wide" and "insideWithout": [ ... ] the same way: left out unless set
    "fields": [ /* as defined */ ],
    "defaults": { /* parsed through the schema: every key present */ },
    "wys": { "headline": [], "items.*.title": [], "items.*.body": [], "note": ["italic"] },
@@ -395,9 +410,9 @@ Studio → canvas
 | `timbrr:insights` | `on` — Insights is showing (false takes it all away; nothing is drawn or measured until it's true). With `on: true`: `mode` (`seen`, `heat` or `scroll`), `selected` (the block's id or null), `colors` (`{ best, middle, lowest }`), `blocks` (`[{ id, name, state, since?, hasRow, seen, clicked, rate, rank, reach }]`: `state` is `live`, `new` (not published yet) or `changed`; `rank` is `best`, `middle`, `lowest` or null; `reach` is 0..1, how many of a page's views saw the block), `buttons` (the selected block's `[{ index, clicks }]`, in the order the page's script counts them) and `heat` (`{ <block id>: { size, cells, max } }`, a 20 x 20 grid for the device the canvas is sized to). The canvas draws a veil and a badge per block, the buttons' counts, the heat, or the lines where `reach` crosses 75, 50 and 25 percent. It sits over the page and takes no clicks. The header and footer have no block id and are drawn as "Not tracked". Only numbers and names the studio read go in; the canvas never reads text from a visitor |
 | `timbrr:format` | `tool` (`bold` `italic` `underline` `link` `h2` `h3` `ul` `ol` `clear`), with `href` for `link` (empty takes the link off) — applied to the open rich-text field if it allows that tool, ignored otherwise |
 | `timbrr:release` | nothing — the studio's keyboard went somewhere other than the format bar (the inspector, the tray): an open rich-text field goes back to text |
-| `timbrr:dragover` | `y` — a block from the studio's tray is over the page, `y` px from its top in the page's own pixels (before any scaling): the canvas puts its drop line where the block would go. A browser lets a drag drop only into documents of the origin it started in, so the studio takes the drop over the frame and says where it is |
+| `timbrr:dragover` | `y` (and `x`, across, and `blockType`, what's dragged, when the studio knows) — a block from the studio's tray is over the page, `y` px from its top in the page's own pixels (before any scaling): the canvas puts its drop line where the block would go. A browser lets a drag drop only into documents of the origin it started in, so the studio takes the drop over the frame and says where it is |
 | `timbrr:dragleave` | nothing — it left the page; the line goes |
-| `timbrr:drop` | `y` — it was let go there; the canvas answers with its own `timbrr:drop` (`kind: add`, `index`), as for a native drop |
+| `timbrr:drop` | `y`, `x`, `blockType` — it was let go there; the canvas answers with its own `timbrr:drop` (`kind: add`, `index`), as for a native drop |
 
 Canvas → studio
 
@@ -410,7 +425,7 @@ Canvas → studio
 | `timbrr:edit` | `id`, `field` (a path: `items.0.title`), `value` — a string for a text field, a rich-text document (`{ type: 'doc', content: […] }`) for an `html` one. The studio takes nothing else |
 | `timbrr:focus` | `id`, `field`, `kind` (`text` or `rich`), `label` (the field's name from its definition: `Description`, or `Cards 2 · Title` in a list), `tools` (what the field allows: its `wys` for rich text, none for plain), `active` (the tools on at the caret), `href` (the link at the caret, or null) — when the caret arrives, and again whenever any of it changes |
 | `timbrr:blur` | nothing — the caret left the field |
-| `timbrr:drop` | `index`, `kind`: `add` (a block from the studio's tray: answering the studio's `timbrr:drop`, or, on a canvas at the studio's own origin, dropped natively as `application/x-timbrr-block`, then with `blockType`) or `move` (with `id`, dragged by the block's tab as `application/x-timbrr-move`). `index` counts the blocks as drawn, and is never inside a locked chunk |
+| `timbrr:drop` | `index`, `kind`: `add` (a block from the studio's tray: answering the studio's `timbrr:drop`, or, on a canvas at the studio's own origin, dropped natively as `application/x-timbrr-block`, then with `blockType`) or `move` (with `id`, dragged by the block's tab as `application/x-timbrr-move`). `index` counts the blocks as drawn, and is never inside a locked chunk. Over a Split's column (`[data-split-column]`) the drop goes in the column: `into: { id, column }` is added and `index` counts that column's blocks; a column that won't take the block (`inside`, docs/sub-blocks.md) lights red with the reason and answers nothing |
 | `timbrr:dragat` | `y` — while a block is dragged by its tab inside the page, where the pointer is, in px from the page's top in the page's own pixels; `null` when the drag ends or leaves. The page never scrolls itself, so the studio scrolls its room when that's near the room's top or bottom. A studio that doesn't know it ignores it |
 | `timbrr:open` | `id` — the placement: Edit in Library was pressed on it, or it was double-clicked. Sent whether or not the canvas is editable |
 | `timbrr:locked` | `id` — the placement: a printable key (no Ctrl or Meta, not held down) other than those `timbrr:flag` and `timbrr:key` carry was pressed while it was selected, on an editable canvas, with no field open. The studio says why nothing happened. A studio too old for `timbrr:key` says nothing for those; the studio deploys first, so no site should meet one |
