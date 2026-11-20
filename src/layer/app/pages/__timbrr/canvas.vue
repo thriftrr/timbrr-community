@@ -250,6 +250,10 @@ import { createInsights } from '../../utils/insights-canvas.js';
  // kept goes to the studio as timbrr:crop (the placement's focal point and
  // zoom); the studio owns the page and sends it back. A locked block's
  // pictures are the Library's, and a double-click there opens that instead.
+ // Choosing a picture (onClick, `pick`): shift-, Cmd- or Ctrl-click, or a
+ // triple-click. The double-click inside a triple-click has opened the crop by
+ // then, so the third click drops it as Escape would (nothing kept) and asks
+ // for the library instead.
 
  const clamp = (n, low, high) => Math.min(high, Math.max(low, n));
  const cropEl = () => (crop.value ? document.querySelector(`[data-block-id="${CSS.escape(crop.value.id)}"] [data-image-field="${CSS.escape(crop.value.field)}"]`) : null);
@@ -262,7 +266,8 @@ import { createInsights } from '../../utils/insights-canvas.js';
  }
 
  function onDblClick(event) {
-  if (preview || !editable.value || staged.value || crop.value) return;
+  // Shift, Cmd or Ctrl on a click means "choose another picture" (onClick), not crop.
+  if (preview || !editable.value || staged.value || crop.value || event.shiftKey || event.metaKey || event.ctrlKey) return;
   // A field of a form: the studio opens that form's Build with it selected. The
   // form is inert here, so the click lands on the block and the field is found
   // by where it was.
@@ -489,7 +494,8 @@ import { createInsights } from '../../utils/insights-canvas.js';
  // Links never take the canvas anywhere. Clicking a block selects it, and
  // clicking anywhere else selects nothing. A click on the header or footer
  // also says which it was, and one on an image which field it is, for the
- // studio to open. The stage has nothing to select, and the studio's panel
+ // studio to open (with `pick` when the click asks for the media library:
+ // shift, Cmd or Ctrl held, or the third click of a triple-click). The stage has nothing to select, and the studio's panel
  // stays open: a click there says which part of the header it landed on, so
  // the panel can open that part's section.
  function onClick(event) {
@@ -505,13 +511,15 @@ import { createInsights } from '../../utils/insights-canvas.js';
   selected.value = id;
   const side = event.target.closest?.('[data-chrome]')?.dataset.chrome;
   const field = frame && event.target.closest?.('[data-image-field]')?.dataset.imageField;
+  const pick = Boolean(field && editable.value && !id.includes('.') && (event.shiftKey || event.metaKey || event.ctrlKey || event.detail >= 3));
+  if (pick) crop.value = null;
   // `href` (the link's own address) and `control` (a link or a button was hit, with its words in
   // `label`) are for the studio's funnel walk (Analytics): a click there is a step. A studio that
   // doesn't know them ignores them.
   const href = event.target.closest?.('a[href]')?.getAttribute('href');
   const control = event.target.closest?.('a, button, [role="button"]');
   const label = control?.textContent?.replace(/\s+/g, ' ').trim().slice(0, 60);
-  post({ type: 'timbrr:click', id, ...(side ? { side } : {}), ...(field ? { field } : {}), ...(href ? { href: String(href).slice(0, 500) } : {}), ...(control ? { control: true, ...(label ? { label } : {}) } : {}) });
+  post({ type: 'timbrr:click', id, ...(side ? { side } : {}), ...(field ? { field } : {}), ...(pick ? { pick: true } : {}), ...(href ? { href: String(href).slice(0, 500) } : {}), ...(control ? { control: true, ...(label ? { label } : {}) } : {}) });
  }
 
  // Keys pressed in here never reach the studio, so F (flag something) and the
