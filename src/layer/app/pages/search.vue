@@ -48,7 +48,9 @@
    .sort((a, b) => (a === 'kind' ? -1 : b === 'kind' ? 1 : 0))
    .map((key) => {
     const picked = all(route.query[key]);
-    const counts = { ...Object.fromEntries(picked.map((value) => [value, 0])), ...(facets[key] ?? {}) };
+    // Every kind the site has (`kinds`) shows, at 0 when another filter leaves none.
+    const known = key === 'kind' ? Object.keys(found.value?.kinds ?? {}) : [];
+    const counts = { ...Object.fromEntries([...known, ...picked].map((value) => [value, 0])), ...(facets[key] ?? {}) };
     const values = Object.entries(counts).map(([value, n]) => ({ value, n: Number(n) || 0, label: key === 'kind' ? kindName(value, found.value) : slugWords(value), on: picked.includes(value) }));
     return { key, name: names(key), values };
    })
