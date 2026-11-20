@@ -19,6 +19,18 @@ export default defineEventHandler((event) => {
  if (canvas || !config.public.site) setHeader(event, 'X-Robots-Tag', 'noindex, nofollow');
  setHeader(event, 'X-Content-Type-Options', 'nosniff');
  setHeader(event, 'Referrer-Policy', 'strict-origin-when-cross-origin');
+ // Browsers only keep this from an https answer, so local http is untouched.
+ // No includeSubDomains: a client's other hosts under its domain aren't ours to decide.
+ setHeader(event, 'Strict-Transport-Security', 'max-age=31536000');
  const studio = String(config.public.studioOrigin ?? '').replace(/\/$/, '');
- setHeader(event, 'Content-Security-Policy', `frame-ancestors 'self' ${studio || 'http://localhost:* http://127.0.0.1:*'}; base-uri 'self'; object-src 'none'`);
+ let policy = `frame-ancestors 'self' ${studio || 'http://localhost:* http://127.0.0.1:*'}; base-uri 'self'; object-src 'none'`;
+ // A site sharing its origin with the studio (timbrr.app's marketing site)
+ // runs no script but its own files, Nuxt's inline ones marked with this
+ // page's nonce (server/plugins/csp-nonce.js) and the form's Turnstile.
+ if (config.timbrr?.scriptPolicy === 'enforce') {
+  const nonce = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(16))));
+  event.context.cspNonce = nonce;
+  policy += `; script-src 'self' 'nonce-${nonce}' https://challenges.cloudflare.com`;
+ }
+ setHeader(event, 'Content-Security-Policy', policy);
 });

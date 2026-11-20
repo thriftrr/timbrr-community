@@ -184,19 +184,27 @@ export const tableSchema = z
 // loose: TbRich only reads the few it draws (a heading's level, a list's
 // start, a link's address) and checks those itself.
 const richAttrsSchema = z.record(z.string(), z.unknown());
+// The caps are loose on purpose: far past anything the editor makes, but
+// enough that one field can't be tens of thousands of nodes re-checked on
+// every view, or so deep that drawing it runs out of stack. Too tight and the
+// studio would refuse a real save, or the site would fall back to the default.
+const RICH_DEPTH = 16;
 const richNodeSchema = z.object({
  type: z.string(),
  text: z.string().optional(),
- marks: z.array(z.object({ type: z.string(), attrs: richAttrsSchema.optional() })).optional(),
+ marks: z.array(z.object({ type: z.string(), attrs: richAttrsSchema.optional() })).max(8).optional(),
  attrs: richAttrsSchema.optional(),
  get content() {
-  return z.array(richNodeSchema).optional();
+  return z.array(richNodeSchema).max(200).optional();
  },
 });
-export const richDocSchema = z.object({
- type: z.literal('doc'),
- content: z.array(richNodeSchema).default([]),
-});
+const richDepth = (nodes) => (Array.isArray(nodes) && nodes.length ? 1 + Math.max(...nodes.map((node) => richDepth(node?.content))) : 0);
+export const richDocSchema = z
+ .object({
+  type: z.literal('doc'),
+  content: z.array(richNodeSchema).max(1000).default([]),
+ })
+ .refine((doc) => richDepth(doc.content) <= RICH_DEPTH, { message: `Rich text nests at most ${RICH_DEPTH} deep.` });
 export const richTextSchema = z.union([richDocSchema, z.string().max(20000)]);
 
 export function richText(...paragraphs) {

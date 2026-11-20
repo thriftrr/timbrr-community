@@ -20,7 +20,8 @@ addresses"); this is what the layer does.
   ("Preview, not live").
 - **Live.** On these addresses a page the studio serves follows its draft:
   `useTimbrrPage` asks `/__timbrr/stamp?path=` every two seconds while the tab
-  is showing (`server/routes/__timbrr/stamp.get.js`, which asks the studio
+  is showing, less often while nothing changes (4, 8, then every 15 seconds;
+  back to two on a change or when the tab is shown again) (`server/routes/__timbrr/stamp.get.js`, which asks the studio
   with the visitor's token) and reads the page again only when the stamp
   changed, then writes the time into the note. The first answer is followed
   by one more read, since a save can land while the page loads or its tab is

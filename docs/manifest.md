@@ -700,5 +700,10 @@ flag for each is on for the site.
 
 The site's copies of what it reads from the studio are keyed by the site's
 cache epoch (`server/utils/studio.js`), asked for at most every five
-seconds, so a page or a site taken down in the studio is gone from the site
-within seconds.
+seconds per isolate and kept five seconds at the edge, so a page or a site
+taken down in the studio is gone from the site within seconds. Behind each
+minute's copy stands a day-long copy without the epoch: when the minute's
+copy is gone (it ran out, or the epoch moved) the day-long one is served
+while one refresh runs after the response, so a studio that's down for a
+while takes no page down and a publish on a busy site costs the studio one
+call per isolate, not one per visitor.

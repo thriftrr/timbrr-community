@@ -17,6 +17,14 @@ export function isFormEmail(value) {
  return typeof value === 'string' && value.length <= 254 && EMAIL.test(value) && !/[\r\n]/.test(value);
 }
 
+// The page's form with this id, or null. Own keys only, so an id like
+// "constructor" or "__proto__" finds nothing rather than Object's own, and one
+// with no fields list isn't drawn at all (TbForm walks it).
+export function formNamed(forms, id) {
+ const doc = forms && id && Object.hasOwn(forms, id) ? forms[id] : null;
+ return Array.isArray(doc?.fields) ? doc : null;
+}
+
 export function formSteps(doc) {
  const steps = [{ title: doc.stepOne || 'Step one', fields: [] }];
  for (const field of doc.fields) {

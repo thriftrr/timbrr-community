@@ -37,7 +37,7 @@
     <span class="tb-embed__host">{{ host }}</span>
    </p>
    <p v-else-if="canvas" class="tb-embed__empty">
-    {{ data.url.trim() ? "That isn't a secure web address. It has to start with https://" : 'Paste the address of the calendar, schedule or shop to show here.' }}
+    {{ data.url.trim() ? (/https:\/\//i.test(data.url) ? "That service can't be shown here yet. Ask the Timbrr team to add it." : "That isn't a secure web address. It has to start with https://") : 'Paste the address of the calendar, schedule or shop to show here.' }}
    </p>
   </div>
  </section>

@@ -85,8 +85,11 @@ export default defineEventHandler(async (event) => {
 It calls the studio's developer API (`docs/collection-api.md` in the studio)
 with `NUXT_TIMBRR_API_KEY`, a key made under Site settings → Developers
 that holds `site:collections.read`. Keep that key in the Worker's secrets: it
-never reaches a browser. The studio allows ten tries an entry and field an
-hour; past that, or when the studio can't be asked, the answer is `false`.
+never reaches a browser. It sends the visitor's address with the check,
+and the studio allows each visitor ten tries an entry and field an hour,
+under a ceiling of 300 an hour for everyone together. Past that it throws a
+429 ("Too many tries. Try again later."), which reaches the visitor as is;
+when the studio can't be asked, the answer is `false`.
 
 ## Checks
 

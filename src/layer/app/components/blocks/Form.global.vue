@@ -17,7 +17,7 @@
 
  const canvas = useCanvas();
  const forms = useTimbrrForms();
- const form = computed(() => forms.value[props.data.form] ?? null);
+ const form = computed(() => formNamed(forms.value, props.data.form));
  const legacy = computed(() => !props.data.form && Boolean(props.data.submit_label?.trim()));
  const empty = computed(() => (props.data.form ? "This form isn't here any more. Pick another in the panel." : 'Pick a form in the panel, or make a new one.'));
  const own = computed(() => typeof props.data.heading === 'string');

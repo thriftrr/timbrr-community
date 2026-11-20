@@ -58,13 +58,37 @@ export function embedSrc(link) {
 }
 
 // What an Embed block frames: the first https address in what was typed,
-// which may be the address alone or a service's whole embed code. Nothing
+// which may be the address alone or a service's whole embed code, when its
+// host is on EMBED_HOSTS. Nothing
 // else of the code is kept, so a pasted <script> never runs on the site.
 // Rock Gym Pro hands out a script address (/b/s/?lk=…&bw=…), which would
 // show as source in a frame; its page for the same widget is /b/?bw=….
 // shortcut: that page carries the gym's own name and address above the widget and can't grow to fit, upgrade to Rock Gym Pro's embedded mode (mode=e, rgpmessage-iframe-resize) if the frame's own scrolling bothers people.
 const RGP_KEYS = ['bw', 'bo'];
 const RGP_ID = /^[\w-]{8,80}$/;
+
+// The services an Embed block may frame, and any host under them. A frame
+// runs its own scripts beside a client's visitors, so it's only ever one of
+// these; anything else is a staff request (add it here).
+export const EMBED_HOSTS = [
+ 'app.rockgympro.com',
+ 'calendly.com',
+ 'youtube.com',
+ 'youtube-nocookie.com',
+ 'player.vimeo.com',
+ 'calendar.google.com',
+ 'docs.google.com',
+ 'open.spotify.com',
+ 'acuityscheduling.com',
+ 'squareup.com',
+ 'eventbrite.com',
+ 'typeform.com',
+];
+
+export function embedAllowed(hostname) {
+ const host = String(hostname ?? '').toLowerCase();
+ return EMBED_HOSTS.some((allowed) => host === allowed || host.endsWith(`.${allowed}`));
+}
 
 export function embedFrame(pasted) {
  const found = /https:\/\/[^\s"'<>]+/i.exec(String(pasted ?? '').replace(/&amp;/g, '&'));
@@ -78,7 +102,7 @@ export function embedFrame(pasted) {
   const key = RGP_KEYS.find((name) => RGP_ID.test(url.searchParams.get(name) ?? ''));
   return key ? `https://app.rockgympro.com/b/?${key}=${url.searchParams.get(key)}` : undefined;
  }
- return url.href;
+ return embedAllowed(url.hostname) ? url.href : undefined;
 }
 
 // What a price typed by hand is worth: '$59', '59.50' and '1,200' are 59,
