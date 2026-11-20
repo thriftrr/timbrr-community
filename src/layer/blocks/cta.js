@@ -11,6 +11,7 @@ export default defineBlock({
  description: 'A headline and one or two buttons',
  category: 'cta',
  icon: 'cta',
+ inside: true, insideWithout: ['style'],
  keywords: ['cta', 'cta banner', 'banner', 'band', 'button', 'call', 'phone', 'donate', 'gift', 'announcement', 'alert', 'closure'],
  presets: [
   {

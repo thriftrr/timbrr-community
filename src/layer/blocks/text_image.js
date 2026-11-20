@@ -10,6 +10,7 @@ export default defineBlock({
  description: 'Words, with a photo on either side or none',
  category: 'content',
  icon: 'text_image',
+ inside: true, insideWithout: ['image_side'],
  keywords: ['text', 'paragraph', 'copy', 'about', 'prose', 'photo'],
  presets: [
   {

@@ -12,6 +12,7 @@ export default defineBlock({
  description: 'Plans, passes or a simple price list',
  category: 'common',
  icon: 'pricing',
+ inside: 'wide',
  keywords: ['plans', 'prices', 'price list', 'rates', 'passes', 'membership', 'menu'],
  schema: z.object({
   tagline: z.string().max(80).default(''),

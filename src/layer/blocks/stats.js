@@ -10,6 +10,7 @@ export default defineBlock({
  description: 'Big numbers with short labels',
  category: 'common',
  icon: 'stats',
+ inside: true,
  keywords: ['numbers', 'figures', 'counter', 'metrics', 'years in business'],
  schema: z.object({
   tagline: z.string().max(80).default(''),

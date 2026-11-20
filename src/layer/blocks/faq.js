@@ -7,6 +7,7 @@ export default defineBlock({
  description: 'Parking, deposits, warranties',
  category: 'common',
  icon: 'faq',
+ inside: true, insideWithout: ['columns'],
  keywords: ['questions', 'answers', 'help', 'accordion'],
  schema: z.object({
   tagline: z.string().max(80).default(''),

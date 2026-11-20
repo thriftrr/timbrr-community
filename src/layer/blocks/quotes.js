@@ -9,6 +9,7 @@ export default defineBlock({
  description: 'Hand-picked words from customers',
  category: 'common',
  icon: 'quotes',
+ inside: true, insideWithout: ['layout'],
  keywords: ['testimonials', 'reviews', 'customers', 'praise', 'kind words'],
  presets: [
   {
