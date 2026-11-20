@@ -1,6 +1,7 @@
 import { defineEventHandler, getQuery, setResponseHeaders, setResponseStatus } from 'h3';
 import { fetchPublished } from '../../utils/studio.js';
 import { visitorAddress } from '../../utils/visitor.js';
+import { emptySiteSearch, siteSearchParams, tidyWords } from '../../utils/site-search.js';
 
 // /__timbrr/search?q=open&limit=10&p=1: a visitor's search of this site's
 // published entries, exactly as the studio's public read API sends it
@@ -14,13 +15,18 @@ import { visitorAddress } from '../../utils/visitor.js';
 // `collections` (keys, comma-separated) keeps it to some collections: kept only when
 // every key looks like one, sorted, so the same choice is one address.
 //
+// With `v=2` it's the whole-site search the header's pop-up and /search ask
+// for (server/utils/site-search.js): { query, total, page, pages, didYouMean,
+// partial, hits, facets }. Without it, the old Site search blocks get the old
+// shape, `v=1`, which a studio from before site search ignores.
+//
 // A visitor gets SEARCHES a minute; past that it's a 429 until the minute
 // is up, and the studio isn't asked.
 // shortcut: counted in this isolate's memory, by the address Cloudflare
 // says the visitor has, so it's a ceiling for each isolate, not one for the
 // whole edge. If a site's search gets hammered, put a Workers rate limit
 // binding (or a WAF rate limiting rule on /__timbrr/search) in front.
-const SEARCHES = 30;
+const SEARCHES = 60; // the pop-up asks as you type, 150 ms after each key
 const windows = new Map(); // visitor → { at, n }
 function allowed(visitor) {
  const now = Date.now();
@@ -35,11 +41,8 @@ function allowed(visitor) {
 
 export default defineEventHandler(async (event) => {
  const asked = getQuery(event);
- const q = String(typeof asked.q === 'string' ? asked.q : '')
-  .toLowerCase()
-  .replace(/\s+/g, ' ')
-  .trim()
-  .slice(0, 100);
+ const q = tidyWords(asked.q);
+ const wholeSite = asked.v === '2';
  const whole = (value, most) => Math.min(most, Math.max(1, Math.round(Number(value)) || 1));
  const limit = whole(asked.limit ?? 10, 20);
  const p = whole(asked.p, 50);
@@ -51,7 +54,9 @@ export default defineEventHandler(async (event) => {
   setResponseHeaders(event, { 'Cache-Control': 'no-store', 'Retry-After': '60', 'X-Robots-Tag': 'noindex' });
   return { statusCode: 429, message: 'Too many searches. Try again in a minute.' };
  }
- const answer = q.length < 2 ? { status: 200, data: { q, results: [], total: 0, page: 1, pages: 1 } } : await fetchPublished(event, `search?${new URLSearchParams({ q, limit: String(limit), p: String(p), ...(collections ? { collections } : {}) })}`);
+ const params = wholeSite ? siteSearchParams(asked) : new URLSearchParams({ q, limit: String(limit), p: String(p), ...(collections ? { collections } : {}), v: '1' });
+ const empty = wholeSite ? emptySiteSearch(q) : { q, results: [], total: 0, page: 1, pages: 1 };
+ const answer = q.length < 2 ? { status: 200, data: empty } : await fetchPublished(event, `search?${params}`);
  const status = answer.status === 200 ? 200 : answer.status === 404 || answer.status === 401 ? answer.status : 502;
  setResponseHeaders(event, {
   'Cache-Control': status === 502 || event.context.timbrrPreview ? 'no-store' : 'public, max-age=60',
