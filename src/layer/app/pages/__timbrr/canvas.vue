@@ -25,6 +25,7 @@
  import { WYS_TOOLS } from '#timbrr/define';
  import { footerData, headerData, navItem, navList } from '../../../schema/frames.js';
 import { createInsights } from '../../utils/insights-canvas.js';
+ import { definitions } from '#timbrr/blocks';
 
  definePageMeta({ layout: false });
 
@@ -63,6 +64,8 @@ import { createInsights } from '../../utils/insights-canvas.js';
  const hovered = ref(null); // the locked placement under the pointer
  const dropIndex = ref(null);
  const dropSlots = ref([]); // every edge a drag could land on: [{ index, top }]
+ const dropColumn = ref(null); // a Split's column the drag is over: { id, column, refused }
+ let dropInto = null; // where a drop would land in it: { id, column, index }
  const active = shallowRef(null); // { id, field, kind } being typed into
  const editor = shallowRef(null); // the open rich-text editor, if any
  const crop = ref(null); // the picture being cropped by hand: { id, field, x, y, zoom }
@@ -221,6 +224,7 @@ import { createInsights } from '../../utils/insights-canvas.js';
    active,
    editor,
    crop,
+   dropColumn,
    activate,
    release,
    edit: (id, field, value) => post({ type: 'timbrr:edit', id, field, value }),
@@ -261,7 +265,7 @@ import { createInsights } from '../../utils/insights-canvas.js';
  let cropDrag = null;
 
  function cropImage(id, field) {
-  const image = valueAt(blocks.value.find((block) => block.id === id)?.data, field);
+  const image = valueAt(findBlockDeep(blocks.value, id)?.data, field);
   return image && typeof image === 'object' && image.src ? image : null;
  }
 
@@ -429,7 +433,7 @@ import { createInsights } from '../../utils/insights-canvas.js';
   // A block from the studio's tray, carried over the page by the studio
   // (its frame can't take the drop itself; see Drops below).
   if (message.type === 'timbrr:dragover') {
-   if (takesDrops.value && Number.isFinite(message.y)) placeDrop(message.y);
+   if (takesDrops.value && Number.isFinite(message.y)) placeDrop(message.y, message.x, message.blockType);
    return;
   }
   if (message.type === 'timbrr:dragleave') {
@@ -438,8 +442,9 @@ import { createInsights } from '../../utils/insights-canvas.js';
   }
   if (message.type === 'timbrr:drop') {
    if (takesDrops.value && Number.isFinite(message.y)) {
-    placeDrop(message.y);
-    if (dropIndex.value !== null) post({ type: 'timbrr:drop', kind: 'add', index: dropIndex.value });
+    placeDrop(message.y, message.x, message.blockType);
+    if (dropInto) post({ type: 'timbrr:drop', kind: 'add', index: dropInto.index, into: { id: dropInto.id, column: dropInto.column } });
+    else if (dropIndex.value !== null) post({ type: 'timbrr:drop', kind: 'add', index: dropIndex.value });
    }
    clearDrop();
    return;
@@ -618,7 +623,59 @@ import { createInsights } from '../../utils/insights-canvas.js';
  }
 
  function frames() {
-  return [...document.querySelectorAll('[data-block-id]')];
+  // The page's own blocks: the ones in a Split's columns have their own drop zones.
+  return [...document.querySelectorAll('[data-block-id]')].filter((el) => !el.parentElement?.closest('[data-block-id]'));
+ }
+
+ // ── Dropping into a Split's column (docs/sub-blocks.md) ──
+ // A column is a drop zone of its own. Over one the drag lands inside it
+ // (`into`, with the place among that column's blocks), or the column says why
+ // it won't take what's dragged. A tray block says what it is in its message;
+ // a block moved by its tab is found by its frame. A drag whose type isn't
+ // known (a native tray drag) is let through, and the studio refuses it.
+ const defs = new Map(definitions.map(({ def }) => [def.type, def]));
+
+ function columnAt(x, y) {
+  return [...document.querySelectorAll('[data-split-column]')].find((el) => {
+   const box = el.getBoundingClientRect();
+   return x >= box.left && x <= box.right && y >= box.top && y <= box.bottom && !el.dataset.splitId?.includes('.');
+  });
+ }
+
+ function dragType(given) {
+  if (typeof given === 'string' && given) return given;
+  return dragging.value ? (document.querySelector(`[data-block-id="${CSS.escape(String(dragging.value))}"]`)?.dataset.blockType ?? '') : '';
+ }
+
+ // True when the pointer is over a column (so the page's own slots stay out of it).
+ function placeInColumn(x, y, given) {
+  const el = Number.isFinite(x) ? columnAt(x, y) : null;
+  if (!el) {
+   dropColumn.value = null;
+   dropInto = null;
+   return false;
+  }
+  const id = el.dataset.splitId;
+  const column = Number(el.dataset.splitColumn);
+  const type = dragType(given);
+  const ratio = blocks.value.find((block) => block.id === id)?.data?.ratio ?? 'halves';
+  const refused = type ? columnRefusal(defs.get(type) ?? { type, label: type }, splitWide(ratio, column)) : '';
+  dropColumn.value = { id, column, refused };
+  dropIndex.value = null;
+  dropInto = null;
+  dropSlots.value = [];
+  if (refused) return true;
+  const kids = [...el.querySelectorAll(':scope > [data-block-id]')];
+  const at = kids.filter((kid) => {
+   const box = kid.getBoundingClientRect();
+   return y > box.top + box.height / 2;
+  }).length;
+  dropInto = { id, column, index: at };
+  const page = document.querySelector('.tb-canvas__page')?.getBoundingClientRect();
+  const box = el.getBoundingClientRect();
+  const edge = kids.length ? (at < kids.length ? kids[at].getBoundingClientRect().top : kids[kids.length - 1].getBoundingClientRect().bottom) : box.top;
+  if (page && kids.length) dropSlots.value = [{ index: -1, into: true, top: edge - page.top, room: Math.max(0, edge), left: box.left - page.left, width: box.width }];
+  return true;
  }
 
  // The target goes on the edge between two blocks, or under the last one,
@@ -629,7 +686,8 @@ import { createInsights } from '../../utils/insights-canvas.js';
  // is lit; an edge beside the block being moved shows none and takes no
  // drop, since nothing would change. `y` is in this page's pixels; the
  // page never scrolls, so that's clientY.
- function placeDrop(y) {
+ function placeDrop(y, x = null, given = '') {
+  if (placeInColumn(x, y, given)) return;
   const list = frames();
   const page = document.querySelector('.tb-canvas__page')?.getBoundingClientRect();
   if (!page) return;
@@ -647,6 +705,8 @@ import { createInsights } from '../../utils/insights-canvas.js';
  function clearDrop() {
   dropIndex.value = null;
   dropSlots.value = [];
+  dropColumn.value = null;
+  dropInto = null;
  }
 
  // A block moved by its tab is dragged inside this page, which the studio
@@ -662,7 +722,7 @@ import { createInsights } from '../../utils/insights-canvas.js';
  function onDragOver(event) {
   if (!accepts(event)) return;
   event.preventDefault();
-  placeDrop(event.clientY);
+  placeDrop(event.clientY, event.clientX);
   dragAt(Math.round(event.clientY));
  }
 
@@ -673,14 +733,11 @@ import { createInsights } from '../../utils/insights-canvas.js';
  }
 
  function onDrop(event) {
-  if (!accepts(event) || dropIndex.value === null) return;
+  if (!accepts(event) || (dropIndex.value === null && !dropInto)) return;
   event.preventDefault();
   const id = event.dataTransfer.getData('application/x-timbrr-move');
-  post(
-   id
-    ? { type: 'timbrr:drop', kind: 'move', id, index: dropIndex.value }
-    : { type: 'timbrr:drop', kind: 'add', blockType: event.dataTransfer.getData('application/x-timbrr-block'), index: dropIndex.value },
-  );
+  const where = dropInto ? { index: dropInto.index, into: { id: dropInto.id, column: dropInto.column } } : { index: dropIndex.value };
+  post(id ? { type: 'timbrr:drop', kind: 'move', id, ...where } : { type: 'timbrr:drop', kind: 'add', blockType: event.dataTransfer.getData('application/x-timbrr-block'), ...where });
   clearDrop();
   saidAt = null; // the drop itself stops the studio's scrolling
   dragging.value = null;
@@ -814,7 +871,7 @@ import { createInsights } from '../../utils/insights-canvas.js';
      </div>
      <p v-else-if="!blocks.length" class="tb-canvas__nothing">Nothing on this page yet.</p>
      <template v-if="blocks.length">
-      <span v-for="slot in dropSlots" :key="slot.index" class="tb-canvas__slot" :class="{ 'is-over': slot.index === dropIndex }" :style="{ top: `${slot.top}px`, '--tb-room': `${slot.room}px` }" aria-hidden="true">
+      <span v-for="slot in dropSlots" :key="slot.index" class="tb-canvas__slot" :class="{ 'is-over': slot.into || slot.index === dropIndex }" :style="{ top: `${slot.top}px`, '--tb-room': `${slot.room}px`, ...(slot.into ? { left: `${slot.left}px`, right: 'auto', width: `${slot.width}px` } : {}) }" aria-hidden="true">
        <span class="tb-canvas__slot-mark">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6" /></svg>
         <span class="tb-canvas__slot-text">Drop here</span>

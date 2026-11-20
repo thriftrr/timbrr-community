@@ -14,6 +14,7 @@ export default defineBlock({
  description: 'Features, services, steps, promises',
  category: 'common',
  icon: 'cards',
+ inside: true, insideWithout: ['columns'],
  keywords: ['features', 'columns', 'grid', 'how it works', 'benefits', 'prices'],
  presets: [
   {

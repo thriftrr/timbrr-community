@@ -10,6 +10,7 @@ export default defineBlock({
  description: 'Team, staff, speakers, artists',
  category: 'common',
  icon: 'people',
+ inside: 'wide',
  keywords: ['team', 'staff', 'about', 'speakers', 'artists', 'meet', 'crew'],
  presets: [
   {

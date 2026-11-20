@@ -25,6 +25,7 @@ export default defineBlock({
  category: 'dynamic',
  loads: ['turnstile'],
  icon: 'form',
+ inside: true, insideWithout: ['content_side'],
  keywords: ['contact', 'email', 'newsletter', 'signup', 'sign up', 'quote', 'estimate', 'inquiry', 'catering', 'booking'],
  schema: z.object({
   form: z.string().max(64).default(''),

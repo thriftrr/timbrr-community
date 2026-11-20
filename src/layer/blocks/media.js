@@ -14,6 +14,7 @@ export default defineBlock({
  category: 'content',
  loads: ['youtube', 'vimeo'],
  icon: 'media',
+ inside: true, insideWithout: ['width'],
  keywords: ['image', 'photo', 'picture', 'video', 'youtube', 'vimeo', 'embed'],
  schema: z.object({
   kind: z.enum(['image', 'video', 'embed']).default('image'),

@@ -13,6 +13,7 @@ export default defineBlock({
  description: 'Dates, sizes, specs or a comparison in rows and columns',
  category: 'content',
  icon: 'table',
+ inside: true,
  keywords: ['grid', 'schedule', 'sessions', 'dates', 'specs', 'sizes', 'comparison', 'rows', 'columns', 'cells', 'spreadsheet', 'timetable'],
  schema: z.object({
   tagline: z.string().max(80).default(''),

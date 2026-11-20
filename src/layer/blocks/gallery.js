@@ -7,6 +7,7 @@ export default defineBlock({
  description: 'Interior, food, finished jobs',
  category: 'content',
  icon: 'gallery',
+ inside: 'wide', insideWithout: ['columns'],
  keywords: ['photos', 'pictures', 'images', 'portfolio', 'slideshow'],
  schema: z.object({
   tagline: z.string().max(80).default(''),
