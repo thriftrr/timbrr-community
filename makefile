@@ -69,4 +69,5 @@ check:
 	cd src && node layer/scripts/check-embed.mjs
 	cd src && node layer/scripts/check-shop.mjs
 	cd src && node layer/scripts/check-insights.mjs
+	cd src && node layer/scripts/check-search.mjs
 	cd src && node layer/scripts/build-analytics.mjs --check

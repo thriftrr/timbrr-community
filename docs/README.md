@@ -396,8 +396,21 @@ docs/collections.md). The layer has what draws them:
   `pick: 'collections'`) keeps it to some of those collections. What was searched is in the address (`?q=`), so the first
   results come with the page and the form works without scripts. With a
   `to` (a page of this site) the box sends the visitor there, and the
-  block on that page shows what's found. One visitor gets 30 searches a
-  minute, counted in the Worker's memory (a ceiling for each isolate).
+  block on that page shows what's found. One visitor gets 60 searches a
+  minute, counted in the Worker's memory (a ceiling for each isolate). The
+  block's searches go to the studio with `v=1`, the old shape.
+- Site search across every page and entry (the studio's `docs/search.md`):
+  with `site.search.on` in the page's answer, the header's search icon opens
+  `TbSiteSearch`, a modal `<dialog>` (a full-screen sheet on a phone), and so
+  does `/` outside a text box; with `opens: 'page'` the icon is a link to
+  `/search` instead. `/search` (`pages/search.vue`) is a built-in page in
+  the home page's header and footer, with filters, sort and pages, all in
+  its address. Both ask `/__timbrr/search?v=2&q=…` (kind, filters, `sort`,
+  `page`, `per`; tidied in `server/utils/site-search.js`). Recent searches
+  stay on the device (`localStorage`). Drawn only with `--site-*`
+  variables. `node layer/scripts/check-search.mjs` checks the plain parts;
+  `layer/scripts/mock-search-studio.mjs` is a stand-in studio for trying it
+  locally.
 - `content_list`, `content_field` and `content_search` are the same three
   under the names they had before Collections, kept and marked retired so pages
   saved with them still load. On the canvas each draws one line asking to

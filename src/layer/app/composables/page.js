@@ -32,7 +32,7 @@ export async function useTimbrrPage(path) {
  const fetched = useFetch('/__timbrr/page', { query: { path: address }, retry: false });
 
  // The site as its header and footer draw it: { name, domain, nav, accent,
- // frame, details, overHero }. `frame` is the page's header and footer from
+ // frame, details, overHero, search }. `frame` is the page's header and footer from
  // the Library (docs/README.md § Header and footer), null from an older
  // studio; `details` the business's phone, address and hours, null from one;
  // `overHero` whether the page opens on a full-bleed hero, the one thing a
@@ -52,6 +52,8 @@ export async function useTimbrrPage(path) {
    brand: normalizeBrand(value.brand),
    overHero: isHeroBleed(blocks.value[0]),
    language: LANGUAGE.test(value.language ?? '') ? value.language : 'en',
+   // Site search's settings (utils/search.js): off unless the studio says on.
+   search: searchSettings(value.search),
   };
  });
  // On a dev or staging address (the note the server writes says it is one),

@@ -79,13 +79,34 @@
  const primary = computed(() => button(header.value?.primary));
  const secondary = computed(() => button(header.value?.secondary));
 
+ // Site search (TbSiteSearch): with the studio's search on, the icon is
+ // /search, and in the pop-up's mode a click opens the pop-up there instead
+ // (a plain link, so without script it still goes). Off, there's no icon. A
+ // site with no search settings (the canvas, an older studio) links where
+ // the header says.
+ const finder = ref(null);
+ const popup = computed(() => props.site.search?.on === true && props.site.search.opens !== 'page');
+ const finding = computed(() => {
+  const search = props.site.search;
+  if (!search) return { link: linkTo(header.value?.icons.search ?? {}) };
+  if (!search.on) return false;
+  return popup.value ? { link: { is: 'a', href: '/search' }, open: openSearch } : { link: { is: NuxtLink, to: '/search' } };
+ });
+ function openSearch(event) {
+  if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || !finder.value) return;
+  event.preventDefault();
+  // From the phone menu, which shuts as it's clicked, focus comes back to its toggle.
+  const from = sheet.value?.contains(event.currentTarget) ? sheet.value.querySelector('summary') : event.currentTarget;
+  finder.value.open(from);
+ }
+
  const phone = computed(() => String(props.site.details?.phone ?? '').trim());
  const dial = computed(() => telHref(phone.value));
  const icons = computed(() => {
   const set = header.value?.icons;
   if (!set) return [];
   return [
-   set.search.on && { key: 'search', label: 'Search', link: linkTo(set.search) },
+   set.search.on && finding.value !== false && { key: 'search', label: 'Search', ...finding.value },
    set.account.on && { key: 'account', text: 'Sign in', link: linkTo(set.account) },
    set.cart.on && { key: 'cart', label: 'Cart', link: linkTo(set.cart) },
    set.phone.on && phone.value && { key: 'phone', text: phone.value, link: linkTo({ to: dial.value }) },
@@ -447,7 +468,7 @@
     </nav>
 
     <div v-if="layout !== 'button' && (icons.length || socials.length)" class="tb-site-header__icons">
-     <component :is="icon.link.is" v-for="icon in icons" :key="icon.key" :to="icon.link.to" :href="icon.link.href" class="tb-site-header__icon" :aria-label="icon.label">
+     <component :is="icon.link.is" v-for="icon in icons" :key="icon.key" :to="icon.link.to" :href="icon.link.href" class="tb-site-header__icon" :aria-label="icon.label" :aria-haspopup="icon.open ? 'dialog' : undefined" @click="icon.open?.($event)">
       <svg v-if="icon.key === 'search'" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
        <circle cx="7" cy="7" r="5" />
        <path d="M11 11l3.5 3.5" />
@@ -563,7 +584,7 @@
          <component :is="entry.link.is" :to="entry.link.to" :href="entry.link.href" class="tb-site-header__sheet-link">{{ entry.label }}</component>
         </li>
         <li v-for="icon in menuIcons" :key="icon.key">
-         <component :is="icon.link.is" :to="icon.link.to" :href="icon.link.href" class="tb-site-header__sheet-link">{{ icon.text ?? icon.label }}</component>
+         <component :is="icon.link.is" :to="icon.link.to" :href="icon.link.href" class="tb-site-header__sheet-link" :aria-haspopup="icon.open ? 'dialog' : undefined" @click="icon.open?.($event)">{{ icon.text ?? icon.label }}</component>
         </li>
        </ul>
        <component :is="secondary.link.is" v-if="secondary" :to="secondary.link.to" :href="secondary.link.href" data-tb-button="secondary" class="tb-site-header__cta tb-site-header__cta--outline tb-site-header__cta--wide">{{ secondary.label }}</component>
@@ -573,6 +594,7 @@
     </details>
    </div>
   </header>
+  <TbSiteSearch v-if="popup" ref="finder" :site="site" />
  </div>
 </template>
 
