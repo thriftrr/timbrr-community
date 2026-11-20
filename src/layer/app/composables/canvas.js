@@ -30,6 +30,14 @@ export function useCanvas() {
  return inject(CANVAS_KEY, null);
 }
 
+// Where a block sits (docs/sub-blocks.md): 'page', or 'column' / 'column-wide'
+// inside a Split. A Split's column provides it; useBlockPlace reads it.
+export const PLACE_KEY = Symbol('timbrr-place');
+export function useBlockPlace() {
+ const place = inject(PLACE_KEY, null);
+ return computed(() => place?.value ?? 'page');
+}
+
 export function useBlockScope() {
  return inject(BLOCK_KEY, null);
 }
@@ -67,7 +75,7 @@ export function useFieldShown() {
  };
 }
 
-function hasWords(node) {
+export function hasWords(node) {
  if (typeof node === 'string') return node.trim() !== '';
  if (node?.type === 'text') return Boolean(node.text?.trim());
  return Array.isArray(node?.content) && node.content.some(hasWords);

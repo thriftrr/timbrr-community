@@ -28,7 +28,12 @@
  });
 
  const canvas = useCanvas();
- provide(BLOCK_KEY, { id: props.block.id, def: props.def });
+ // `lock` is handed to the blocks in a locked Split's columns (TbSplitColumn).
+ provide(BLOCK_KEY, { id: props.block.id, def: props.def, lock: props.block.lock });
+ // In a Split's column the block draws compact: no band or line of its own, and
+ // its tab says so (docs/sub-blocks.md).
+ const place = useBlockPlace();
+ const inColumn = computed(() => place.value !== 'page');
 
  // Everything inside a locked block sees a canvas that can't be edited, so
  // it draws as the site does. This component keeps the real one, so the
@@ -40,7 +45,7 @@
 
  // How the block sits on the page (site.css, § The look of a block), set on
  // its root. A retired block has none of these keys, so it gets none.
- const look = computed(() => ({
+ const pageLook = () => ({
   'tb-look--soft': data.value?.background === 'soft',
   'tb-look--brand': data.value?.background === 'brand',
   'tb-look--dark': data.value?.background === 'dark',
@@ -51,7 +56,8 @@
   ...(data.value?.above || data.value?.below
    ? { [`tb-look--above-${data.value.above ?? data.value.spacing ?? 'normal'}`]: true, [`tb-look--below-${data.value.below ?? data.value.spacing ?? 'normal'}`]: true }
    : {}),
- }));
+ });
+ const look = computed(() => (inColumn.value ? { 'tb-in-column': true, 'tb-in-column--wide': place.value === 'column-wide' } : pageLook()));
  const placement = computed(() => props.block.lock?.id ?? props.block.id);
  const selected = computed(() => placementOf(canvas?.selected.value) === placement.value);
  const dragged = computed(() => placementOf(canvas?.dragging.value) === placement.value);
@@ -70,8 +76,12 @@
 
  // ── What the tab says, and its Style menu ──
  const MENU_MAX = 4;
+ // The look fields mean nothing in a column (it has no band or room of its own).
+ const COLUMN_NO = ['background', 'spacing', 'above', 'below', 'divider'];
  const choices = computed(() =>
-  props.block.lock || !data.value ? [] : fieldsThatApply(props.def?.fields, data.value).filter((field) => field.widget === 'buttons' && !field.draws && field.options.length > 1).slice(0, MENU_MAX),
+  props.block.lock || !data.value ? [] : fieldsThatApply(props.def?.fields, data.value)
+    .filter((field) => field.widget === 'buttons' && !field.draws && field.options.length > 1 && !(inColumn.value && (COLUMN_NO.includes(field.key) || props.def?.insideWithout?.includes(field.key))))
+    .slice(0, MENU_MAX),
  );
  const chosen = (field) => field.options.find((option) => option.value === data.value[field.key]);
  const summary = computed(() =>
@@ -125,6 +135,7 @@
    'is-last': block.lock && block.lock.index === block.lock.count - 1,
   }"
   :data-block-id="block.id"
+  :data-block-type="block.type"
   :data-lock-id="block.lock?.id"
   @pointerenter="hover(true)"
   @pointerleave="hover(false)"
@@ -147,7 +158,7 @@
     <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
     <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
    </svg>
-   <span>{{ block.lock?.name ?? def?.label ?? block.type }}<template v-for="part in summary" :key="part"> · {{ part }}</template><template v-if="block.hidden"> · hidden</template></span>
+   <span>{{ block.lock?.name ?? def?.label ?? block.type }}<template v-if="inColumn"> · in a column</template><template v-for="part in summary" :key="part"> · {{ part }}</template><template v-if="block.hidden"> · hidden</template></span>
    <button v-if="block.lock && canvas.library.value" type="button" class="tb-frame__open" @click="open">Edit in Library</button>
    <button v-if="canStyle" type="button" class="tb-frame__style" aria-haspopup="true" :aria-expanded="styling ? 'true' : 'false'" :aria-controls="styling ? menuId : undefined" @click.stop="styling = !styling">Style ▾</button>
   </span>

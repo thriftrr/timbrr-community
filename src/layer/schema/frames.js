@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { imageSchema, navEntrySchema, navListSchema } from './define.js';
 import { blockData } from './manifest.js';
+import { BRAND_COLORS } from '../app/utils/brand.js';
 
 // What a site's header and footer hold (docs/manifest.md § Header and footer),
 // and the small pure sums <TbSiteHeader> and <TbSiteFooter> draw from. It all
@@ -16,6 +17,20 @@ const buttonShape = z
   to: address,
  })
  .default({ label: '', to: '' });
+
+// The site's palette, by Branding's own keys (utils/brand.js): a header or
+// footer is only ever coloured from it, so nothing can clash with Branding,
+// and it follows when Branding changes. '' means not chosen. `font` is one of
+// the brand's two text fonts, and '' leaves the page's.
+export const FRAME_COLOR_KEYS = BRAND_COLORS.map((color) => color.key);
+const colorKey = z.enum(['', ...FRAME_COLOR_KEYS]).default('');
+const frameFont = z.enum(['', 'display', 'body']).default('');
+
+// The CSS the palette key stands for, or '' for anything that isn't one.
+export function paletteVar(key) {
+ const color = BRAND_COLORS.find((entry) => entry.key === key);
+ return color ? `var(${color.variable})` : '';
+}
 
 const iconShape = z.object({ on, to: address }).default({ on: false, to: '' });
 
@@ -80,8 +95,17 @@ export const headerSchema = z.object({
    edge: z.enum(['none', 'line', 'shadow']).default('line'),
    button: z.enum(['filled', 'outline']).default('filled'),
    logo: z.enum(['small', 'medium', 'large']).default('medium'),
+   // Palette colours (FB-123): the bar's background, its words and links, the
+   // main button (`buttonInk` its words). Any of them left '' keeps what
+   // `background` gives.
+   colors: z
+    .object({ bg: colorKey, ink: colorKey, button: colorKey, buttonInk: colorKey })
+    .default({ bg: '', ink: '', button: '', buttonInk: '' }),
+   font: frameFont,
   })
-  .default({ background: 'light', height: 'regular', edge: 'line', button: 'filled', logo: 'medium' }),
+  .default({ background: 'light', height: 'regular', edge: 'line', button: 'filled', logo: 'medium', colors: { bg: '', ink: '', button: '', buttonInk: '' }, font: '' }),
+ // Show the site's social icons (Site details, FB-122) in the bar.
+ showSocial: z.boolean().default(false),
  // The starting look the studio last applied, so it can say what's been
  // changed since and put it back. The site never reads it.
  start: z.string().max(40).default(''),
@@ -101,7 +125,9 @@ export const headerSchema = z.object({
   .default({ style: 'accordion', pins: { button: false, phone: false, cart: false } }),
 });
 
-export const SOCIAL_NETWORKS = ['instagram', 'facebook', 'x', 'youtube', 'linkedin', 'tiktok'];
+// Site details' networks (shared/utils/site-details.js in the studio), in the
+// order their icons are drawn.
+export const SOCIAL_NETWORKS = ['instagram', 'facebook', 'x', 'youtube', 'linkedin', 'tiktok', 'pinterest'];
 
 export const footerSchema = z.object({
  layout: z.enum(['columns', 'centered', 'slim']).default('columns'),
@@ -123,6 +149,15 @@ export const footerSchema = z.object({
    phone: on,
   })
   .default({ hours: false, address: false, phone: false }),
+ // Show the site's social icons, from Site details (FB-122). Missing means
+ // the footer hasn't been converted yet: it follows `social`, which is its own
+ // old list, drawn until convert-blocks folds it into Site details.
+ showSocial: z.boolean().optional(),
+ look: z
+  .object({ colors: z.object({ bg: colorKey, ink: colorKey }).default({ bg: '', ink: '' }), font: frameFont })
+  .default({ colors: { bg: '', ink: '' }, font: '' }),
+ // The footer's own social list, from before Site details had one. Read, never
+ // written by the studio any more.
  social: z
   .array(
    z.object({
@@ -145,6 +180,53 @@ export const footerSchema = z.object({
   })
   .default({ on: false, label: '', to: '' }),
 });
+
+export const SOCIAL_MARKS = {
+ instagram: {
+  label: 'Instagram',
+  line: true,
+  path: 'M7.5 3h9A4.5 4.5 0 0 1 21 7.5v9a4.5 4.5 0 0 1-4.5 4.5h-9A4.5 4.5 0 0 1 3 16.5v-9A4.5 4.5 0 0 1 7.5 3zM12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM17.25 6.75h.01',
+ },
+ facebook: {
+  label: 'Facebook',
+  path: 'M13.5 21v-7.5H16l.5-3h-3V8.6c0-.9.3-1.6 1.6-1.6h1.6V4.3c-.3 0-1.2-.1-2.3-.1-2.3 0-3.9 1.4-3.9 4v2.3H8v3h2.5V21z',
+ },
+ x: {
+  label: 'X',
+  path: 'M17.5 3h3.1l-6.8 7.8L21.8 21h-6.3l-4.9-6.4L5 21H1.9l7.3-8.3L1.5 3H8l4.4 5.8zm-1.1 16.2h1.7L7 4.7H5.1z',
+ },
+ youtube: {
+  label: 'YouTube',
+  path: 'M22 8.2a3 3 0 0 0-2.1-2.1C18 5.6 12 5.6 12 5.6s-6 0-7.9.5A3 3 0 0 0 2 8.2 31 31 0 0 0 1.5 12a31 31 0 0 0 .5 3.8 3 3 0 0 0 2.1 2.1c1.9.5 7.9.5 7.9.5s6 0 7.9-.5a3 3 0 0 0 2.1-2.1 31 31 0 0 0 .5-3.8 31 31 0 0 0-.5-3.8zM10 15V9l5.2 3z',
+ },
+ linkedin: {
+  label: 'LinkedIn',
+  path: 'M5 3.5a2 2 0 1 1 0 4 2 2 0 0 1 0-4zM3.3 9h3.4v11.5H3.3zM9 9h3.3v1.6h.1c.5-.9 1.6-1.9 3.4-1.9 3.6 0 4.2 2.4 4.2 5.4v6.4h-3.4v-5.7c0-1.4 0-3.1-1.9-3.1s-2.2 1.5-2.2 3v5.8H9z',
+ },
+ tiktok: {
+  label: 'TikTok',
+  path: 'M16.6 3c.3 2.2 1.6 3.6 3.9 3.8v3.1c-1.4.1-2.6-.3-3.9-1.1v5.9c0 3.7-2.7 6.3-6.1 6.3s-6-2.7-6-5.9c0-3.7 3.1-6.4 7-5.8v3.3c-1.9-.4-3.6.7-3.6 2.5 0 1.5 1.1 2.7 2.7 2.7 1.7 0 2.6-1.1 2.6-3V3z',
+ },
+ pinterest: {
+  label: 'Pinterest',
+  line: true,
+  path: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM10.2 18l1.5-6.8M9.5 13.5c-.7-2.3.5-4.5 2.9-4.5 1.8 0 3 1.1 3 2.7 0 1.9-1.1 3.2-2.7 3.2-.9 0-1.5-.5-1.7-1.2',
+ },
+};
+
+// The icons to draw for a site's social links: Site details' addresses
+// (`details.social`, already checked by the studio) in the networks' own order,
+// then any address a footer still lists that Site details hasn't (`legacy`,
+// the old per-footer list, until convert-blocks has folded it in), so nothing
+// goes missing in between. Each is { network, label, line, path, href }.
+export function socialLinks(details, legacy = []) {
+ const own = isObject(details?.social) ? details.social : {};
+ const old = Array.isArray(legacy) ? legacy : [];
+ return SOCIAL_NETWORKS.flatMap((network) => {
+  const href = typeof own[network] === 'string' && own[network] ? own[network] : old.find((row) => row?.network === network && typeof row?.to === 'string')?.to ?? '';
+  return href ? [{ network, ...SOCIAL_MARKS[network], href }] : [];
+ });
+}
 
 export const HEADER_DEFAULTS = headerSchema.parse({});
 export const FOOTER_DEFAULTS = footerSchema.parse({});

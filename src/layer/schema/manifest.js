@@ -85,6 +85,11 @@ function checkFields(fields, shape, where, root = shape) {
    const table = bare(shape[field.key]);
    if (table?.type !== 'object' || bare(table.shape.rows)?.type !== 'array') throw new Error(`${where}.${field.key}: the schema must be tableSchema`);
   }
+  // `blocks` holds a list of columns, each a list of blocks.
+  if (field.widget === 'blocks') {
+   const columns = bare(shape[field.key]);
+   if (columns?.type !== 'array' || bare(columns.element)?.type !== 'array') throw new Error(`${where}.${field.key}: the schema must be a list of lists of blocks`);
+  }
   if (field.format !== undefined && !(field.widget === 'text' && ['email', 'tel', 'url'].includes(field.format))) {
    throw new Error(`${where}.${field.key}: format is email, tel or url, on a text field`);
   }
@@ -148,6 +153,9 @@ export function buildManifest(site, layers, definitions, collectionHooks = []) {
    if (bad) throw new Error(`${where}: wys.${key} has unknown tool "${bad}"`);
   }
   if (def.advanced && def.retired) throw new Error(`${where}: a block can't be advanced and retired`);
+  if (def.inside !== undefined && def.inside !== true && def.inside !== 'wide') throw new Error(`${where}: inside is true or 'wide'`);
+  if (def.insideWithout !== undefined && (!Array.isArray(def.insideWithout) || def.insideWithout.some((key) => !def.fields.some((field) => field.key === key)))) throw new Error(`${where}: insideWithout names fields the block doesn't have`);
+  if (def.inside && (def.frame || def.retired)) throw new Error(`${where}: a frame or retired block can't go inside a column`);
   checkPresets(def, where);
   checkLoads(def.loads, where);
   const defaults = def.schema.parse(def.defaults ?? {});
@@ -167,6 +175,8 @@ export function buildManifest(site, layers, definitions, collectionHooks = []) {
    ...(def.presets?.length ? { presets: def.presets } : {}),
    ...(def.keywords?.length ? { keywords: def.keywords } : {}),
    ...(def.loads?.length ? { loads: def.loads } : {}),
+   ...(def.inside ? { inside: def.inside } : {}),
+   ...(def.insideWithout?.length ? { insideWithout: def.insideWithout } : {}),
    fields: def.fields,
    defaults,
    wys: def.wys ?? {},

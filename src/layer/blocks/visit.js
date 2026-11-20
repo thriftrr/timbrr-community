@@ -17,6 +17,7 @@ export default defineBlock({
  category: 'dynamic',
  loads: ['google_maps'],
  icon: 'visit',
+ inside: true,
  keywords: ['open', 'opening hours', 'address', 'map', 'directions', 'phone', 'contact', 'find us', 'where'],
  presets: [
   {
@@ -88,7 +89,7 @@ export default defineBlock({
      .array(z.object({ title: z.string().max(40).default(''), body: z.string().max(60).default('') }))
      .max(10)
      .default([]),
-    note: z.string().max(1000).default(''),
+    note: richTextSchema.default(richText('')),
     map_url: z.string().max(2000).default(''),
    })
    .prefault({}),
@@ -134,17 +135,22 @@ export default defineBlock({
   },
   {
    key: 'custom',
-   label: 'Use different details',
+   label: 'From site settings',
    widget: 'group',
-   help: 'Anything you fill in here wins over Site settings, for this block only.',
+   help: 'These come from Site settings. Override one to use your own on this block only.',
+   // `follows` (docs/manifest.md § Widgets): the studio shows what Site
+   // details has, read-only, with an "Override on this block" switch. Off, the
+   // field is empty and the block draws the site's value; on, what's typed
+   // wins. A studio that doesn't know `follows` shows the plain field.
    subfields: [
-    { key: 'phone', label: 'Phone', widget: 'text', format: 'tel', when: { '^show': 'phone' } },
-    { key: 'email', label: 'Email', widget: 'text', format: 'email', when: { '^show': 'phone' } },
+    { key: 'phone', label: 'Phone', widget: 'text', format: 'tel', follows: 'phone', when: { '^show': 'phone' } },
+    { key: 'email', label: 'Email', widget: 'text', format: 'email', follows: 'email', when: { '^show': 'phone' } },
     // The map links to the address, and Open now is off for typed hours,
     // so each stays while a part that reads it is on.
-    { key: 'address', label: 'Address', widget: 'textarea', when: { '^show': ['address', 'map'] } },
+    { key: 'address', label: 'Address', widget: 'textarea', follows: 'address', when: { '^show': ['address', 'map'] } },
     {
      key: 'hours',
+     follows: 'hours',
      when: { '^show': ['hours', 'open_now'] },
      label: 'Hours',
      widget: 'items',
@@ -155,7 +161,7 @@ export default defineBlock({
       { key: 'body', label: 'Hours', widget: 'text', placeholder: '9:00 am – 5:00 pm' },
      ],
     },
-    { key: 'note', label: 'Note', widget: 'textarea' },
+    { key: 'note', label: 'Note', widget: 'html' },
     { key: 'map_url', label: 'Map link', widget: 'text', link: true, when: { '^show': ['address', 'map'] } },
    ],
   },

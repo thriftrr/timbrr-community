@@ -25,13 +25,14 @@ export default defineBlock({
  category: 'dynamic',
  loads: ['turnstile'],
  icon: 'form',
+ inside: true, insideWithout: ['content_side'],
  keywords: ['contact', 'email', 'newsletter', 'signup', 'sign up', 'quote', 'estimate', 'inquiry', 'catering', 'booking'],
  schema: z.object({
   form: z.string().max(64).default(''),
   // No default, on purpose: a block with no `heading` at all is one that hasn't
   // been converted yet, which the page can only tell if nothing fills it in.
   heading: z.string().max(160).optional(),
-  lede: z.string().max(1000).optional(),
+  lede: richTextSchema.optional(),
   headline: z.string().max(160).default(''),
   hide_title: z.boolean().default(false),
   layout: z.enum(['full', 'split']).default('full'),
@@ -54,7 +55,7 @@ export default defineBlock({
  fields: [
   { key: 'form', label: 'Which form', widget: 'form' },
   { key: 'heading', label: 'Heading', widget: 'text', fallback: 'headline', help: 'Leave empty for no heading.' },
-  { key: 'lede', label: 'Intro', widget: 'textarea', help: 'A few words under the heading. Leave empty for none.' },
+  { key: 'lede', label: 'Intro', widget: 'html', help: 'A few words under the heading. Leave empty for none.' },
   {
    key: 'layout',
    label: 'Layout',

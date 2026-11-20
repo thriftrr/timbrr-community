@@ -14,6 +14,12 @@
  if (!slug) useHead({ title: 'Timbrr starter — every block' });
 
  const shelf = definitions.map(({ def }) => ({ id: def.type, type: def.type, data: def.defaults ?? {} }));
+ // A Split on the shelf holds a few blocks, so it shows what a column does to them (docs/sub-blocks.md).
+ const inSplit = shelf.find((block) => block.type === 'split');
+ if (inSplit) {
+  const child = (type) => ({ id: `shelf-${type}`, type, data: definitions.find(({ def }) => def.type === type)?.def.defaults ?? {} });
+  inSplit.data = { ...inSplit.data, ratio: '35-65', columns: [[child('cta')], [child('cards'), child('carousel')]] };
+ }
  const published = slug ? await useTimbrrPage('/') : null;
  const site = published?.site;
  const blocks = published?.blocks;
