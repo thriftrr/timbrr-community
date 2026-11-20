@@ -47,6 +47,14 @@ or off) · `form` (a form from the site's Forms, by id: the studio's own
 picker) · `group` (one object's keys, with `subfields`, folded away until
 they're wanted) · `stepper` (a small whole number between `min` and `max`).
 
+A field inside a `group` may carry `follows: 'phone' | 'email' | 'address' |
+'hours'` (Visit's "From site settings"): the studio shows what Site details
+holds for it, read-only, with an "Override on this block" switch. Off, the field
+is empty and the block draws the site's value; on, the field's own input
+appears and what it holds wins. Nothing extra is stored: a field with a value
+already has the switch on. A studio that doesn't know `follows` shows the
+field as a plain one, so the layer can ship before it.
+
 For a particular kind of value:
 
 | Widget | Holds | Reads |
@@ -490,7 +498,11 @@ with the defaults (`headerFromSite`), so there's one way of drawing them.
   edge: 'line',                        // 'none' | 'line' | 'shadow'
   button: 'filled',                    // 'filled' | 'outline'
   logo: 'medium',                      // 'small' | 'medium' | 'large'
+  colors: { bg: '', ink: '', button: '', buttonInk: '' },  // Branding palette keys (utils/brand.js
+                                       // BRAND_COLORS: 'accent', 'dark', 'surface'…); '' keeps `background`'s
+  font: '',                            // '' | 'display' | 'body': one of the brand's two text fonts
  },
+ showSocial: false,                    // the site's social icons, from site.details.social
  start: '',                            // the studio's starting look; the site ignores it
  sticky: 'never',                      // 'never' | 'always' | 'up'
  transparent: false,
@@ -506,8 +518,11 @@ with the defaults (`headerFromSite`), so there's one way of drawing them.
  columns: [],                          // NavItem[]: an item with children is a headed column
  newsletter: { on: false, headline: '', label: '', to: '' },  // words and a link, not a form
  contact: { hours: false, address: false, phone: false },     // from site.details
- social: [],                           // [{ network, to }], 6 at most;
-                                       // network: instagram | facebook | x | youtube | linkedin | tiktok
+ showSocial: true,                     // the site's social icons from site.details.social; missing on
+                                       // a footer not converted yet, which follows `social`
+ look: { colors: { bg: '', ink: '' }, font: '' },  // palette keys and a brand font, as the header's
+ social: [],                           // retired: the footer's own list [{ network, to }]. Still drawn, with
+                                       // site.details.social's, until convert-blocks folds it into Site details
  legal: '',                            // 300; empty draws "© year name"
  legal_links: [],                      // NavEntry[], 4 at most
 }
