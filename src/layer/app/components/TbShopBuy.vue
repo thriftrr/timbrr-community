@@ -65,6 +65,7 @@
  function submit(event) {
   if (canvas || !variant.value?.available) return event.preventDefault();
   busy.value = true;
+  timbrrEvent('shop_handoff');
  }
  onMounted(() => window.addEventListener('pageshow', ready));
  onBeforeUnmount(() => window.removeEventListener('pageshow', ready));

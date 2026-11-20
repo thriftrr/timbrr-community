@@ -24,6 +24,7 @@
  // development.
  import { WYS_TOOLS } from '#timbrr/define';
  import { footerData, headerData, navItem, navList } from '../../../schema/frames.js';
+import { createInsights } from '../../utils/insights-canvas.js';
 
  definePageMeta({ layout: false });
 
@@ -366,6 +367,10 @@
   cropZoom(crop.value.zoom * Math.exp(-event.deltaY * 0.0025));
  }
 
+ // Insights (`timbrr:insights`): the numbers the studio read, drawn over the
+ // page. Does nothing until the studio sends `on: true` (utils/insights-canvas.js).
+ const insights = createInsights({ post: (message) => post(message) });
+
  // The studio records its sessions with rrweb and can't see into this frame,
  // so when it asks, rrweb here passes what happens on the canvas up to the
  // studio's. Asked again, it sends the whole page afresh: the studio has
@@ -384,6 +389,10 @@
   const message = event.data;
   if (!message || message.v !== 1) return;
   parentOrigin = event.origin;
+  if (message.type === 'timbrr:insights') {
+   if (!preview) insights.apply(message);
+   return;
+  }
   if (message.type === 'timbrr:record') {
    joinRecording();
    return;
@@ -407,6 +416,7 @@
    // its size, even an unchanged one: the frame it's in may have shrunk to
    // measure it.
    nextTick(() => reportSize(preview));
+   insights.refresh();
    return;
   }
   // A preview only ever draws the page it's sent.
@@ -438,6 +448,7 @@
    // The studio shows this page scaled down to fit; the outlines, tabs and
    // drop zone are drawn up by as much, so they read at their real size.
    ui.value = Math.min(5, Math.max(1, 1 / message.scale));
+   insights.scale(ui.value);
   } else if (message.type === 'timbrr:format' && typeof message.tool === 'string') {
    editor.value?.format(message.tool, typeof message.href === 'string' ? message.href : '');
   } else if (message.type === 'timbrr:release') {
@@ -494,7 +505,13 @@
   selected.value = id;
   const side = event.target.closest?.('[data-chrome]')?.dataset.chrome;
   const field = frame && event.target.closest?.('[data-image-field]')?.dataset.imageField;
-  post({ type: 'timbrr:click', id, ...(side ? { side } : {}), ...(field ? { field } : {}) });
+  // `href` (the link's own address) and `control` (a link or a button was hit, with its words in
+  // `label`) are for the studio's funnel walk (Analytics): a click there is a step. A studio that
+  // doesn't know them ignores them.
+  const href = event.target.closest?.('a[href]')?.getAttribute('href');
+  const control = event.target.closest?.('a, button, [role="button"]');
+  const label = control?.textContent?.replace(/\s+/g, ' ').trim().slice(0, 60);
+  post({ type: 'timbrr:click', id, ...(side ? { side } : {}), ...(field ? { field } : {}), ...(href ? { href: String(href).slice(0, 500) } : {}), ...(control ? { control: true, ...(label ? { label } : {}) } : {}) });
  }
 
  // Keys pressed in here never reach the studio, so F (flag something) and the

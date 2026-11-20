@@ -23,7 +23,7 @@
   <figure class="tb-media__figure" :class="{ 'tb-wrap': data.width !== 'wide' }">
    <div v-if="video || player" class="tb-media__stage" :class="{ 'tb-media__stage--still': canvas }">
     <!-- crossorigin only with captions: a track from another address needs it, and a video from a server that doesn't allow it would stop playing. -->
-    <video v-if="video" :src="video" :poster="safeSrc(data.image.src)" :crossorigin="captions ? 'anonymous' : undefined" controls playsinline preload="metadata" class="tb-media__player">
+    <video v-if="video" :src="video" :poster="safeSrc(data.image.src)" :crossorigin="captions ? 'anonymous' : undefined" controls playsinline preload="metadata" class="tb-media__player" @play.once="timbrrEvent('video_play')">
      <track v-if="captions" kind="captions" :src="captions" :srclang="language" label="Captions" default />
     </video>
     <iframe

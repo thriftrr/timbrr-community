@@ -26,6 +26,7 @@ export default defineBlock({
  label: 'Collection field',
  description: 'Shows one field of an entry',
  category: 'dynamic',
+ loads: ['youtube', 'vimeo', 'openstreetmap'],
  icon: 'text',
  keywords: ['collections', 'entry', 'field', 'template', 'value'],
  schema: z.object({
