@@ -18,7 +18,7 @@ export default defineBlock({
   body: richTextSchema.default(richText('')),
   placeholder: z.string().max(60).default(''),
   channel: z.enum(['phone', 'email']).default('phone'),
-  consent: z.string().max(500).default(''),
+  consent: richTextSchema.default(richText('')),
   submit_label: z.string().max(40).default(''),
  }),
  fields: [
@@ -38,7 +38,7 @@ export default defineBlock({
   {
    key: 'consent',
    label: 'Consent copy',
-   widget: 'textarea',
+   widget: 'html',
    inline: true,
    help: "Shown under the box. Say who's sending, how often, and how to stop.",
   },
@@ -55,8 +55,8 @@ export default defineBlock({
   body: richText('New arrivals, events and the occasional deal. Two texts a month, tops.'),
   placeholder: 'Phone number',
   channel: 'phone',
-  consent: 'By joining you agree to receive texts from us. Msg & data rates may apply. Reply STOP to opt out.',
+  consent: richText('By joining you agree to receive texts from us. Msg & data rates may apply. Reply STOP to opt out.'),
   submit_label: 'Join',
  },
- wys: { headline: [], body: ['bold', 'italic', 'link'], placeholder: [], consent: [], submit_label: [] },
+ wys: { headline: [], body: ['bold', 'italic', 'link'], placeholder: [], consent: ['bold', 'italic', 'link'], submit_label: [] },
 });

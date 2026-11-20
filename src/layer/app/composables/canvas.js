@@ -67,7 +67,7 @@ export function useFieldShown() {
  };
 }
 
-function hasWords(node) {
+export function hasWords(node) {
  if (typeof node === 'string') return node.trim() !== '';
  if (node?.type === 'text') return Boolean(node.text?.trim());
  return Array.isArray(node?.content) && node.content.some(hasWords);
