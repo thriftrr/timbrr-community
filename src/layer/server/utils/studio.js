@@ -55,9 +55,9 @@ async function siteState(api, site, relay = '', cache) {
    const res = kept ?? (await fetch(url, { headers: { accept: 'application/json', ...(relay ? { 'x-timbrr-relay': relay } : {}) }, signal: AbortSignal.timeout(EPOCH_WAIT) }));
    if (res.ok) {
     const text = await res.text();
-    const answer = JSON.parse(text);
+    const body = JSON.parse(text);
     // analytics: what the owner picked ({ on, events, fields, id }); an older studio sends none, which counts nothing.
-    state = { epoch: Number(answer?.epoch) || 0, headers: bookmarkHeaders(answer?.bookmarks), analytics: answer?.analytics ?? null };
+    state = { epoch: Number(body?.epoch) || 0, headers: bookmarkHeaders(body?.bookmarks), analytics: body?.analytics ?? null };
     if (cache && !kept) await cache.put(url, new Response(text, { headers: { 'content-type': 'application/json', 'cache-control': `public, max-age=${EPOCH_FOR / 1000}` } })).catch(() => {});
    }
   } catch {
