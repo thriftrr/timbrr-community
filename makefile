@@ -70,4 +70,6 @@ check:
 	cd src && node layer/scripts/check-shop.mjs
 	cd src && node layer/scripts/check-insights.mjs
 	cd src && node layer/scripts/check-search.mjs
+	cd src && node layer/scripts/check-hours.mjs
+	cd src && node layer/scripts/check-missed.mjs
 	cd src && node layer/scripts/build-analytics.mjs --check

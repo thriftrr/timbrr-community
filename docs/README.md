@@ -336,6 +336,37 @@ same in a layout:
 </template>
 ```
 
+## Closed days and not-found reports
+
+Both come from the studio's Business details and the Worker's own 404s.
+
+**Closed days.** The studio puts `details.closedDays` in the site's public
+answers: up to 20 `{ from, to, note }` spans of `YYYY-MM-DD` dates (`to` the
+same as `from` for one day, `note` up to 120 characters), sorted, in the
+site's time zone (`details.timezone`). They beat the weekly hours.
+`openNow(hours, timezone, now, closedDays)` in `app/utils/hours.js` answers
+`{ open: false, label: 'Closed today · Merry Christmas' }` on a covered date
+(`opens` still says when it ends, up to a week out), and the "opens Mon 9:00
+am" of any other day skips covered dates. `upcomingClosures(closedDays,
+timezone)` lists the spans covering today or starting in the next 45 days;
+the Visit block draws them as "Closed Dec 25 and 26 · Merry Christmas" above
+its hours. Like open now, both are worked out in the browser after the page
+loads (pages are cached for a minute), and say nothing without a time zone
+the browser knows. Check them with `node layer/scripts/check-hours.mjs`. The
+layer writes no schema.org markup, so there is no `specialOpeningHoursSpecification`.
+
+**Not-found reports.** When the Worker renders the 404 page for a published
+site (`useTimbrrPage`, on the server only), it posts one
+`POST {NUXT_TIMBRR_API}/api/public/sites/<slug>/missed` with
+`{ "path": "/old-menu" }` (the pathname, no query, at most 300 characters),
+answered 204. It goes out through `waitUntil`, so the visitor never waits
+for it, errors are swallowed, and nothing is retried: the studio rate limits.
+It is only sent for GET requests, and not for a path with a file extension, a
+path under `/_nuxt`, `/api`, `/.well-known` or `/__timbrr`, a user agent
+matching `bot|crawl|spider|slurp|preview`, or a dev or staging address. The
+studio lists what was missed most so its owner can add a redirect. Rules and
+request: `app/utils/missed.js`, checked by `node layer/scripts/check-missed.mjs`.
+
 ## Collections
 
 A site's collections and their entries live in the studio (its
