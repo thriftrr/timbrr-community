@@ -176,6 +176,18 @@ export function dataPoint(site, e, { visitor, country, browser, os }, fields = F
  return { indexes: [site], blobs: BLOBS.map((name) => blobs[name] ?? ''), doubles: DOUBLES.map((name) => doubles[name]) };
 }
 
+// ── What isn't counted, counted ──
+// A hit dropped as the site's own team (the draft cookie), a dev or staging
+// address, or a bot is one data point of its own, for the studio's Checks
+// screen: index1 the site's id, blob1 'skipped' (no event is ever called
+// that, so a query for events never meets one), blob2 the reason, double1
+// the events in the request, double2 the views among them. Nothing else:
+// no visitor, path, IP or user agent. The day is the data point's own
+// timestamp. DNT and GPC aren't here: the script sends nothing for them.
+export const SKIPPED = 'skipped';
+export const SKIP_REASONS = { draft: 'team', preview: 'preview', bot: 'bot' };
+export const skippedPoint = (site, reason, events) => ({ indexes: [site], blobs: [SKIPPED, reason], doubles: [events.length, events.filter((e) => e.e === 'view').length] });
+
 // What the route reads off a request, as plain data (so it runs as it is in
 // the studio's checks): a dev or staging address (the preview middleware set
 // context.timbrrPreview), or the studio's draft cookie, is not a visitor.
@@ -201,9 +213,21 @@ export function hitInput({ headers = {}, context = {}, previewCookie, fallbackIp
 //              (or when there is no getConfig, or the studio is too old to say,
 //              or sends no `fields`, which means none of the optional details,
 //              or sends no id: the id is index1 and part of the visitor hash)
-export async function handleHit({ binding, site, preview = false, draft = false, headers = {}, cf, ip, body, getSalt, getConfig }) {
+//   tally      write one skippedPoint for a well-formed hit dropped as the team, a
+//              preview or a bot, on a site that is on (`written` stays 0; `skipped`
+//              names the reason). Off by default; the route turns it on.
+export async function handleHit({ binding, site, preview = false, draft = false, headers = {}, cf, ip, body, getSalt, getConfig, tally = false }) {
  if (typeof binding?.writeDataPoint !== 'function') return { status: 204, written: 0 };
- if (notCounted({ preview, site, headers, draft, cf })) return { status: 204, written: 0 };
+ const why = notCounted({ preview, site, headers, draft, cf });
+ if (why) {
+  const reason = tally && SKIP_REASONS[why];
+  const events = reason && site && validateHit(body);
+  if (!events) return { status: 204, written: 0 };
+  const config = await getConfig?.();
+  if (config?.on !== true || typeof config.id !== 'string' || !config.id) return { status: 204, written: 0 };
+  binding.writeDataPoint(skippedPoint(config.id, reason, events));
+  return { status: 204, written: 0, skipped: reason };
+ }
  const events = validateHit(body);
  if (!events) return { status: 400, written: 0 };
  if (!ip) return { status: 204, written: 0 };

@@ -9,6 +9,10 @@
 // again on every client-side route change; that change is what ends one view
 // and starts the next.
 (function (w, d) {
+ var n = navigator;
+ // Do Not Track or Global Privacy Control: send nothing, listen to nothing.
+ // The hit route also drops DNT: 1 and Sec-GPC: 1, as a second line.
+ if (n.doNotTrack == '1' || w.doNotTrack == '1' || n.globalPrivacyControl === true) return;
  var h = d.documentElement;
  var S = h.dataset;
  var ev = [];
@@ -28,7 +32,7 @@
   tm = 0;
   if (!q.length) return;
   try {
-   navigator.sendBeacon('/__timbrr/hit', JSON.stringify(q));
+   n.sendBeacon('/__timbrr/hit', JSON.stringify(q));
   } catch (e) {}
   q = [];
  }

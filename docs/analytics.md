@@ -10,7 +10,10 @@ this is the site's half: a script, a route and a binding.
   `src/layer/analytics/a.src.js`, minified by `node layer/scripts/build-analytics.mjs`
   into `server/utils/analytics-script.js` (committed; `make check` fails when it
   is out of date). It stores nothing on the device and sends events with
-  `navigator.sendBeacon`.
+  `navigator.sendBeacon`. A browser with Do Not Track (`navigator.doNotTrack`
+  or `window.doNotTrack` is `'1'`) or Global Privacy Control
+  (`navigator.globalPrivacyControl === true`) gets a script that returns
+  before anything else: no listeners, no beacon, not one request.
 - **`/__timbrr/hit`**: takes the script's events and writes one Workers
   Analytics Engine data point each. Always `204`, whatever was or wasn't
   counted; `400` for a body that isn't one the script sends. Never sets a cookie.
@@ -95,6 +98,56 @@ category), `Sec-GPC: 1`, `DNT: 1`, a request whose `Origin` isn't the site's own
 `device`, `browser`, `os`, `width`, `kind`, `dest`, `name`. Doubles: `seconds`,
 `depth`, `x`, `y`, `button`. The names are `BLOBS` and `DOUBLES` in
 `server/utils/analytics.js`; the studio's nightly task reads by these positions.
+
+## How this site counts visits (`/how-we-count`)
+
+Every site with analytics on has `/how-we-count`, drawn by the layer
+(`app/pages/how-we-count.vue`) in the site's own header, footer and look, from
+the home page's read, as `/search` is. A site with analytics off answers 404.
+It lists only what this site collects, from the `events` and `fields` the
+studio already sends (`countedLines` in `app/utils/how-we-count.js`), what is
+never counted, that Do Not Track and Global Privacy Control send nothing, how
+long it is kept and who counts. It is indexable (it follows the home page's
+robots) and never in site search, whose index holds only the studio's pages
+and entries. A page the site publishes at that address is shadowed by it.
+
+What the layer reads from the studio's `analytics` answer
+(`analyticsSettings`), beside `{ on, events, fields, id }`:
+
+- `retentionDays`: a whole number of days. Missing (today's studio), the page
+  says 90.
+- `howWeCountLink`: `true` puts "How we count visits" at the end of the
+  footer's small-print links, in every footer layout. Missing or anything but
+  `true` (or analytics off), no link. A footer turned off (`frame.footer:
+  false`) has no link either.
+
+## What isn't counted, counted
+
+For the studio's Checks screen: a hit dropped because it is the site's own
+team (the draft cookie), a dev or staging address, or a bot is written as one
+data point of its own, in the same dataset (`timbrr_hits`), when the body is
+one the script sends and the site has analytics on. One per request, however
+many events it carried:
+
+| Position | Holds |
+|---|---|
+| `index1` | the site's id (as for events) |
+| `blob1` | `'skipped'`, the marker: no event is ever called that |
+| `blob2` | the reason: `team`, `preview` or `bot` |
+| `double1` | how many events the request carried |
+| `double2` | how many of them were views |
+
+Nothing else: no visitor hash, path, page, IP or user agent. The day is the
+data point's own `timestamp`; count with `SUM(_sample_interval)` (requests)
+or `SUM(_sample_interval * double2)` (views). A query for events
+(`WHERE blob1 = 'view'`, …) never meets one. `SKIPPED`, `SKIP_REASONS` and
+`skippedPoint` in `server/utils/analytics.js`; `handleHit` writes it only with
+`tally: true`, which `/__timbrr/hit` passes.
+
+Not tallied: Do Not Track and Global Privacy Control (the script sends
+nothing, so there is nothing to count; the route's `DNT`/`Sec-GPC` check stays
+as a second line and writes nothing), another site posting here, the canvas,
+and a body the script never sends.
 
 ## Deploy order
 
