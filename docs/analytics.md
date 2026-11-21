@@ -99,6 +99,34 @@ category), `Sec-GPC: 1`, `DNT: 1`, a request whose `Origin` isn't the site's own
 `depth`, `x`, `y`, `button`. The names are `BLOBS` and `DOUBLES` in
 `server/utils/analytics.js`; the studio's nightly task reads by these positions.
 
+## What isn't counted, counted
+
+For the studio's Checks screen: a hit dropped because it is the site's own
+team (the draft cookie), a dev or staging address, or a bot is written as one
+data point of its own, in the same dataset (`timbrr_hits`), when the body is
+one the script sends and the site has analytics on. One per request, however
+many events it carried:
+
+| Position | Holds |
+|---|---|
+| `index1` | the site's id (as for events) |
+| `blob1` | `'skipped'`, the marker: no event is ever called that |
+| `blob2` | the reason: `team`, `preview` or `bot` |
+| `double1` | how many events the request carried |
+| `double2` | how many of them were views |
+
+Nothing else: no visitor hash, path, page, IP or user agent. The day is the
+data point's own `timestamp`; count with `SUM(_sample_interval)` (requests)
+or `SUM(_sample_interval * double2)` (views). A query for events
+(`WHERE blob1 = 'view'`, …) never meets one. `SKIPPED`, `SKIP_REASONS` and
+`skippedPoint` in `server/utils/analytics.js`; `handleHit` writes it only with
+`tally: true`, which `/__timbrr/hit` passes.
+
+Not tallied: Do Not Track and Global Privacy Control (the script sends
+nothing, so there is nothing to count; the route's `DNT`/`Sec-GPC` check stays
+as a second line and writes nothing), another site posting here, the canvas,
+and a body the script never sends.
+
 ## Deploy order
 
 Studio first (salt route, then the rest), then this layer, then each site

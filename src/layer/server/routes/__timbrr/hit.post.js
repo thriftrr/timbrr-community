@@ -31,6 +31,7 @@ export default defineEventHandler(async (event) => {
   body: await readRawBody(event, 'utf8'),
   getSalt: () => fetchSalt({ api: studioApi(event), secret: String(config.timbrr?.relaySecret ?? '') }),
   getConfig: () => siteAnalytics(studioApi(event), site, String(config.timbrr?.relaySecret ?? '')),
+  tally: true,
  });
  setResponseStatus(event, status);
  return status === 204 ? null : { statusCode: status, message: 'Not understood.' };
