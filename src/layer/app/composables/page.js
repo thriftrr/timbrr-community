@@ -54,6 +54,8 @@ export async function useTimbrrPage(path) {
    language: LANGUAGE.test(value.language ?? '') ? value.language : 'en',
    // Site search's settings (utils/search.js): off unless the studio says on.
    search: searchSettings(value.search),
+   // Analytics as the studio says it (utils/how-we-count.js): /how-we-count and its footer link.
+   analytics: analyticsSettings(fetched.data.value?.analytics),
   };
  });
  // On a dev or staging address (the note the server writes says it is one),

@@ -82,7 +82,9 @@
  const phone = computed(() => (footer.value?.contact.phone ? String(details.value?.phone ?? '').trim() : ''));
  const hasContact = computed(() => Boolean(hours.value.length || address.value.length || phone.value));
 
- const legalLinks = computed(() => named(footer.value?.legal_links).map(linked));
+ // The footer's own small-print links, then "How we count visits" when the
+ // studio says to show it (analytics on, and the owner's howWeCountLink).
+ const legalLinks = computed(() => [...named(footer.value?.legal_links).map(linked), ...(props.site.analytics?.howWeCountLink ? [{ label: 'How we count visits', link: { is: NuxtLink, to: HOW_WE_COUNT_PATH } }] : [])]);
  const legal = computed(() => footer.value?.legal.trim() || `© ${year} ${name.value}`);
 
  // The floating button, when it's on and has both words and somewhere to go.

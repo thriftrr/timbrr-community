@@ -99,6 +99,28 @@ category), `Sec-GPC: 1`, `DNT: 1`, a request whose `Origin` isn't the site's own
 `depth`, `x`, `y`, `button`. The names are `BLOBS` and `DOUBLES` in
 `server/utils/analytics.js`; the studio's nightly task reads by these positions.
 
+## How this site counts visits (`/how-we-count`)
+
+Every site with analytics on has `/how-we-count`, drawn by the layer
+(`app/pages/how-we-count.vue`) in the site's own header, footer and look, from
+the home page's read, as `/search` is. A site with analytics off answers 404.
+It lists only what this site collects, from the `events` and `fields` the
+studio already sends (`countedLines` in `app/utils/how-we-count.js`), what is
+never counted, that Do Not Track and Global Privacy Control send nothing, how
+long it is kept and who counts. It is indexable (it follows the home page's
+robots) and never in site search, whose index holds only the studio's pages
+and entries. A page the site publishes at that address is shadowed by it.
+
+What the layer reads from the studio's `analytics` answer
+(`analyticsSettings`), beside `{ on, events, fields, id }`:
+
+- `retentionDays`: a whole number of days. Missing (today's studio), the page
+  says 90.
+- `howWeCountLink`: `true` puts "How we count visits" at the end of the
+  footer's small-print links, in every footer layout. Missing or anything but
+  `true` (or analytics off), no link. A footer turned off (`frame.footer:
+  false`) has no link either.
+
 ## What isn't counted, counted
 
 For the studio's Checks screen: a hit dropped because it is the site's own
