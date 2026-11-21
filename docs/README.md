@@ -240,6 +240,17 @@ site's own Worker, so publishing is live within a minute with no rebuild:
   public API (`GET /api/public/sites/:slug/page`, published pages of
   approved sites only) and keeping the answer in Cloudflare's edge cache
   for a minute. The browser never talks to the studio.
+- `/f/<slug>` and `GET /__timbrr/share?slug=…`: a form's share page (the
+  studio's docs/forms.md, "Share link"). The page shows the site's logo or
+  name, the live form (`TbForm`, so it sends, checks and thanks as the Form
+  block's does) and a line with the site's name, address and domain; a
+  link that is off, or never was, is "This form is closed" with a 404. The
+  server asks `GET /api/public/sites/:slug/share/:shareSlug` (a dev or
+  staging address, the working copy) and keeps the answer a minute at the
+  edge. It is the one route other sites may frame, since it is what the
+  embed snippet frames (`frame-ancestors *`, and every other page keeps
+  `'self'` and the studio), and it is never indexed. It wins over a site's
+  own page at `/f/<something>`. `scripts/check-share.mjs` checks it.
 - `GET /sitemap.xml` and `GET /robots.txt`, from the published pages. With
   no `NUXT_PUBLIC_SITE` (the starter, the shared canvas) robots.txt turns
   every crawler away and every page says `X-Robots-Tag: noindex`, since

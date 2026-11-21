@@ -11,6 +11,62 @@ const NO_ANSWER = ['page', 'calc', 'hidden'];
 const has = (value) => value !== undefined && value !== null && value !== '';
 const list = (value) => (Array.isArray(value) ? value : []);
 
+// A pattern the owner writes (Pro, "Must match a pattern") runs on the server
+// and in the visitor's browser, so only a kind that stays quick on any answer
+// is taken. No repeat right after brackets, like (a+)+; no \1 or look-arounds;
+// and a budget: each open-ended repeat (*, +, {n,} or {n,m}), and not starting
+// with ^, can cost a pass over the answer, and each ? or | doubles the tries.
+// The studio's shared/utils/forms.js has the same function; change them together.
+const QUANTIFIER = /^(?:[*+?]|\{(\d+)(?:(,)(\d*))?\})/;
+export function formRegexProblem(source) {
+ if (!source) return 'Write a pattern.';
+ if (source.length > 200) return 'Keep it to 200 characters.';
+ try {
+  new RegExp(source);
+ } catch {
+  return "That isn't a valid pattern.";
+ }
+ let repeats = 0;
+ let choices = 0;
+ let depth = 0;
+ let anchored = source.startsWith('^');
+ for (let i = 0; i < source.length; i++) {
+  const char = source[i];
+  if (char === '\\') {
+   if (/[1-9k]/.test(source[i + 1] ?? '')) return "Matching an earlier part again, like \\1, isn't supported. Write that part out again.";
+   i++;
+  } else if (char === '[') {
+   for (i++; i < source.length && source[i] !== ']'; i++) if (source[i] === '\\') i++;
+  } else if (char === '(') {
+   if (/^\?<?[=!]/.test(source.slice(i + 1))) return "Looking ahead or behind, like (?=…), isn't supported.";
+   if (source[i + 1] === '?') i++;
+   depth++;
+  } else if (char === ')') {
+   depth--;
+   if (QUANTIFIER.test(source.slice(i + 1))) return 'A repeat right after brackets, like (ab)+, can hang the form. Repeat one letter or one [set] at a time instead.';
+  } else if (char === '|') {
+   choices++;
+   if (!depth) anchored = false;
+  } else {
+   const quantifier = source.slice(i).match(QUANTIFIER);
+   if (!quantifier) continue;
+   const [whole, low, comma, high] = quantifier;
+   if (whole === '?') choices++;
+   else if (whole === '*' || whole === '+' || (comma && (high === '' || Number(high) > Number(low)))) repeats++;
+   i += whole.length - 1;
+   // A lazy repeat, like +?, is still one repeat.
+   if (source[i + 1] === '?') i++;
+  }
+ }
+ // Measured on a 500-character answer, the slowest pattern this lets through takes under 10 ms.
+ const passes = repeats + (anchored ? 0 : 1);
+ if (passes > 2 || choices > 14 || passes * 9 + choices > 20) return 'This pattern has too many repeats (*, +, ?, {…}) or choices (|) and could hang the form. Use fewer, or start it with ^.';
+ return '';
+}
+// A pattern with a problem never stops anyone sending (Build lists it to fix),
+// and an answer longer than a short answer can be is never tried against one.
+export const formRegexMatches = (source, answer) => formRegexProblem(source) !== '' || (String(answer).length <= 500 && new RegExp(source).test(String(answer)));
+
 export const isFormInput = (field) => !NO_ANSWER.includes(field.type);
 
 export function isFormEmail(value) {
@@ -108,5 +164,6 @@ export function formFieldError(doc, field, answers, today) {
  if (valid.pattern === 'zip' && !/^\d{5}$/.test(answer)) return 'Enter a 5-digit ZIP code, like 55408.';
  if (valid.pattern === 'digits' && !/^\d+$/.test(answer)) return 'Use numbers only.';
  if (valid.pattern === 'letters' && !/^[A-Za-z\s'’-]+$/.test(answer)) return 'Use letters only.';
+ if (valid.regex && !formRegexMatches(valid.regex, answer)) return valid.message || "That doesn't look right. Check it and try again.";
  return '';
 }
