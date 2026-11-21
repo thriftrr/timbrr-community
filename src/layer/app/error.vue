@@ -10,6 +10,8 @@
 
  const status = computed(() => Number(props.error?.statusCode) || 500);
  const missing = computed(() => status.value === 404);
+ // A preview link that has run out or been turned off (pages/__timbrr/preview/[token].vue).
+ const linkGone = computed(() => missing.value && props.error?.data?.preview === true);
 
  useHead({
   htmlAttrs: { lang: 'en' },
@@ -30,8 +32,8 @@
  <main class="tb-error">
   <div class="tb-wrap tb-wrap--narrow">
    <p class="tb-eyebrow">{{ status }}</p>
-   <h1 class="tb-heading">{{ missing ? "We couldn't find that page." : 'Sorry, something went wrong.' }}</h1>
-   <p class="tb-lede">{{ missing ? "It may have moved, or there's a typo in the address." : "This page didn't load. Try again in a minute." }}</p>
+   <h1 class="tb-heading">{{ linkGone ? "This preview link doesn't work any more." : missing ? "We couldn't find that page." : 'Sorry, something went wrong.' }}</h1>
+   <p class="tb-lede">{{ linkGone ? 'It may have run out, or been turned off. Ask whoever sent it for a new one.' : missing ? "It may have moved, or there's a typo in the address." : "This page didn't load. Try again in a minute." }}</p>
    <div class="tb-buttons">
     <a href="/" class="tb-button tb-button--solid" @click="home">Go to the home page</a>
    </div>
