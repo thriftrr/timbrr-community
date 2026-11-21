@@ -65,10 +65,10 @@
  const areas = computed(() => props.data.areas.map((item, index) => ({ item, index })).filter(({ item, index }) => shows(`areas.${index}.title`, item.title)));
  const hasArea = computed(() => areas.value.length > 0 || shows('area_headline', props.data.area_headline) || shows('area_body', props.data.area_body));
 
- const hasWords = computed(() => showAddress.value || showPhone.value || showEmail.value || hasNote.value || links.value.length > 0);
+ const hasDetails = computed(() => showAddress.value || showPhone.value || showEmail.value || hasNote.value || links.value.length > 0);
  const hasSide = computed(() => showHours.value || showMap.value);
  // Nothing to say at all, on the canvas: where to go to fix that.
- const empty = computed(() => Boolean(canvas) && !hasWords.value && !hasSide.value && !hasArea.value);
+ const empty = computed(() => Boolean(canvas) && !hasDetails.value && !hasSide.value && !hasArea.value);
 
  // ── Open now ──
  // Nothing until the page is in the browser, then once a minute, so a tab
@@ -137,7 +137,7 @@
      </a>
     </div>
    </div>
-   <div v-if="hasArea" class="tb-visit__area" :class="{ 'tb-visit__area--first': !hasWords && !hasSide }">
+   <div v-if="hasArea" class="tb-visit__area" :class="{ 'tb-visit__area--first': !hasDetails && !hasSide }">
     <TbText v-if="shows('area_headline', data.area_headline)" :data="data" field="area_headline" tag="h3" class="tb-visit__area-headline" />
     <TbRich v-if="shows('area_body', data.area_body)" :data="data" field="area_body" class="tb-visit__area-body" />
     <ul v-if="areas.length" class="tb-visit__areas" role="list">
