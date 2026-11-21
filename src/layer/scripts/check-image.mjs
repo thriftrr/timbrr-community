@@ -22,6 +22,10 @@ equal(json.properties.zoom.maximum, 4);
 for (const altFrom of ['library', 'page']) equal(imageSchema.parse({ ...old, altFrom }).altFrom, altFrom);
 ok(!imageSchema.safeParse({ ...old, altFrom: 'site' }).success, 'an unknown altFrom is refused');
 deepEqual(json.properties.altFrom.enum, ['library', 'page']);
+// optimize: only `false` is stored (Optimize off); missing is on.
+equal(imageSchema.parse({ ...old, optimize: false }).optimize, false);
+ok(!imageSchema.safeParse({ ...old, optimize: true }).success, 'optimize: true is never stored');
+equal(json.properties.optimize.const, false);
 
 // mediaSrcset: without delivery, today's w480/w960/w1600 list.
 const id = 'AbCdEfGhIjKlMnOp';

@@ -243,6 +243,9 @@ export const imageSchema = z.object({
  // live pages (the studio fills it in at read time), 'page' is this page's
  // own and is kept. Missing on values saved before the marker existed.
  altFrom: z.enum(['library', 'page']).optional(),
+ // The inspector's Optimize switch turned off for this placement: the
+ // uploaded file alone, no srcset. Missing is on.
+ optimize: z.literal(false).optional(),
 });
 
 // An icon drawn by its paths: each the `d` of one path on a 24 × 24 grid,

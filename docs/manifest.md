@@ -136,6 +136,11 @@ keys parses them away and ignores them.
 its focal point inside a box that keeps the block's shape. Without it, or at
 1, the picture is the single `<img>` it always was (`scripts/check-image.mjs`).
 
+`optimize` (`false`, optional) is one placement's own: the inspector's
+Optimize switch turned off. The picture is then the uploaded file alone, with
+no `srcset`, neither the stored widths nor Cloudflare's resizing. Absent means
+on.
+
 `altFrom` (`'library'` | `'page'`, optional) says whose alt text it is. The
 studio writes `'library'` when a photo is picked and `'page'` once someone
 types this page's own. The layer only parses it: the studio's public answer
