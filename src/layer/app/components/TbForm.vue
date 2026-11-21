@@ -11,6 +11,12 @@
  // block's, possibly empty) along with `heading`: then what's given is all that
  // draws, and with no heading the form's name is what screen readers get. With
  // `intro` left out, the form's own title and intro draw as they always did.
+ //
+ // A form with steps keeps what's typed in this browser only (utils/form-keep.js):
+ // a band offers to pick up where they left off, and Start again empties it.
+ // When the Human check can't load, a Try again button reloads it and Send waits
+ // for it. A failed Next or Send puts focus on "N things to fix", which links to
+ // each field, and the thank-you takes focus so a screen reader reads it out.
  const props = defineProps({
   form: { type: Object, required: true },
   heading: { type: String, default: '' },
@@ -31,7 +37,16 @@
  const trap = ref('');
  const root = ref(null);
  const check = ref(null);
+ const summary = ref(null);
+ const thanks = ref(null);
+ const canKeep = ref(false); // this browser lets the form keep answers (a multi-step form, storage on)
+ const restored = ref(false); // answers came back from this browser, so a file didn't
+ const kept = ref(null); // what an earlier visit left here, { at, step, values }, while the band offers it
+ const checkFailed = ref(false); // the Human check couldn't load or run: Try again shows, Send waits
+ let challengeKey = '';
  let opened = 0;
+ let keepTimer = 0;
+ let keepAs = '';
 
  const steps = computed(() => formSteps(props.form));
  const current = computed(() => Math.min(step.value, steps.value.length - 1));
@@ -60,19 +75,87 @@
   if (/^city\b|\bcity$/.test(label)) return 'address-level2';
   return undefined;
  }
- // After a failed check, focus goes to the first field with a mistake.
+ // After a failed check, focus goes to "N things to fix", which links to each
+ // one (every field keeps its own message too). With nothing to list, the first
+ // field with a mistake.
  function focusFirstError() {
-  nextTick(() => root.value?.querySelector('.tb-form__field:has(.tb-form__error) :is(input, select, textarea)')?.focus());
+  nextTick(() => (summary.value ?? root.value?.querySelector('.tb-form__field:has(.tb-form__error) :is(input, select, textarea)'))?.focus());
+ }
+
+ // A link in the summary: the field itself (a group of choices, its first).
+ function goToField(field) {
+  root.value?.querySelector(`[data-form-field="${field.id}"] :is(input, select, textarea)`)?.focus();
+ }
+
+ // ── Kept answers ──
+ const storage = () => {
+  try {
+   return window.localStorage;
+  } catch {
+   return null;
+  }
+ };
+
+ // Debounced, and only from what the visitor does: restoring isn't saving, so
+ // looking at an old copy doesn't make it a week younger.
+ function remember() {
+  if (!multi.value || !keepAs) return;
+  clearTimeout(keepTimer);
+  keepTimer = setTimeout(() => {
+   const held = keepable(props.form, values);
+   try {
+    if (Object.keys(held).length) storage()?.setItem(keepAs, JSON.stringify({ at: Date.now(), step: current.value, values: held }));
+    else storage()?.removeItem(keepAs);
+   } catch {
+    // Full or blocked: nothing is kept, and nothing else breaks.
+   }
+  }, 400);
+ }
+
+ function forget() {
+  clearTimeout(keepTimer);
+  try {
+   if (keepAs) storage()?.removeItem(keepAs);
+  } catch {
+   // Nothing to forget.
+  }
+ }
+
+ function pickUp() {
+  step.value = Math.min(kept.value.step, steps.value.length - 1);
+  kept.value = null;
+  nextTick(() => root.value?.scrollIntoView?.({ block: 'nearest' }));
+ }
+
+ function startAgain() {
+  for (const key of Object.keys(values)) delete values[key];
+  for (const key of Object.keys(errors)) delete errors[key];
+  files.clear();
+  step.value = 0;
+  kept.value = null;
+  restored.value = false;
+  forget();
  }
  const priced = (field, option) => props.form.advanced && Number(option.v) > 0;
  const timesGuests = (field) => props.form.fields.some((entry) => entry.type === 'calc' && entry.terms?.some((term) => term.field === field.id && term.op === '×'));
  const price = (field, option) => `${field.type === 'checkbox' ? '+' : ''}${formMoney(option.v)}${field.type === 'radio' && timesGuests(field) ? ' each' : ''}`;
  const accepted = (field) => (field.files?.types ?? []).map((kind) => ({ JPG: '.jpg,.jpeg', HEIC: '.heic,.heif' })[kind] ?? `.${kind.toLowerCase()}`).join(',');
- const fileHint = (field) => `${(field.files?.types ?? []).join(', ')} · up to ${field.files?.max ?? 10} MB`;
+ // "up to 10 MB, JPG or PNG", from the field's own limits, before anything is chosen.
+ const fileHint = (field) => {
+  const types = field.files?.types ?? [];
+  const named = types.length > 1 ? `${types.slice(0, -1).join(', ')} or ${types.at(-1)}` : types[0];
+  return [`up to ${field.files?.max ?? 10} MB`, named].filter(Boolean).join(', ');
+ };
+ const photos = (field) => (field.files?.types ?? []).length > 0 && field.files.types.every((kind) => ['JPG', 'PNG', 'GIF', 'WEBP', 'HEIC'].includes(kind));
+ const multi = computed(() => steps.value.length > 1 && !props.locked && !props.compact);
+
+ // The fields on this step that still have a mistake, for "N things to fix".
+ const problems = computed(() => shown.value.filter((field) => errors[field.id]));
 
  function clear(field) {
   delete errors[field.id];
   failed.value = '';
+  remember();
  }
 
  function toggle(field, label) {
@@ -110,8 +193,20 @@
  function next() {
   if (!checkStep()) return focusFirstError();
   step.value = current.value + 1;
+  kept.value = null;
+  remember();
   nextTick(() => root.value?.scrollIntoView?.({ block: 'nearest' }));
  }
+
+ function back() {
+  step.value = current.value - 1;
+  remember();
+ }
+
+ // The Human check not loading or not running isn't a mistake in the form: Try
+ // again, and Send waits (checkFailed).
+ class CheckError extends Error {}
+ const LOAD_WAIT = 12000;
 
  function loadTurnstile() {
   if (window.turnstile) return Promise.resolve(window.turnstile);
@@ -119,8 +214,17 @@
    const script = document.createElement('script');
    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
    script.async = true;
-   script.onload = () => resolve(window.turnstile);
-   script.onerror = () => reject(new Error("Couldn't load the check."));
+   const fail = () => {
+    clearTimeout(timer);
+    script.remove(); // a retry loads it afresh
+    reject(new CheckError("Couldn't load the check."));
+   };
+   const timer = setTimeout(fail, LOAD_WAIT);
+   script.onload = () => {
+    clearTimeout(timer);
+    window.turnstile ? resolve(window.turnstile) : fail();
+   };
+   script.onerror = fail;
    document.head.append(script);
   });
  }
@@ -130,7 +234,7 @@
   const turnstile = await loadTurnstile();
   return new Promise((resolve, reject) => {
    check.value.textContent = '';
-   turnstile.render(check.value, { sitekey: siteKey, callback: resolve, 'error-callback': () => reject(new Error('The check failed.')) });
+   turnstile.render(check.value, { sitekey: siteKey, callback: resolve, 'error-callback': () => reject(new CheckError('The check failed.')), 'timeout-callback': () => reject(new CheckError('The check ran out of time.')) });
   });
  }
 
@@ -154,7 +258,10 @@
  async function send(token = '') {
   const res = await fetch(`/__timbrr/forms/${encodeURIComponent(props.form.id)}`, { method: 'POST', ...body(token) });
   const answer = await res.json().catch(() => null);
-  if (res.status === 428 && answer?.siteKey && !token) return send(await humanToken(answer.siteKey));
+  if (res.status === 428 && answer?.siteKey && !token) {
+   challengeKey = answer.siteKey;
+   return send(await humanToken(answer.siteKey));
+  }
   if (res.status === 422 && answer?.errors) {
    Object.assign(errors, answer.errors);
    const at = steps.value.findIndex((entry) => entry.fields.some((field) => answer.errors[field.id]));
@@ -166,32 +273,63 @@
   if (!res.ok || !answer?.ok) throw new Error(answer?.message ?? { 413: 'That is too much to send in one go. Use smaller files or shorter answers.', 429: 'Lots of sends right now. Try again in a minute.' }[res.status] ?? '');
   if (answer.after === 'redirect' && typeof answer.to === 'string' && answer.to.startsWith('/') && !answer.to.startsWith('//')) {
    timbrrEvent('form_sent');
+   forget();
    await navigateTo(answer.to);
    return;
   }
   timbrrEvent('form_sent');
+  forget();
   sent.value = answer.message ?? { type: 'doc', content: [] };
+  // The thank-you takes focus, so a screen reader reads it out instead of the page staying silent.
+  await nextTick();
+  thanks.value?.focus();
  }
 
- async function submit() {
+ // One run of the send, from Send or from Try again: a check that can't run is
+ // Try again's to fix; anything else is said where the Send button is.
+ async function run(work) {
   if (props.locked || sending.value) return;
-  if (!checkStep()) return focusFirstError();
   sending.value = true;
   failed.value = '';
+  checkFailed.value = false;
   try {
-   await send();
+   await work();
   } catch (error) {
-   failed.value = error.message || "Couldn't send that. Try again in a minute.";
+   if (error instanceof CheckError) {
+    checkFailed.value = true;
+    nextTick(() => root.value?.querySelector('.tb-form__retry')?.focus());
+   } else failed.value = error.message || "Couldn't send that. Try again in a minute.";
   } finally {
    sending.value = false;
   }
  }
+
+ function submit() {
+  if (props.locked || sending.value) return;
+  if (!checkStep()) return focusFirstError();
+  return run(() => send());
+ }
+
+ // Reload the check, and carry on with the send it was holding up.
+ const retryCheck = () => run(async () => send(await humanToken(challengeKey)));
 
  // A link can fill fields in (?guests=40), and hidden ones only ever fill in
  // this way.
  onMounted(() => {
   opened = Date.now();
   if (props.locked) return;
+  if (multi.value && storage()) {
+   keepAs = keepKey(window.location.host, props.form);
+   canKeep.value = true;
+   sweepKept(storage());
+   const raw = storage().getItem(keepAs);
+   const found = raw ? readKept(raw, props.form, steps.value.length) : null;
+   if (found) {
+    Object.assign(values, found.values);
+    kept.value = found;
+    restored.value = true;
+   } else if (raw) forget();
+  }
   const query = new URLSearchParams(window.location.search);
   for (const field of props.form.fields) {
    const value = field.param ? query.get(field.param) : null;
@@ -202,8 +340,18 @@
 
 <template>
  <div ref="root" class="tb-form__body" :class="{ 'tb-form__body--compact': compact, 'tb-form__body--untitled': noHeading }" :inert="locked">
-  <div role="status"><div v-if="sent" class="tb-form__sent"><TbRich :doc="sent" /></div></div>
+  <div role="status"><div v-if="sent" ref="thanks" tabindex="-1" class="tb-form__sent"><TbRich :doc="sent" /></div></div>
   <form v-if="!sent" novalidate :aria-label="noHeading ? label : undefined" @submit.prevent="last ? submit() : next()">
+   <div v-if="kept" class="tb-form__kept">
+    <div class="tb-form__kept-text">
+     <p class="tb-form__kept-title">We kept your answers from {{ keptWhen(kept.at) }}.</p>
+     <p class="tb-form__kept-note">Saved in this browser only. They are cleared when you send.</p>
+    </div>
+    <div class="tb-form__kept-actions">
+     <button v-if="kept.step > 0" type="button" class="tb-button tb-button--solid" @click="pickUp">Pick up at step {{ kept.step + 1 }}</button>
+     <button type="button" class="tb-form__link" @click="startAgain">Start again</button>
+    </div>
+   </div>
    <template v-if="!compact">
     <h2 v-if="title && !noHeading" class="tb-heading tb-form__title">{{ title }}</h2>
     <TbRich v-if="hasLede" :doc="lede" class="tb-form__lede" />
@@ -215,6 +363,13 @@
     </div>
     <p class="tb-form__step" role="status">Step {{ current + 1 }} of {{ steps.length }} · {{ steps[current].title }}</p>
    </div>
+
+   <section v-if="problems.length" ref="summary" tabindex="-1" class="tb-form__summary" :aria-labelledby="`${uid}-fix`">
+    <p :id="`${uid}-fix`" class="tb-form__summary-title">{{ problems.length }} {{ problems.length === 1 ? 'thing' : 'things' }} to fix</p>
+    <ul>
+     <li v-for="field in problems" :key="field.id"><a :href="`#${fieldId(field)}`" @click.prevent="goToField(field)">{{ field.label }}</a></li>
+    </ul>
+   </section>
 
    <div class="tb-form__grid">
     <div v-for="field in shown" :key="field.id" class="tb-form__field" :data-form-field="field.id" :style="{ '--tb-form-span': span(field) }">
@@ -264,7 +419,7 @@
       </div>
       <label v-else-if="field.type === 'file'" class="tb-form__drop">
        <input :id="fieldId(field)" type="file" :accept="accepted(field)" class="tb-form__drop-input" :aria-required="field.required || undefined" :aria-invalid="Boolean(errors[field.id])" :aria-describedby="describedBy(field)" @change="pick(field, $event)" />
-       <span class="tb-form__drop-text">{{ values[field.id]?.name ?? 'Choose a file or drop it here' }}</span>
+       <span class="tb-form__drop-text">{{ values[field.id]?.name ?? (photos(field) ? 'Add a photo' : 'Add a file') }}</span>
        <span class="tb-form__drop-hint">{{ fileHint(field) }}</span>
       </label>
       <input
@@ -283,18 +438,26 @@
      </template>
 
      <p v-if="field.help" :id="`${fieldId(field)}-help`" class="tb-form__help">{{ field.help }}</p>
+     <p v-if="field.type === 'file' && restored && !values[field.id]" class="tb-form__help">{{ photos(field) ? "Photos can't" : "Files can't" }} be kept in this browser. Add it again if you'd like to send one.</p>
      <p v-if="errors[field.id]" :id="`${fieldId(field)}-error`" class="tb-form__error" role="alert">{{ errors[field.id] }}</p>
     </div>
    </div>
 
    <input v-model="trap" type="text" name="website_url" tabindex="-1" autocomplete="off" inert class="tb-form__trap" />
    <div ref="check" />
+   <div v-if="checkFailed" class="tb-form__check">
+    <p class="tb-form__label">Quick check</p>
+    <p class="tb-form__error" role="alert">We couldn't load a quick check.</p>
+    <button type="button" class="tb-button tb-form__retry" :disabled="sending" @click="retryCheck">Try again</button>
+   </div>
    <p v-if="failed" class="tb-form__error" role="alert">{{ failed }}</p>
 
    <div class="tb-form__actions">
-    <button v-if="current > 0" type="button" class="tb-button tb-form__back" @click="step = current - 1">Back</button>
-    <button type="submit" class="tb-button tb-button--solid tb-form__submit" :disabled="sending">{{ sending ? 'Sending…' : last ? form.button : form.next }}</button>
+    <button v-if="current > 0" type="button" class="tb-button tb-form__back" @click="back">Back</button>
+    <button type="submit" class="tb-button tb-button--solid tb-form__submit" :disabled="sending || checkFailed" :aria-describedby="checkFailed ? `${uid}-held` : undefined">{{ sending ? 'Sending…' : last ? form.button : form.next }}</button>
    </div>
+   <p v-if="checkFailed" :id="`${uid}-held`" class="tb-form__help">Send switches on once the quick check loads. Try again above, or check your connection.</p>
+   <p v-if="canKeep" class="tb-form__saved">Your answers are saved in this browser until you send.</p>
   </form>
  </div>
 </template>
@@ -537,17 +700,20 @@
  }
 
  .tb-form__drop-text {
-  display: block;
+  display: inline;
   font-weight: 600;
   color: var(--site-heading);
   overflow-wrap: anywhere;
  }
 
  .tb-form__drop-hint {
-  display: block;
-  margin-top: 2px;
+  display: inline;
   font-size: 13px;
   color: var(--site-muted);
+ }
+
+ .tb-form__drop-hint::before {
+  content: ' · ';
  }
 
  .tb-form__total {
@@ -572,6 +738,100 @@
   font-size: 14px;
   line-height: 1.45;
   color: #a2463a;
+ }
+
+ /* The band that offers what an earlier visit left: calm, not an alarm. */
+ .tb-form__kept {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+  margin-bottom: 20px;
+  border: 1px solid var(--site-border);
+  border-radius: var(--site-control-radius);
+  padding: 14px 16px;
+  background: color-mix(in srgb, var(--site-accent) 7%, var(--site-bg));
+ }
+
+ .tb-form__kept-title {
+  margin: 0;
+  font-weight: 600;
+  color: var(--site-heading);
+ }
+
+ .tb-form__kept-note {
+  margin: 2px 0 0;
+  font-size: 14px;
+  color: var(--site-muted);
+ }
+
+ .tb-form__kept-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 18px;
+ }
+
+ .tb-form__link {
+  margin: 0;
+  border: 0;
+  padding: 4px 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--site-heading);
+  text-decoration: underline;
+  cursor: pointer;
+ }
+
+ /* "N things to fix": the mistakes on this step, each a link to its field. */
+ .tb-form__summary {
+  margin-top: 20px;
+  border-radius: var(--site-control-radius);
+  padding: 14px 16px;
+  background: color-mix(in srgb, #a2463a 9%, var(--site-bg));
+  color: #8a3a30;
+ }
+
+ .tb-form__summary:focus {
+  outline: 2px solid #a2463a;
+  outline-offset: 2px;
+ }
+
+ .tb-form__summary-title {
+  margin: 0;
+  font-weight: 700;
+ }
+
+ .tb-form__summary ul {
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+ }
+
+ .tb-form__summary a {
+  display: inline-block;
+  padding: 4px 0;
+  font-weight: 600;
+  color: inherit;
+  text-decoration: underline;
+ }
+
+ /* The Human check that couldn't load: what happened, then the one thing to do. */
+ .tb-form__check {
+  margin-top: 20px;
+ }
+
+ .tb-form__check .tb-form__error {
+  margin: 0 0 10px;
+  font-weight: 600;
+ }
+
+ .tb-form__saved {
+  margin: 14px 0 0;
+  font-size: 14px;
+  color: var(--site-muted);
  }
 
  /* Where only a bot goes. Not display:none, which a good one reads. */
@@ -607,6 +867,12 @@
  .tb-form__submit:disabled {
   opacity: 0.65;
   cursor: progress;
+ }
+
+ .tb-form__retry {
+  margin: 0;
+  font-family: inherit;
+  cursor: pointer;
  }
 
  .tb-form__sent {
