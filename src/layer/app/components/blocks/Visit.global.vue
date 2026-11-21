@@ -74,11 +74,15 @@
  // Nothing until the page is in the browser, then once a minute, so a tab
  // left open doesn't go on saying "open" after closing time.
  const status = ref(null);
+ // Closed days now or in the next 45 days, for the note above the hours.
+ const closures = ref([]);
  let clock = null;
 
  function tell() {
   const live = on('open_now') && !typedHours.value.length;
-  status.value = live ? openNow(details.value?.hours, details.value?.timezone) : null;
+  status.value = live ? openNow(details.value?.hours, details.value?.timezone, new Date(), details.value?.closedDays) : null;
+  // Told even over typed hours: a closed day is the business's, not the week's.
+  closures.value = upcomingClosures(details.value?.closedDays, details.value?.timezone);
  }
 
  onMounted(() => {
@@ -121,6 +125,12 @@
      <p v-if="empty" class="tb-visit__empty">Add your address, phone and hours in Site settings, under Business details, and they'll show here.</p>
     </div>
     <div v-if="hasSide" class="tb-visit__side">
+     <ul v-if="showHours && closures.length" class="tb-visit__closures" role="list">
+      <li v-for="closure in closures" :key="closure.words" class="tb-visit__closure">
+       <strong>Closed {{ closure.words }}</strong>
+       <span v-if="closure.note"> · {{ closure.note }}</span>
+      </li>
+     </ul>
      <dl v-if="showHours" class="tb-card tb-visit__hours">
       <div v-for="(row, index) in hours" :key="index" class="tb-visit__row">
        <dt class="tb-visit__days">{{ row.title }}</dt>
@@ -287,6 +297,26 @@
  }
 
  /* The week: days on the left, hours on the right, a rule between each. */
+ .tb-visit__closures {
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+ }
+
+ .tb-visit__closure {
+  margin: 0;
+  border-radius: 12px;
+  padding: 10px 14px;
+  background: color-mix(in srgb, var(--site-accent) 8%, var(--site-surface));
+  color: color-mix(in srgb, var(--site-accent) 70%, var(--site-heading));
+  font-size: 15px;
+  line-height: 1.45;
+ }
+
+ .tb-visit__closure + .tb-visit__closure {
+  margin-top: 8px;
+ }
+
  .tb-visit .tb-visit__hours {
   margin: 0;
   padding: 6px clamp(18px, 2.2vw, 22px);
