@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { CATEGORIES, CHOICE_WIDGETS, WIDGETS, WYS_TOOLS } from './define.js';
 import { whenProblem, whenTerms } from '../app/utils/when.js';
-import { collectionHookFlags } from './collection-hooks.js';
+import { collectionHookFlags, collectionHookList } from './collection-hooks.js';
 import { SITE_LOADS, THIRD_PARTIES, cookieProblem, thirdPartiesForManifest } from './third-parties.js';
 
 // The manifest: everything a studio needs to edit this site's blocks without
@@ -137,8 +137,10 @@ export function tierOf(def, layer) {
 // definition is a build error that names the block, never a quiet skip.
 // `collectionHooks` are the site's defineCollectionHook files (#timbrr/collection-hooks):
 // the manifest says only which kinds it has, so the studio knows whether to
-// ask /__timbrr/collection-fields before its entry editor draws.
-export function buildManifest(site, layers, definitions, collectionHooks = []) {
+// ask /__timbrr/collection-fields before its entry editor draws. `hookSources`
+// (the generated module's collectionHookSources) adds `collectionHooks.list`,
+// one entry per file with its description and text, for the studio's Editor hooks screen.
+export function buildManifest(site, layers, definitions, collectionHooks = [], hookSources = []) {
  const seen = new Map();
  const blocks = definitions.map(({ def, layer }) => {
   const where = `block "${def?.type}" (${layer.name})`;
@@ -183,7 +185,7 @@ export function buildManifest(site, layers, definitions, collectionHooks = []) {
    schema: z.toJSONSchema(def.schema, { io: 'input', unrepresentable: 'throw' }),
   };
  });
- return { version: MANIFEST_VERSION, generatedAt: new Date().toISOString(), site, layers, widgets: WIDGETS, thirdParties: thirdPartiesForManifest(), siteLoads: SITE_LOADS, blocks, collectionHooks: collectionHookFlags(collectionHooks) };
+ return { version: MANIFEST_VERSION, generatedAt: new Date().toISOString(), site, layers, widgets: WIDGETS, thirdParties: thirdPartiesForManifest(), siteLoads: SITE_LOADS, blocks, collectionHooks: { ...collectionHookFlags(collectionHooks), list: collectionHookList(hookSources) } };
 }
 
 // What wraps a field's real shape (a default, a missing value allowed);

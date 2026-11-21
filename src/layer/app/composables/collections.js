@@ -24,12 +24,15 @@ const KEY = /^[a-z][a-z0-9_]{0,39}$/;
 // A `collection` field's value as the site's /__timbrr/collections reads it
 // (docs/README.md § Collections, "Collection-aware blocks"). `answers` are a visitor's
 // picks for the list's choices ({ field: value }); `meta` asks for the collection's
-// fields beside the entries.
+// fields beside the entries. An answer of several values ('a|b') is "one of
+// them", sent as a filter: the studio's own answers hold one value.
 export function collectionQuery(source, { page = 1, answers = {}, meta = false } = {}) {
  const s = source && typeof source === 'object' ? source : {};
  const related = s.related === true ? 'points_here' : typeof s.related === 'string' ? s.related : 'none';
  const rk = { points_here: 'points_here', same_dimension_value: s.relatedSet ? `same_dimension_value.${s.relatedSet}` : '', linked: s.relatedField ? `linked.${s.relatedField}` : '' }[related] ?? '';
- const filters = [...(Array.isArray(s.filters) ? s.filters : []), ...(s.filter?.field ? [s.filter] : [])].slice(0, 5);
+ const many = (field) => (typeof answers[field] === 'string' && answers[field].includes('|') ? answers[field].split('|').filter(Boolean).slice(0, 8) : null);
+ const picked = (Array.isArray(s.choices) ? s.choices : []).map((choice) => choice?.field).filter((field) => KEY.test(field ?? '') && many(field));
+ const filters = [...(Array.isArray(s.filters) ? s.filters : []), ...(s.filter?.field ? [s.filter] : []), ...picked.map((field) => ({ field, op: 'in', value: many(field) }))].slice(0, 5);
  const choices = (Array.isArray(s.choices) ? s.choices : []).map((choice) => choice?.field).filter((field) => KEY.test(field ?? '')).slice(0, 3);
  const query = {
   collection: s.collection ?? '',
@@ -43,7 +46,7 @@ export function collectionQuery(source, { page = 1, answers = {}, meta = false }
  if (s.dimensionValue) Object.assign(query, { bs: s.dimensionValue.set, br: s.dimensionValue.slug });
  if (rk) Object.assign(query, { rk, rel: s.relatedTo || '-' });
  if (choices.length) query.facets = choices.join(',');
- for (const field of choices) if (typeof answers[field] === 'string' && answers[field]) query[`c.${field}`] = answers[field].slice(0, 200);
+ for (const field of choices) if (typeof answers[field] === 'string' && answers[field] && !many(field)) query[`c.${field}`] = answers[field].slice(0, 200);
  if (meta) query.meta = '1';
  return query;
 }

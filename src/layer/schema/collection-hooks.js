@@ -5,6 +5,8 @@
 // check scripts all read the same rules.
 //
 //   collection   the collection's key (required)
+//   description  what the hook is for, in plain words (up to 300 characters),
+//           shown on the studio's Editor hooks screen
 //   field    a field's key, or
 //   kind    every field of that kind (text, number, date…); neither: every field
 //   format(value, { field, entry, collection })  what to draw in place of the
@@ -18,12 +20,15 @@ const KEY = /^[a-z][a-z0-9_]{0,39}$/;
 // where they don't loosen the collection's own rule.
 export const EDITOR_SETTINGS = ['label', 'help', 'placeholder', 'prepend', 'append', 'options', 'min', 'max', 'step', 'default', 'readOnly', 'hidden', 'required'];
 
+export const DESCRIPTION_LIMIT = 300;
+
 export function defineCollectionHook(hook) {
  const where = `defineCollectionHook(${JSON.stringify(hook?.collection ?? '')})`;
- if (!hook || typeof hook !== 'object') throw new Error('defineCollectionHook takes { collection, field?, kind?, format?, editor? }');
+ if (!hook || typeof hook !== 'object') throw new Error('defineCollectionHook takes { collection, field?, kind?, description?, format?, editor? }');
  if (!KEY.test(String(hook.collection ?? ''))) throw new Error(`${where}: collection must be a collection's key`);
  if (hook.field !== undefined && !KEY.test(String(hook.field))) throw new Error(`${where}: field must be a field's key`);
  if (hook.kind !== undefined && !KEY.test(String(hook.kind))) throw new Error(`${where}: kind must be a field kind`);
+ if (hook.description !== undefined && (typeof hook.description !== 'string' || hook.description.length > DESCRIPTION_LIMIT)) throw new Error(`${where}: description must be words, up to ${DESCRIPTION_LIMIT} characters`);
  if (hook.format !== undefined && typeof hook.format !== 'function') throw new Error(`${where}: format must be a function`);
  if (hook.editor !== undefined && typeof hook.editor !== 'function') throw new Error(`${where}: editor must be a function`);
  if (!hook.format && !hook.editor) throw new Error(`${where}: give it a format or an editor function`);
@@ -34,6 +39,22 @@ const fits = (hook, collection, field) => hook.collection === collection && (hoo
 
 // The manifest's flag: which kinds of hook the site has.
 export const collectionHookFlags = (hooks) => ({ format: hooks.some((hook) => hook.format), editor: hooks.some((hook) => hook.editor) });
+
+// The manifest's list of hook files (collectionHooks.list), one per file:
+// what it is for, where it applies and the file's own text. `sources` is
+// the generated module's collectionHookSources.
+export const collectionHookList = (sources) =>
+ (Array.isArray(sources) ? sources : []).map(({ file, source, cut, hook }) => ({
+  file,
+  collection: hook.collection,
+  field: hook.field ?? null,
+  kind: hook.kind ?? null,
+  format: typeof hook.format === 'function',
+  editor: typeof hook.editor === 'function',
+  description: hook.description ?? '',
+  source,
+  ...(cut ? { cut: true } : {}),
+ }));
 
 // A field's value as the hooks draw it: the value as given when no hook
 // formats it, else the first matching hook's answer as plain words. A hook

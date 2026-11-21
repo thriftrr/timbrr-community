@@ -308,7 +308,7 @@ same-site paths). Nothing a page holds becomes markup.
  ],
  "thirdParties": [ /* every service a block can load, below */ ],
  "siteLoads": ["timbrr_hosting", "timbrr_analytics", "timbrr_draft", "google_fonts"], // loaded by every page
- "collectionHooks": { "format": false, "editor": true } // which kinds of collection hook the site's code has
+ "collectionHooks": { "format": false, "editor": true, "list": [ /* one per hook file, below */ ] } // which kinds of collection hook the site's code has
 }
 ```
 
@@ -356,6 +356,26 @@ studio asks the site's `POST /__timbrr/collection-fields` before its entry
 editor draws a collection's form. A manifest without it is read as neither; one
 whose `collectionHooks` isn't two booleans is refused whole, like any other
 shape the studio doesn't read.
+
+`collectionHooks.list` is one entry per hook file, for the studio's Editor
+hooks screen. It is read when the site builds (`modules/collection-hooks.js`),
+from the site's `collection-hooks/` files and nothing else; a site with none has `[]`.
+Adding it doesn't change the manifest version, and a studio that doesn't
+know it ignores it.
+
+```jsonc
+{
+ "file": "collection-hooks/class-price.js", // from the layer's root; the site's own files come first
+ "collection": "classes",
+ "field": "price",       // or null: `kind` or every field
+ "kind": null,           // or "date", "number"…
+ "format": false,        // has a format function
+ "editor": true,         // has an editor function
+ "description": "…",     // the hook's own words, up to 300 characters; "" when it gives none
+ "source": "…",          // the file's text, the first 8000 characters, cut with no marker
+ "cut": true             // only there when the text was cut
+}
+```
 
 A layer's tier is its `package.json` → `timbrr.tier`; anything undeclared
 is `private`. A block's tier, which picks its shelf in the studio's tray,

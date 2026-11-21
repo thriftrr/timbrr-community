@@ -420,6 +420,51 @@ docs/collections.md). The layer has what draws them:
   studio's public `/api/public/sites/:slug/collections` and keeps the answer a
   minute at the edge (the working copies, never cached, on a dev or
   staging address).
+- `collection_list` as **Rows with pictures** or **People** (`layout: 'rows'`
+  or `'person'`): each entry is drawn from fields the owner names by the name
+  the editor shows (or the key): `row_picture` and `row_date` (empty: the
+  first of their kind), `row_end` (a time, "10:00 – 14:00"), `row_line` (up to
+  four, in a quiet line), `row_price`, `row_places` (a number: "8 places
+  left", "Full" at 0, which also drops the button), `row_button` (its words) and
+  `row_link` (a link field; empty: the entry's page). The app asks the studio
+  for exactly those fields, after one cached look at the collection's field
+  names. Rows also have `row_group` (a heading for each month, when the
+  list is in date order), the visitor's controls (`TbListFilters`: the first
+  `choices` entry set to buttons is a row of pressed buttons, the others menus
+  "Level  Any level", `row_sort` an order menu, `row_month` a month menu, the
+  count when `count` is on, a Clear link) and `ending` (a closing line,
+  `ending_text`, `ending_label`, `ending_to`). A visitor's picks live in the
+  address: `?<block id>.<field>=<value>` (a menu, one value; the phone sheet
+  can pick several of one field, `a|b`, sent to the studio as an `in`
+  filter), `?<block id>._month=2027-01`, `?<block id>._sort=price`; the buttons
+  and the Clear link are real links, the menus a GET form, so narrowing works
+  without scripts (the phone's sheet needs them). On a phone the controls
+  become one "Filter · Bread" button that opens a `<dialog>` bottom sheet
+  (chips for every choice, "Any time" and the months, "Show 3 classes", Clear
+  all) and the order menu beside it. When nothing is left the list says so in
+  the collection's words ("No Beginner Bread classes in January."), what there is
+  instead, buttons that take one thing away (only ones that leave something) and
+  "The next Beginner Bread class" when another month has one; `empty_label` and
+  `empty_to` are the quiet link under them ("Get an email when one's added":
+  link a page with a Form block). `row_about` (`{value}`) names a value's page
+  topic in those words. `more_label` and `more_to` put a link at the top right
+  ("See all Bread classes"). People is a round picture, the name, a quiet line
+  and `row_button` as a link ("More about [name]" is their first name). The
+  plain parts are `app/utils/collection-rows.js`, checked by
+  `node layer/scripts/check-collection-rows.mjs`.
+- `collection_summary` ("Entry summary"): the card for an entry's page: a
+  price (`price`, `price_before`, `price_after`), rows of an icon and words,
+  one of them the places left (a number: "8 places left", "Full" at 0), a
+  button, a note and, when full, `full_note` instead of the button. It works for
+  any collection because every word can hold the entry's tokens
+  (`{price}`, `{starts}`: docs/collections.md in the studio), filled when the
+  studio serves the page; tokens are not filled inside a Split's columns, so
+  put it on the page itself. With `sticky` on, a phone gets a bar fixed to the
+  bottom (price, places, button) and the rows stay in the page.
+- `breadcrumb` ("Breadcrumb"): "Classes › Bread", steps of words and an
+  address (none: where the visitor is). Words and addresses take tokens;
+  an address from a token is kept to lower-case paths
+  (`/classes/categories/{category}`).
 - `collection_repeat` ("Repeat for each entry"): the blocks after it, up to an
   "End of the repeat" (the same block with `end` on, a preset), drawn once
   for each entry its `source` lists, in `columns` with a `gap`. The
