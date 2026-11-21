@@ -241,7 +241,11 @@ export async function useTimbrrPage(path) {
   if (import.meta.client) return new Promise(() => {});
   return { site, page, blocks, style };
  }
- if (fetched.error.value || !fetched.data.value?.page) throw pageError(fetched.error.value?.statusCode === 404, address.value);
+ if (fetched.error.value || !fetched.data.value?.page) {
+  const missing = fetched.error.value?.statusCode === 404;
+  if (missing && import.meta.server) nuxtApp.runWithContext(tellStudioMissed); // after an await, so the app is given back
+  throw pageError(missing, address.value);
+ }
  return { site, page, blocks, style };
 }
 
@@ -267,6 +271,19 @@ function pageError(missing, address) {
   message: missing ? `Nothing is published at ${address}.` : `Couldn't get ${address} from the studio.`,
   fatal: import.meta.client,
  });
+}
+
+// A published site's 404 told to the studio (app/utils/missed.js), once per
+// visit and after the response (waitUntil), so the visitor never waits for
+// it. Server-side only, and never for a dev or staging address, which is a
+// draft. The request's own path, not the page's: what the visitor asked for.
+function tellStudioMissed() {
+ const event = useRequestEvent();
+ if (!event || event.context.timbrrPreview) return;
+ const config = useRuntimeConfig();
+ const path = missedPath({ method: event.method, pathname: useRequestURL().pathname, userAgent: useRequestHeaders(['user-agent'])['user-agent'] ?? '' });
+ const api = String(config.timbrr?.api ?? '').trim().replace(/\/+$/, '');
+ event.waitUntil?.(reportMissed({ api, site: String(config.public.site ?? '').trim(), path }));
 }
 
 function text(value) {
