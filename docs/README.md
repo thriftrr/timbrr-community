@@ -239,6 +239,16 @@ site's own Worker, so publishing is live within a minute with no rebuild:
   Cloudflare's managed robots.txt can put an "Allow: /" in front of ours.
   A site mustn't ship its own `public/robots.txt` or `public/sitemap.xml`,
   which would shadow these.
+- `/__timbrr/preview/<token>`: a preview link (the studio's
+  docs/publishing.md, "Preview links"): a page's working copy, not live
+  yet, for someone the team shared it with, drawn like any page
+  (`useTimbrrPage` with `source`) under a slim bar, with comments pinned to
+  blocks. `/__timbrr/share/<token>` (GET) and `/__timbrr/share/<token>/comments`
+  (POST) pass the read and a comment on to the studio from the site's
+  server, the comment with the visitor's address and the relay secret as a
+  form send does. Never cached, never indexed; on a dev address these paths
+  skip the sign-in gate, since the token is the key. Comment words are
+  only ever drawn as text.
 - `/__timbrr/canvas` and `/__timbrr/manifest.json`: what the studio edits
   the site through. In the studio, Site settings → Site code is where the
   builder finds them (staff only); a site whose code is deployed sets it to
