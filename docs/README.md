@@ -225,7 +225,14 @@ site's own Worker, so publishing is live within a minute with no rebuild:
   noindex). The page's header and footer from the Library, if it has them,
   come with it as `page.frame`, and `useTimbrrPage` hands them on as
   `site.frame`, so neither this page nor a site's own needs to do anything
-  about them. Nothing published there is a 404, drawn by `app/error.vue`.
+  about them. Nothing published there is a 404, drawn by `app/error.vue`
+  in the site's own look: the home page's header and footer (read with
+  `useTimbrrPage('/', { quiet: true })`, which sets no head tags and loads
+  no analytics), "We couldn't find that page", the search box when site
+  search is on, the menu's first four pages and the opening hours from
+  Site details. Still a 404, still noindex. An old address of a page's
+  (it moved, or was deleted while live) comes back from the studio as a
+  404 with `data.redirect`, like an entry's, and is a 301 here.
   A site's own page wins for its address, which is why the starter's
   `pages/index.vue` draws the published home page itself once a site is
   set (`useTimbrrPage('/')`), and the block shelf otherwise.
