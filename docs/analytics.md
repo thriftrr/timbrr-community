@@ -10,7 +10,10 @@ this is the site's half: a script, a route and a binding.
   `src/layer/analytics/a.src.js`, minified by `node layer/scripts/build-analytics.mjs`
   into `server/utils/analytics-script.js` (committed; `make check` fails when it
   is out of date). It stores nothing on the device and sends events with
-  `navigator.sendBeacon`.
+  `navigator.sendBeacon`. A browser with Do Not Track (`navigator.doNotTrack`
+  or `window.doNotTrack` is `'1'`) or Global Privacy Control
+  (`navigator.globalPrivacyControl === true`) gets a script that returns
+  before anything else: no listeners, no beacon, not one request.
 - **`/__timbrr/hit`**: takes the script's events and writes one Workers
   Analytics Engine data point each. Always `204`, whatever was or wasn't
   counted; `400` for a body that isn't one the script sends. Never sets a cookie.
