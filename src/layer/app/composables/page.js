@@ -15,7 +15,8 @@
 // `source` reads the page from another of the site's own routes instead: a
 // preview link's (/__timbrr/share/<token>, pages/__timbrr/preview/[token].vue)
 // answers in the same shape. Then nothing follows a draft, no redirect is
-// followed, and the whole answer comes back too, as `data`.
+// followed, and the whole answer comes back too, as `data`. `quiet` sets
+// no head tags of the page's and loads no analytics (see below).
 
 const HEX = /^#[0-9a-f]{6}$/i;
 // A BCP 47 tag, as the studio's Settings stores it (sites.seo.language): <html lang>, WCAG 3.1.1.
@@ -23,7 +24,7 @@ const LANGUAGE = /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/i;
 const DOMAIN = /^(?=.{4,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i;
 const LOCAL = /^(?:localhost|127\.0\.0\.1|\[::1\])$/;
 
-export async function useTimbrrPage(path, { source = '' } = {}) {
+export async function useTimbrrPage(path, { source = '', quiet = false } = {}) {
  const route = useRoute();
  const address = computed(() => toValue(path) ?? route.path);
  // /__timbrr/ is the studio's (the canvas, the manifest, the page reads),
@@ -199,26 +200,32 @@ export async function useTimbrrPage(path, { source = '' } = {}) {
   return !preview.value && picks?.on === true && events.length && typeof page.value.path === 'string' ? { events: events.join(','), where: `${page.value.path} ${typeof page.value.id === 'string' ? page.value.id : ''}`.trim() } : null;
  });
 
- useHead({
-  htmlAttrs: { lang: () => site.value.language, 'data-tb-a': () => analytics.value?.events, 'data-tb-p': () => analytics.value?.where },
-  link: () => (head.value.canonical ? [{ rel: 'canonical', href: head.value.canonical }] : []),
-  script: () => (analytics.value ? [{ key: 'timbrr-analytics', src: '/__timbrr/a.js', defer: true }] : []),
- });
- useSeoMeta({
-  title: () => head.value.title,
-  description: () => head.value.description,
-  robots: () => head.value.robots,
-  ogType: () => (head.value.title ? 'website' : undefined),
-  ogSiteName: () => site.value.name || undefined,
-  ogUrl: () => head.value.canonical,
-  ogTitle: () => head.value.shareTitle,
-  ogDescription: () => head.value.shareDescription,
-  ogImage: () => head.value.image,
-  twitterCard: () => (head.value.title ? (head.value.image ? 'summary_large_image' : 'summary') : undefined),
-  twitterTitle: () => head.value.shareTitle,
-  twitterDescription: () => head.value.shareDescription,
-  twitterImage: () => head.value.image,
- });
+ // `quiet`: the site and its look only, for a page that sets its own head
+ // and counts nothing (error.vue reads the home page for its header, menu
+ // and footer): no title, share tags, canonical address or analytics.
+ if (quiet) useHead({ htmlAttrs: { lang: () => site.value.language } });
+ else {
+  useHead({
+   htmlAttrs: { lang: () => site.value.language, 'data-tb-a': () => analytics.value?.events, 'data-tb-p': () => analytics.value?.where },
+   link: () => (head.value.canonical ? [{ rel: 'canonical', href: head.value.canonical }] : []),
+   script: () => (analytics.value ? [{ key: 'timbrr-analytics', src: '/__timbrr/a.js', defer: true }] : []),
+  });
+  useSeoMeta({
+   title: () => head.value.title,
+   description: () => head.value.description,
+   robots: () => head.value.robots,
+   ogType: () => (head.value.title ? 'website' : undefined),
+   ogSiteName: () => site.value.name || undefined,
+   ogUrl: () => head.value.canonical,
+   ogTitle: () => head.value.shareTitle,
+   ogDescription: () => head.value.shareDescription,
+   ogImage: () => head.value.image,
+   twitterCard: () => (head.value.title ? (head.value.image ? 'summary_large_image' : 'summary') : undefined),
+   twitterTitle: () => head.value.shareTitle,
+   twitterDescription: () => head.value.shareDescription,
+   twitterImage: () => head.value.image,
+  });
+ }
 
  // The forms the page shows, for the blocks and footer that name one. This has
  // to be set up before the await: a watcher made after it belongs to no
