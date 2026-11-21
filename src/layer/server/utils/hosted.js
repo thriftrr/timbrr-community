@@ -30,12 +30,21 @@ export function hostedHost(event) {
 // can't be a domain isn't asked about. One call per host at a time, and when
 // the studio fails, the last answer stands.
 export async function siteForHost(event, host) {
- if (!DOMAIN.test(host)) return null;
+ const answer = await hostAnswer(event, host);
+ return answer === undefined ? undefined : answer.slug;
+}
+
+// The studio's whole answer for a hostname: { slug } for a live site,
+// { slug: null, paused } for a live site billing took off the web (the
+// short-break page, the studio's docs/account.md), { slug: null } for
+// none, or undefined when the studio can't be asked.
+export async function hostAnswer(event, host) {
+ if (!DOMAIN.test(host)) return { slug: null };
  const hit = known.get(host);
- if (hit && hit.until > Date.now()) return hit.slug;
+ if (hit && hit.until > Date.now()) return hit.answer;
  if (!asking.has(host)) asking.set(host, ask(event, host).finally(() => asking.delete(host)));
- const slug = await asking.get(host);
- return slug === undefined && hit ? hit.slug : slug;
+ const answer = await asking.get(host);
+ return answer === undefined && hit ? hit.answer : answer;
 }
 
 async function ask(event, host) {
@@ -45,10 +54,11 @@ async function ask(event, host) {
    signal: AbortSignal.timeout(WAIT),
   });
   if (res.status !== 200 && res.status !== 404) throw new Error(`it answered ${res.status}`);
-  const slug = res.status === 404 ? null : (await res.json()).slug;
+  const body = res.status === 404 ? {} : await res.json();
+  const answer = { slug: body.slug ?? null, ...(body.paused && typeof body.paused === 'object' ? { paused: body.paused } : {}) };
   if (known.size > 5000) known.clear();
-  known.set(host, { slug, until: Date.now() + KEEP });
-  return slug;
+  known.set(host, { answer, until: Date.now() + KEEP });
+  return answer;
  } catch (error) {
   console.error(`[timbrr] Couldn't look up ${host} with the studio: ${error.message}`);
   return undefined;

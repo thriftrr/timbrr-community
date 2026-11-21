@@ -10,7 +10,8 @@ import { equal, ok } from 'node:assert/strict';
 // '#imports' is Nuxt's; here it's just the runtime config on the event.
 registerHooks({ resolve: (name, context, next) => (name === '#imports' ? { url: 'data:text/javascript,export const useRuntimeConfig = (e) => e.config;', shortCircuit: true } : next(name, context)) });
 
-const { HOSTED_HOST_HEADER, hostedHost, siteForHost } = await import('../server/utils/hosted.js');
+const { HOSTED_HOST_HEADER, hostAnswer, hostedHost, siteForHost } = await import('../server/utils/hosted.js');
+const { breakPageHtml } = await import('../server/utils/break-page.js');
 const { passHost } = await import('../server/utils/preview.js');
 const { fetchPublished } = await import('../server/utils/studio.js');
 
@@ -40,7 +41,12 @@ globalThis.fetch = async (url, init = {}) => {
  await tick();
  if (down) return new Response('', { status: 503 });
  const { pathname, searchParams } = new URL(url);
- if (pathname.startsWith('/api/public/hosts/')) return decodeURIComponent(pathname.slice(18)) === 'gym.example.com' ? Response.json({ slug: 'north' }) : new Response('', { status: 404 });
+ if (pathname.startsWith('/api/public/hosts/')) {
+  const host = decodeURIComponent(pathname.slice(18));
+  if (host === 'gym.example.com') return Response.json({ slug: 'north' });
+  if (host === 'paused.example.com') return Response.json({ slug: null, paused: { name: 'Bakery <b>', phone: '(503) 555-0142', email: '', address: '14 Front St', hours: [{ day: 'Monday', text: 'Closed' }] } });
+  return new Response('', { status: 404 });
+ }
  if (pathname.endsWith('/epoch')) return Response.json({ epoch, bookmarks: { db: BM(epoch), 'bad name': BM(9), sites_2: 'not one' } });
  sent.push(init.headers ?? {});
  const body = pages[searchParams.get('path')];
@@ -85,6 +91,17 @@ down = true;
 equal(await siteForHost(event('x'), 'gym.example.com'), 'north');
 equal(await siteForHost(event('x'), 'never-seen.example.com'), undefined);
 down = false;
+
+// A live site billing took off the web: no slug, the short-break page's
+// facts instead, every value escaped and no script.
+const paused = await hostAnswer(event('x'), 'paused.example.com');
+equal(paused.slug, null);
+equal(await siteForHost(event('x'), 'paused.example.com'), null);
+const html = breakPageHtml(paused.paused);
+ok(html.includes('Bakery &lt;b&gt; is taking a short break online'));
+ok(html.includes('tel:5035550142') && html.includes('Mon Closed') && html.includes('14 Front St'));
+ok(!html.includes('<script'));
+ok(breakPageHtml({ name: 'X', hours: [] }).includes('Please check back soon.'));
 
 // A burst on a cold page: one epoch call and one page call.
 calls.length = 0;
