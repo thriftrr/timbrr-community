@@ -1,5 +1,6 @@
 import { defineEventHandler, getRequestURL, setHeader } from 'h3';
 import { useRuntimeConfig } from '#imports';
+import { isSharePath } from '../../server/utils/share.js';
 
 // Every page may be framed by the site itself and one studio only:
 // NUXT_PUBLIC_STUDIO_ORIGIN (read per request, so changing it needs no
@@ -12,18 +13,25 @@ import { useRuntimeConfig } from '#imports';
 // robots.txt alone isn't enough there, since Cloudflare's managed
 // robots.txt puts an "Allow: /" for every crawler in front of ours, and
 // crawlers merge the two.
+//
+// A form's share page (/f/<slug>, server/utils/share.js) is the exception on
+// both counts: it is what the embed snippet frames, from any site, so it may be
+// framed by anyone, and it is never indexed, since the link is for sending
+// people, not for search. Nothing else on the site changes.
 export default defineEventHandler((event) => {
  const config = useRuntimeConfig(event);
  // Whatever its case: a router that matched /__TIMBRR/canvas would still be the canvas.
- const canvas = getRequestURL(event).pathname.replace(/\/+$/, '').toLowerCase() === '/__timbrr/canvas';
- if (canvas || !config.public.site) setHeader(event, 'X-Robots-Tag', 'noindex, nofollow');
+ const pathname = getRequestURL(event).pathname;
+ const canvas = pathname.replace(/\/+$/, '').toLowerCase() === '/__timbrr/canvas';
+ const share = isSharePath(pathname);
+ if (canvas || share || !config.public.site) setHeader(event, 'X-Robots-Tag', 'noindex, nofollow');
  setHeader(event, 'X-Content-Type-Options', 'nosniff');
  setHeader(event, 'Referrer-Policy', 'strict-origin-when-cross-origin');
  // Browsers only keep this from an https answer, so local http is untouched.
  // No includeSubDomains: a client's other hosts under its domain aren't ours to decide.
  setHeader(event, 'Strict-Transport-Security', 'max-age=31536000');
  const studio = String(config.public.studioOrigin ?? '').replace(/\/$/, '');
- let policy = `frame-ancestors 'self' ${studio || 'http://localhost:* http://127.0.0.1:*'}; base-uri 'self'; object-src 'none'`;
+ let policy = `frame-ancestors ${share ? '*' : `'self' ${studio || 'http://localhost:* http://127.0.0.1:*'}`}; base-uri 'self'; object-src 'none'`;
  // A site sharing its origin with the studio (timbrr.app's marketing site)
  // runs no script but its own files, Nuxt's inline ones marked with this
  // page's nonce (server/plugins/csp-nonce.js) and the form's Turnstile.
