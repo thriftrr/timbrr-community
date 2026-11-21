@@ -7,7 +7,8 @@
 // paths, not crawlers, which ask for a thousand addresses nobody linked.
 const BOT = /bot|crawl|spider|slurp|preview/i;
 const SKIPPED = /^\/(?:_nuxt|api|\.well-known|__timbrr)(?:\/|$)/;
-const EXTENSION = /\.[a-z0-9]{1,8}$/i;
+// An old website's page (/menu.html) is a page someone followed a link to, so .html and .htm count.
+const EXTENSION = /\.(?!html?$)[a-z0-9]{1,8}$/i;
 
 // The path worth reporting, or '' when this request isn't.
 export function missedPath({ method = 'GET', pathname = '', userAgent = '' }) {
