@@ -69,6 +69,7 @@ import { createInsights } from '../../utils/insights-canvas.js';
  const active = shallowRef(null); // { id, field, kind } being typed into
  const editor = shallowRef(null); // the open rich-text editor, if any
  const crop = ref(null); // the picture being cropped by hand: { id, field, x, y, zoom }
+ const changed = ref({}); // a reviewer's marks: { [block id]: [changed field paths] }, from the studio
  let parentOrigin = null;
  let focused = null; // { id, field, key } the studio last heard has the caret
 
@@ -225,6 +226,7 @@ import { createInsights } from '../../utils/insights-canvas.js';
    editor,
    crop,
    dropColumn,
+   changed,
    activate,
    release,
    edit: (id, field, value) => post({ type: 'timbrr:edit', id, field, value }),
@@ -419,6 +421,7 @@ import { createInsights } from '../../utils/insights-canvas.js';
    editable.value = !preview && message.editable !== false;
    library.value = message.library !== false;
    endZone.value = message.endZone !== false;
+   changed.value = message.changed && typeof message.changed === 'object' && !Array.isArray(message.changed) ? message.changed : {};
    connected.value = true;
    // Measured every time, since what's absolute (a header's panels) moves the
    // page's height without moving its box. A preview answers every page with

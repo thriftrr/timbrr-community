@@ -207,3 +207,29 @@ export function dropTargets(blocks, y) {
  }
  return { index: still(index) ? null : index, slots };
 }
+
+// A block's own classes and anchor, set in the studio's Pro tools (its
+// inspector's Advanced section) and cleaned there too. Cleaned again here
+// before they reach the page: classes keep only a-z, 0-9, _ and - (up to 10),
+// an anchor is a slug. Empty is none.
+export function blockClasses(block) {
+ if (typeof block?.classes !== 'string') return '';
+ const words = block.classes
+  .toLowerCase()
+  .split(/\s+/)
+  .map((word) => word.replace(/[^a-z0-9_-]/g, '').slice(0, 40))
+  .filter(Boolean);
+ return [...new Set(words)].slice(0, 10).join(' ');
+}
+
+export function blockAnchor(block) {
+ if (typeof block?.anchor !== 'string') return undefined;
+ const slug = block.anchor
+  .toLowerCase()
+  .replace(/^#/, '')
+  .replace(/[^a-z0-9-]+/g, '-')
+  .replace(/^-+|-+$/g, '')
+  .slice(0, 64)
+  .replace(/-+$/, '');
+ return slug || undefined;
+}
