@@ -11,6 +11,24 @@ const NO_ANSWER = ['page', 'calc', 'hidden'];
 const has = (value) => value !== undefined && value !== null && value !== '';
 const list = (value) => (Array.isArray(value) ? value : []);
 
+// A pattern the owner writes (Pro, "Must match a pattern"). A repeat inside a
+// repeat, like (a+)+, is the shape that can hang a server on a crafted answer,
+// so it isn't accepted.
+const REGEX_NESTED = /\([^)]*[+*][^)]*\)[+*{]/;
+export function formRegexProblem(source) {
+ if (!source) return 'Write a pattern.';
+ if (source.length > 200) return 'Keep it to 200 characters.';
+ if (REGEX_NESTED.test(source)) return 'A repeat inside a repeat, like (a+)+, can hang the form. Rewrite it.';
+ try {
+  new RegExp(source);
+ } catch {
+  return "That isn't a valid pattern.";
+ }
+ return '';
+}
+// A broken pattern never stops anyone sending: it only checks when it's sound.
+export const formRegexMatches = (source, answer) => formRegexProblem(source) !== '' || new RegExp(source).test(String(answer));
+
 export const isFormInput = (field) => !NO_ANSWER.includes(field.type);
 
 export function isFormEmail(value) {
@@ -108,5 +126,6 @@ export function formFieldError(doc, field, answers, today) {
  if (valid.pattern === 'zip' && !/^\d{5}$/.test(answer)) return 'Enter a 5-digit ZIP code, like 55408.';
  if (valid.pattern === 'digits' && !/^\d+$/.test(answer)) return 'Use numbers only.';
  if (valid.pattern === 'letters' && !/^[A-Za-z\s'’-]+$/.test(answer)) return 'Use letters only.';
+ if (valid.regex && !formRegexMatches(valid.regex, answer)) return valid.message || "That doesn't look right. Check it and try again.";
  return '';
 }
