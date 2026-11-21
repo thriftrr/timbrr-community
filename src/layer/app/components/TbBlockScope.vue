@@ -58,11 +58,17 @@
    : {}),
  });
  const look = computed(() => (inColumn.value ? { 'tb-in-column': true, 'tb-in-column--wide': place.value === 'column-wide' } : pageLook()));
+ // The block's own classes after the site's (Pro tools), and on the live site
+ // its anchor as the root's id, so /page#anchor scrolls to it.
+ const own = computed(() => blockClasses(props.block));
+ const anchor = computed(() => blockAnchor(props.block));
  const placement = computed(() => props.block.lock?.id ?? props.block.id);
  const selected = computed(() => placementOf(canvas?.selected.value) === placement.value || Boolean(canvas?.chosen?.value.some((id) => placementOf(id) === placement.value)));
  const dragged = computed(() => placementOf(canvas?.dragging.value) === placement.value);
  const hovered = computed(() => Boolean(props.block.lock) && canvas?.hovered.value === placement.value);
  const tabbed = computed(() => !props.block.lock || props.block.lock.index === 0);
+ // A reviewer's canvas: the block differs from the live copy (canvas.changed).
+ const changed = computed(() => Boolean(canvas?.changed?.value && Object.hasOwn(canvas.changed.value, placement.value)) && tabbed.value);
 
  // The pointer is over any block of a locked piece: its tab shows, however
  // far down the piece that is.
@@ -121,7 +127,7 @@
 </script>
 
 <template>
- <component :is="component" v-if="!canvas && data" :data="data" :class="look" :data-block-id="block.id" />
+ <component :is="component" v-if="!canvas && data" :id="anchor" :data="data" :class="[look, own]" :data-block-id="block.id" />
  <div
   v-else-if="canvas"
   class="tb-frame"
@@ -133,6 +139,7 @@
    'is-hovered': hovered,
    'is-first': block.lock?.index === 0,
    'is-last': block.lock && block.lock.index === block.lock.count - 1,
+   'is-changed': changed,
   }"
   :data-block-id="block.id"
   :data-block-type="block.type"
@@ -141,8 +148,9 @@
   @pointerleave="hover(false)"
   @dblclick="open"
  >
-  <component :is="component" v-if="data" :data="data" :class="look" />
+  <component :is="component" v-if="data" :data="data" :class="[look, own]" />
   <div v-else class="tb-frame__missing">This site can't show “{{ block.type }}” blocks. Its code doesn't have them.</div>
+  <span v-if="changed" class="tb-frame__changed">Changed</span>
   <span
    v-if="tabbed"
    class="tb-frame__tab"

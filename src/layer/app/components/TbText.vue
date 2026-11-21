@@ -20,6 +20,9 @@
  const scope = useBlockScope();
  const editable = computed(() => Boolean(canvas?.editable.value && scope));
  const value = computed(() => String(valueAt(props.data, props.field) ?? ''));
+ // A reviewer's canvas marks it when it differs from the live copy.
+ const fieldChanged = useFieldChanged();
+ const marked = computed(() => fieldChanged(props.field));
  // In a collection's template the studio draws `{tokens}` filled with a
  // entry's values, and sends the words as they're kept beside them
  // (useKeptValue, composables/collections.js). What's typed into is always the
@@ -136,12 +139,13 @@
 </script>
 
 <template>
- <component :is="tag" v-if="!editable">{{ value }}</component>
+ <component :is="tag" v-if="!editable" :class="{ 'tb-changed': marked }">{{ value }}</component>
  <component
   :is="tag"
   v-else
   ref="el"
   class="tb-text"
+  :class="{ 'tb-changed': marked }"
   contenteditable="plaintext-only"
   :data-field="field"
   @focus="onFocus"

@@ -9,6 +9,8 @@
 //  chosen               ref: more placements picked with it (shift, Cmd or Ctrl), outlined too
 //  hovered              ref: the locked placement under the pointer, for its tab
 //  editable             ref: false when the studio says this person can only look
+//  changed              ref: { [block id]: [field paths] } a reviewer sees marked as
+//                       changed since the last publish (an added block: [])
 //  library              ref: false when this person can't open the Library
 //  active               ref: { id, field, kind } of the one field being typed into
 //                       ('text' or 'rich'); a rich field keeps its editor while
@@ -73,6 +75,19 @@ export function useFieldShown() {
   if (hasWords(value)) return true;
   const active = canvas?.active?.value;
   return Boolean(active && scope && active.id === scope.id && active.field === field);
+ };
+}
+
+// For <TbText>: whether a reviewer's canvas marks this field as changed since
+// the last publish (canvas.changed). A field matches a changed path that is
+// it, inside it, or holds it (a whole row that's new). Never on the site.
+export function useFieldChanged() {
+ const canvas = useCanvas();
+ const scope = useBlockScope();
+ return (field) => {
+  const id = scope?.lock?.id ?? scope?.id;
+  const paths = id ? canvas?.changed?.value?.[id] : null;
+  return Array.isArray(paths) && paths.some((path) => path === field || path.startsWith(`${field}.`) || field.startsWith(`${path}.`));
  };
 }
 
