@@ -20,6 +20,7 @@ import { defineCollectionHook } from '#timbrr/collection-hook';
 export default defineCollectionHook({
  collection: 'events', // the collection's key (required)
  field: 'price', // one field by its key; or `kind: 'date'` for every field of a kind; neither: every field
+ description: 'Shows 0 as Free and asks for the price in dollars.', // what it is for, in plain words (up to 300 characters); optional
  format: (value, { field, entry, collection }) => (value === 0 ? 'Free' : `$${value.toFixed(2)}`),
  editor: (field, { collection }) => ({ label: 'Price (USD)', prepend: '$', required: true }),
 });
@@ -30,6 +31,18 @@ alike. The layer's `modules/collection-hooks.js` gathers every layer's
 `collection-hooks/*.js` (the site's first) into `#timbrr/collection-hooks` when the
 site builds. A hook with no `collection`, or with neither `format` nor `editor`,
 fails the build.
+
+`description` is for the people who run the site: the studio's Editor hooks
+screen shows it beside the hook. Words only, up to 300 characters; longer
+fails the build. A complete example, an editor hook that locks a field, is
+`docs/examples/collection-hooks/class-price.js`.
+
+## What the studio reads
+
+The manifest (`docs/manifest.md`, `collectionHooks.list`) lists every hook file,
+read when the site builds: its name, where it applies, which functions it has,
+its description and its text (the first 8,000 characters, cut with no marker;
+`cut: true` says it was). Nothing outside `collection-hooks/` is ever read.
 
 ## format
 

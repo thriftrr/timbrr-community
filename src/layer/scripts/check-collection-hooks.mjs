@@ -11,8 +11,9 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { defineCollectionHook, editorFields, formatFieldValue, collectionHookFlags } from '../schema/collection-hooks.js';
-import { collectionHookFiles, collectionHooksModule } from '../modules/collection-hooks.js';
+import { defineCollectionHook, editorFields, formatFieldValue, collectionHookFlags, collectionHookList } from '../schema/collection-hooks.js';
+import { buildManifest } from '../schema/manifest.js';
+import { collectionHookFiles, collectionHookSourcesModule, collectionHooksModule, hookSource } from '../modules/collection-hooks.js';
 
 const LAYER = (process.env.LAYER ?? 'http://localhost:3001').replace(/\/$/, '');
 const site = mkdtempSync(join(tmpdir(), 'collection-hooks-'));
@@ -25,6 +26,7 @@ writeFileSync(
 export default defineCollectionHook({
  collection: 'events',
  field: 'price',
+ description: 'Shows 0 as Free.',
  format: (value) => (value === 0 ? 'Free' : '$' + Number(value).toFixed(2)),
  editor: (field) => ({ label: 'Price (USD)', prepend: '$', min: 0, required: true, key: 'stolen', kind: 'text', options: [] }),
 });
@@ -56,6 +58,9 @@ const cases = {
   assert.throws(() => defineCollectionHook({ collection: 'events', format: 'x' }), /format must be a function/);
   assert.throws(() => defineCollectionHook({ collection: 'events', field: 'Bad key', format: () => '' }), /field/);
   assert.equal(defineCollectionHook({ collection: 'events', format: () => '' }).collection, 'events');
+  assert.throws(() => defineCollectionHook({ collection: 'events', description: 'x'.repeat(301), format: () => '' }), /description/);
+  assert.throws(() => defineCollectionHook({ collection: 'events', description: 7, format: () => '' }), /description/);
+  assert.equal(defineCollectionHook({ collection: 'events', description: 'x'.repeat(300), format: () => '' }).description.length, 300);
  },
  'the module finds each layer\'s hook files, sorted, and nothing else': () => {
   const files = collectionHookFiles(site);
@@ -68,9 +73,14 @@ const cases = {
  },
  'the generated module loads, with every hook in it': async () => {
   writeFileSync(join(site, 'collection-hooks.mjs'), collectionHooksModule(collectionHookFiles(site)));
+  writeFileSync(join(site, 'collection-hook-sources.mjs'), collectionHookSourcesModule(collectionHookFiles(site)));
   const { collectionHooks } = await import(pathToFileURL(join(site, 'collection-hooks.mjs')).href);
+  const { collectionHookSources } = await import(pathToFileURL(join(site, 'collection-hook-sources.mjs')).href);
+  assert.doesNotMatch(collectionHooksModule(collectionHookFiles(site)), /source/);
   assert.equal(collectionHooks.length, 3);
+  assert.equal(collectionHookSources.length, 3);
   cases.hooks = collectionHooks;
+  cases.sources = collectionHookSources;
  },
  'format: by field, then by kind; plain words; other collections and fields untouched': () => {
   const hooks = cases.hooks;
@@ -112,6 +122,31 @@ const cases = {
   assert.deepEqual(collectionHookFlags(cases.hooks), { format: true, editor: true });
   assert.deepEqual(collectionHookFlags([]), { format: false, editor: false });
   assert.deepEqual(collectionHookFlags([defineCollectionHook({ collection: 'a', format: () => '' })]), { format: true, editor: false });
+ },
+ 'the manifest lists each hook file with its words and text': () => {
+  const list = collectionHookList(cases.sources);
+  assert.deepEqual(list.map((one) => one.file), ['collection-hooks/broken.js', 'collection-hooks/events.js', 'collection-hooks/kinds.js']);
+  const events = list.find((one) => one.file.endsWith('events.js'));
+  assert.deepEqual({ ...events, source: '' }, { file: 'collection-hooks/events.js', collection: 'events', field: 'price', kind: null, format: true, editor: true, description: 'Shows 0 as Free.', source: '' });
+  assert.match(events.source, /defineCollectionHook/);
+  assert.equal('cut' in events, false);
+  const kinds = list.find((one) => one.file.endsWith('kinds.js'));
+  assert.deepEqual([kinds.field, kinds.kind, kinds.format, kinds.editor, kinds.description], [null, 'date', true, false, '']);
+  assert.deepEqual(collectionHookList([]), []);
+  const layer = { name: 'check', version: '0.0.0', tier: 'community' };
+  const manifest = buildManifest('check', [layer], [], cases.hooks, cases.sources);
+  assert.deepEqual(Object.keys(manifest.collectionHooks).sort(), ['editor', 'format', 'list']);
+  assert.equal(manifest.version, 1);
+  assert.deepEqual(buildManifest('check', [layer], []).collectionHooks, { format: false, editor: false, list: [] });
+ },
+ 'a long file is cut at 8000 characters, with no marker, and says so': () => {
+  const long = join(site, 'collection-hooks', 'long.txt');
+  writeFileSync(long, `${'a'.repeat(7999)}😀${'b'.repeat(50)}`);
+  const cut = hookSource(long);
+  assert.equal(cut.cut, true);
+  assert.equal(cut.source, 'a'.repeat(7999));
+  writeFileSync(long, 'a'.repeat(8000));
+  assert.deepEqual([hookSource(long).cut, hookSource(long).source.length], [false, 8000]);
  },
  'a running site: the manifest carries the flag': async () => {
   if (process.env.SKIP_LAYER) return 'skipped';
