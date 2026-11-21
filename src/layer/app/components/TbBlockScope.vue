@@ -63,7 +63,7 @@
  const own = computed(() => blockClasses(props.block));
  const anchor = computed(() => blockAnchor(props.block));
  const placement = computed(() => props.block.lock?.id ?? props.block.id);
- const selected = computed(() => placementOf(canvas?.selected.value) === placement.value);
+ const selected = computed(() => placementOf(canvas?.selected.value) === placement.value || Boolean(canvas?.chosen?.value.some((id) => placementOf(id) === placement.value)));
  const dragged = computed(() => placementOf(canvas?.dragging.value) === placement.value);
  const hovered = computed(() => Boolean(props.block.lock) && canvas?.hovered.value === placement.value);
  const tabbed = computed(() => !props.block.lock || props.block.lock.index === 0);
@@ -166,8 +166,9 @@
     <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
     <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
    </svg>
-   <span>{{ block.lock?.name ?? def?.label ?? block.type }}<template v-if="inColumn"> · in a column</template><template v-for="part in summary" :key="part"> · {{ part }}</template><template v-if="block.hidden"> · hidden</template></span>
-   <button v-if="block.lock && canvas.library.value" type="button" class="tb-frame__open" @click="open">Edit in Library</button>
+   <span v-if="block.lock">{{ block.lock.name }} · shared<template v-if="Number.isInteger(block.lock.pages)"> · on {{ block.lock.pages }} {{ block.lock.pages === 1 ? 'page' : 'pages' }}</template><template v-if="block.hidden"> · hidden</template></span>
+   <span v-else>{{ def?.label ?? block.type }}<template v-if="inColumn"> · in a column</template><template v-for="part in summary" :key="part"> · {{ part }}</template><template v-if="block.hidden"> · hidden</template></span>
+   <button v-if="block.lock && canvas.library.value" type="button" class="tb-frame__open" @click="open">Edit in the Library</button>
    <button v-if="canStyle" type="button" class="tb-frame__style" aria-haspopup="true" :aria-expanded="styling ? 'true' : 'false'" :aria-controls="styling ? menuId : undefined" @click.stop="styling = !styling">Style ▾</button>
   </span>
   <div v-if="styling && canStyle" :id="menuId" ref="menu" class="tb-frame__menu" role="group" aria-label="Style of this block" @keydown="onMenuKey" @click.stop>

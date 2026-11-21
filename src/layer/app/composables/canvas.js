@@ -6,6 +6,7 @@
 //
 // What the canvas page provides (docs/manifest.md § Inline editing):
 //  selected, dragging   refs: the selected block's id; a block moved by its tab
+//  chosen               ref: more placements picked with it (shift, Cmd or Ctrl), outlined too
 //  hovered              ref: the locked placement under the pointer, for its tab
 //  editable             ref: false when the studio says this person can only look
 //  changed              ref: { [block id]: [field paths] } a reviewer sees marked as
@@ -18,7 +19,7 @@
 //  activate, release    take `active`, and give it up
 //  edit                 a field's new value: a string, or a rich-text document
 //  focus, blur          the caret is in a field (with what it allows there), or left
-//  open                 a locked placement's Edit in Library
+//  open                 a locked placement's Edit in the Library
 //  toolsFor, labelFor   a field's formatting tools and its name, from its block
 export const CANVAS_KEY = Symbol('timbrr-canvas');
 export const BLOCK_KEY = Symbol('timbrr-block');

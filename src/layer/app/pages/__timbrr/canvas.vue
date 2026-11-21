@@ -60,6 +60,8 @@ import { createInsights } from '../../utils/insights-canvas.js';
  const endZone = ref(true); // false: the document takes no more blocks, so nothing asks for one
  const ui = ref(1); // how much larger to draw the chrome, as the studio scales the frame down
  const selected = ref(null);
+ // More blocks picked with it (shift, Cmd or Ctrl): placements, outlined too.
+ const chosen = ref([]);
  const dragging = ref(null); // a block being moved inside the canvas
  const hovered = ref(null); // the locked placement under the pointer
  const dropIndex = ref(null);
@@ -218,6 +220,7 @@ import { createInsights } from '../../utils/insights-canvas.js';
  if (!preview) {
   provide(CANVAS_KEY, {
    selected,
+   chosen,
    dragging,
    hovered,
    editable,
@@ -454,6 +457,8 @@ import { createInsights } from '../../utils/insights-canvas.js';
   }
   if (message.type === 'timbrr:select') {
    selected.value = message.id ?? null;
+   chosen.value = Array.isArray(message.ids) ? message.ids.filter((id) => typeof id === 'string').slice(0, 50) : [];
+   if (chosen.value.length) nextTick(sendChosen);
    // Picked with the keyboard or the outline: it comes into view, in the
    // studio's own scroller too (the frame is as tall as the page).
    if (selected.value) nextTick(() => document.querySelector(`[data-block-id="${CSS.escape(String(selected.value))}"]`)?.scrollIntoView({ block: 'nearest' }));
@@ -499,6 +504,17 @@ import { createInsights } from '../../utils/insights-canvas.js';
   return { rect };
  }
 
+ // Where the picked blocks are, together, in this frame (it's as tall as the
+ // page), for the studio's bar above them.
+ function sendChosen() {
+  const ids = [selected.value, ...chosen.value].filter(Boolean).map(placementOf);
+  const boxes = [...document.querySelectorAll('[data-block-id]')].filter((el) => ids.includes(placementOf(el.dataset.lockId || el.dataset.blockId))).map((el) => el.getBoundingClientRect());
+  if (!boxes.length) return;
+  const top = Math.min(...boxes.map((box) => box.top)) + window.scrollY;
+  const bottom = Math.max(...boxes.map((box) => box.bottom)) + window.scrollY;
+  post({ type: 'timbrr:chosen', top: Math.round(top), bottom: Math.round(bottom) });
+ }
+
  // Links never take the canvas anywhere. Clicking a block selects it, and
  // clicking anywhere else selects nothing. A click on the header or footer
  // also says which it was, and one on an image which field it is, for the
@@ -516,6 +532,15 @@ import { createInsights } from '../../utils/insights-canvas.js';
   }
   const frame = event.target.closest?.('[data-block-id]');
   const id = frame?.dataset.blockId ?? null;
+  // Shift, Cmd or Ctrl on a block other than the selected one picks it too:
+  // the studio says what's selected now (`timbrr:select` with `ids`).
+  const extend = Boolean(id && selected.value && placementOf(id) !== placementOf(selected.value) && (event.shiftKey || event.metaKey || event.ctrlKey));
+  if (extend) {
+   // A shift-click also selects text; that isn't what was meant.
+   window.getSelection()?.removeAllRanges();
+   post({ type: 'timbrr:click', id, extend: true });
+   return;
+  }
   selected.value = id;
   const side = event.target.closest?.('[data-chrome]')?.dataset.chrome;
   const field = frame && event.target.closest?.('[data-image-field]')?.dataset.imageField;
