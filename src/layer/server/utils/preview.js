@@ -55,7 +55,9 @@ export function gateUrl(event, { slug, kind }, next) {
 }
 
 // Whether the token opens the site: true, false, or null when the studio
-// can't be asked, which serves nothing.
+// can't be asked, which serves nothing. A pass from a preview link
+// (docs/people.md in the studio) also sets event.context.timbrrPreviewLink
+// to { path, expiresAt }, for the banner.
 export async function previewAllowed(event, slug, token) {
  if (!token) return false;
  try {
@@ -63,7 +65,11 @@ export async function previewAllowed(event, slug, token) {
    headers: { accept: 'application/json', authorization: `Bearer ${token}` },
    signal: AbortSignal.timeout(WAIT),
   });
-  if (res.status === 200) return true;
+  if (res.status === 200) {
+   const body = await res.json().catch(() => null);
+   if (body?.link) event.context.timbrrPreviewLink = body.link;
+   return true;
+  }
   if (res.status === 401) return false;
   throw new Error(`it answered ${res.status}`);
  } catch (error) {
