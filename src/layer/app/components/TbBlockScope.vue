@@ -58,11 +58,17 @@
    : {}),
  });
  const look = computed(() => (inColumn.value ? { 'tb-in-column': true, 'tb-in-column--wide': place.value === 'column-wide' } : pageLook()));
+ // The block's own classes after the site's (Pro tools), and on the live site
+ // its anchor as the root's id, so /page#anchor scrolls to it.
+ const own = computed(() => blockClasses(props.block));
+ const anchor = computed(() => blockAnchor(props.block));
  const placement = computed(() => props.block.lock?.id ?? props.block.id);
- const selected = computed(() => placementOf(canvas?.selected.value) === placement.value);
+ const selected = computed(() => placementOf(canvas?.selected.value) === placement.value || Boolean(canvas?.chosen?.value.some((id) => placementOf(id) === placement.value)));
  const dragged = computed(() => placementOf(canvas?.dragging.value) === placement.value);
  const hovered = computed(() => Boolean(props.block.lock) && canvas?.hovered.value === placement.value);
  const tabbed = computed(() => !props.block.lock || props.block.lock.index === 0);
+ // A reviewer's canvas: the block differs from the live copy (canvas.changed).
+ const changed = computed(() => Boolean(canvas?.changed?.value && Object.hasOwn(canvas.changed.value, placement.value)) && tabbed.value);
 
  // The pointer is over any block of a locked piece: its tab shows, however
  // far down the piece that is.
@@ -121,7 +127,7 @@
 </script>
 
 <template>
- <component :is="component" v-if="!canvas && data" :data="data" :class="look" :data-block-id="block.id" />
+ <component :is="component" v-if="!canvas && data" :id="anchor" :data="data" :class="[look, own]" :data-block-id="block.id" />
  <div
   v-else-if="canvas"
   class="tb-frame"
@@ -133,6 +139,7 @@
    'is-hovered': hovered,
    'is-first': block.lock?.index === 0,
    'is-last': block.lock && block.lock.index === block.lock.count - 1,
+   'is-changed': changed,
   }"
   :data-block-id="block.id"
   :data-block-type="block.type"
@@ -141,8 +148,9 @@
   @pointerleave="hover(false)"
   @dblclick="open"
  >
-  <component :is="component" v-if="data" :data="data" :class="look" />
+  <component :is="component" v-if="data" :data="data" :class="[look, own]" />
   <div v-else class="tb-frame__missing">This site can't show “{{ block.type }}” blocks. Its code doesn't have them.</div>
+  <span v-if="changed" class="tb-frame__changed">Changed</span>
   <span
    v-if="tabbed"
    class="tb-frame__tab"
@@ -158,8 +166,9 @@
     <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
     <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
    </svg>
-   <span>{{ block.lock?.name ?? def?.label ?? block.type }}<template v-if="inColumn"> · in a column</template><template v-for="part in summary" :key="part"> · {{ part }}</template><template v-if="block.hidden"> · hidden</template></span>
-   <button v-if="block.lock && canvas.library.value" type="button" class="tb-frame__open" @click="open">Edit in Library</button>
+   <span v-if="block.lock">{{ block.lock.name }} · shared<template v-if="Number.isInteger(block.lock.pages)"> · on {{ block.lock.pages }} {{ block.lock.pages === 1 ? 'page' : 'pages' }}</template><template v-if="block.hidden"> · hidden</template></span>
+   <span v-else>{{ def?.label ?? block.type }}<template v-if="inColumn"> · in a column</template><template v-for="part in summary" :key="part"> · {{ part }}</template><template v-if="block.hidden"> · hidden</template></span>
+   <button v-if="block.lock && canvas.library.value" type="button" class="tb-frame__open" @click="open">Edit in the Library</button>
    <button v-if="canStyle" type="button" class="tb-frame__style" aria-haspopup="true" :aria-expanded="styling ? 'true' : 'false'" :aria-controls="styling ? menuId : undefined" @click.stop="styling = !styling">Style ▾</button>
   </span>
   <div v-if="styling && canStyle" :id="menuId" ref="menu" class="tb-frame__menu" role="group" aria-label="Style of this block" @keydown="onMenuKey" @click.stop>

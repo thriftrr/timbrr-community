@@ -11,6 +11,12 @@
 // published page there is a 404, and the studio not answering a 502: both
 // are thrown as fatal errors, so Nuxt shows error.vue on the server and in
 // the browser alike.
+//
+// `source` reads the page from another of the site's own routes instead: a
+// preview link's (/__timbrr/share/<token>, pages/__timbrr/preview/[token].vue)
+// answers in the same shape. Then nothing follows a draft, no redirect is
+// followed, and the whole answer comes back too, as `data`. `quiet` sets
+// no head tags of the page's and loads no analytics (see below).
 
 const HEX = /^#[0-9a-f]{6}$/i;
 // A BCP 47 tag, as the studio's Settings stores it (sites.seo.language): <html lang>, WCAG 3.1.1.
@@ -18,18 +24,18 @@ const LANGUAGE = /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/i;
 const DOMAIN = /^(?=.{4,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i;
 const LOCAL = /^(?:localhost|127\.0\.0\.1|\[::1\])$/;
 
-export async function useTimbrrPage(path) {
+export async function useTimbrrPage(path, { source = '', quiet = false } = {}) {
  const route = useRoute();
  const address = computed(() => toValue(path) ?? route.path);
  // /__timbrr/ is the studio's (the canvas, the manifest, the page reads),
  // never a page. Asking for one there could only ever loop back here.
- if (address.value.startsWith('/__timbrr/')) throw pageError(true, address.value);
+ if (!source && address.value.startsWith('/__timbrr/')) throw pageError(true, address.value);
  const here = useRequestURL();
  const nuxtApp = useNuxtApp(); // navigateTo after an await needs the app it started in
  const forms = useTimbrrForms();
  // No second try: a 502 means the site's server already gave the studio
  // its chance (and its 8 seconds).
- const fetched = useFetch('/__timbrr/page', { query: { path: address }, retry: false });
+ const fetched = source ? useFetch(source, { retry: false }) : useFetch('/__timbrr/page', { query: { path: address }, retry: false });
 
  // The site as its header and footer draw it: { name, domain, nav, accent,
  // frame, details, overHero, search }. `frame` is the page's header and footer from
@@ -54,6 +60,8 @@ export async function useTimbrrPage(path) {
    language: LANGUAGE.test(value.language ?? '') ? value.language : 'en',
    // Site search's settings (utils/search.js): off unless the studio says on.
    search: searchSettings(value.search),
+   // Analytics as the studio says it (utils/how-we-count.js): /how-we-count and its footer link.
+   analytics: analyticsSettings(fetched.data.value?.analytics),
   };
  });
  // On a dev or staging address (the note the server writes says it is one),
@@ -69,7 +77,7 @@ export async function useTimbrrPage(path) {
  const LIVE_GIVE_UP = 15;
  onMounted(() => {
   const when = document.getElementById('timbrr-preview-when');
-  if (!when) return;
+  if (!when || source) return;
   let stamp = null;
   let misses = 0;
   let busy = false;
@@ -194,26 +202,32 @@ export async function useTimbrrPage(path) {
   return !preview.value && picks?.on === true && events.length && typeof page.value.path === 'string' ? { events: events.join(','), where: `${page.value.path} ${typeof page.value.id === 'string' ? page.value.id : ''}`.trim() } : null;
  });
 
- useHead({
-  htmlAttrs: { lang: () => site.value.language, 'data-tb-a': () => analytics.value?.events, 'data-tb-p': () => analytics.value?.where },
-  link: () => (head.value.canonical ? [{ rel: 'canonical', href: head.value.canonical }] : []),
-  script: () => (analytics.value ? [{ key: 'timbrr-analytics', src: '/__timbrr/a.js', defer: true }] : []),
- });
- useSeoMeta({
-  title: () => head.value.title,
-  description: () => head.value.description,
-  robots: () => head.value.robots,
-  ogType: () => (head.value.title ? 'website' : undefined),
-  ogSiteName: () => site.value.name || undefined,
-  ogUrl: () => head.value.canonical,
-  ogTitle: () => head.value.shareTitle,
-  ogDescription: () => head.value.shareDescription,
-  ogImage: () => head.value.image,
-  twitterCard: () => (head.value.title ? (head.value.image ? 'summary_large_image' : 'summary') : undefined),
-  twitterTitle: () => head.value.shareTitle,
-  twitterDescription: () => head.value.shareDescription,
-  twitterImage: () => head.value.image,
- });
+ // `quiet`: the site and its look only, for a page that sets its own head
+ // and counts nothing (error.vue reads the home page for its header, menu
+ // and footer): no title, share tags, canonical address or analytics.
+ if (quiet) useHead({ htmlAttrs: { lang: () => site.value.language } });
+ else {
+  useHead({
+   htmlAttrs: { lang: () => site.value.language, 'data-tb-a': () => analytics.value?.events, 'data-tb-p': () => analytics.value?.where },
+   link: () => (head.value.canonical ? [{ rel: 'canonical', href: head.value.canonical }] : []),
+   script: () => (analytics.value ? [{ key: 'timbrr-analytics', src: '/__timbrr/a.js', defer: true }] : []),
+  });
+  useSeoMeta({
+   title: () => head.value.title,
+   description: () => head.value.description,
+   robots: () => head.value.robots,
+   ogType: () => (head.value.title ? 'website' : undefined),
+   ogSiteName: () => site.value.name || undefined,
+   ogUrl: () => head.value.canonical,
+   ogTitle: () => head.value.shareTitle,
+   ogDescription: () => head.value.shareDescription,
+   ogImage: () => head.value.image,
+   twitterCard: () => (head.value.title ? (head.value.image ? 'summary_large_image' : 'summary') : undefined),
+   twitterTitle: () => head.value.shareTitle,
+   twitterDescription: () => head.value.shareDescription,
+   twitterImage: () => head.value.image,
+  });
+ }
 
  // The forms the page shows, for the blocks and footer that name one. This has
  // to be set up before the await: a watcher made after it belongs to no
@@ -233,7 +247,7 @@ export async function useTimbrrPage(path) {
  // (a 301 on the server, a plain move in the browser). Only a path on this
  // site or a library file's own address is followed; anything else is the
  // 404 it came with, so the answer can never send a visitor elsewhere.
- const moved = fetched.error.value?.statusCode === 404 ? fetched.error.value.data?.data?.redirect?.to : null;
+ const moved = !source && fetched.error.value?.statusCode === 404 ? fetched.error.value.data?.data?.redirect?.to : null;
  const external = mediaFile(moved);
  if ((sitePath(moved) || external) && moved !== address.value) {
   await nuxtApp.runWithContext(() => navigateTo(moved, { redirectCode: 301, replace: true, external }));
@@ -242,11 +256,12 @@ export async function useTimbrrPage(path) {
   return { site, page, blocks, style };
  }
  if (fetched.error.value || !fetched.data.value?.page) {
+  if (source && fetched.error.value?.statusCode === 404) throw createError({ statusCode: 404, statusMessage: 'Page Not Found', message: "This preview link doesn't work any more.", data: { preview: true }, fatal: import.meta.client });
   const missing = fetched.error.value?.statusCode === 404;
   if (missing && import.meta.server) nuxtApp.runWithContext(tellStudioMissed); // after an await, so the app is given back
   throw pageError(missing, address.value);
  }
- return { site, page, blocks, style };
+ return { site, page, blocks, style, data: fetched.data };
 }
 
 // A path on this site, never another site's address or a protocol.

@@ -225,7 +225,14 @@ site's own Worker, so publishing is live within a minute with no rebuild:
   noindex). The page's header and footer from the Library, if it has them,
   come with it as `page.frame`, and `useTimbrrPage` hands them on as
   `site.frame`, so neither this page nor a site's own needs to do anything
-  about them. Nothing published there is a 404, drawn by `app/error.vue`.
+  about them. Nothing published there is a 404, drawn by `app/error.vue`
+  in the site's own look: the home page's header and footer (read with
+  `useTimbrrPage('/', { quiet: true })`, which sets no head tags and loads
+  no analytics), "We couldn't find that page", the search box when site
+  search is on, the menu's first four pages and the opening hours from
+  Site details. Still a 404, still noindex. An old address of a page's
+  (it moved, or was deleted while live) comes back from the studio as a
+  404 with `data.redirect`, like an entry's, and is a 301 here.
   A site's own page wins for its address, which is why the starter's
   `pages/index.vue` draws the published home page itself once a site is
   set (`useTimbrrPage('/')`), and the block shelf otherwise.
@@ -233,12 +240,33 @@ site's own Worker, so publishing is live within a minute with no rebuild:
   public API (`GET /api/public/sites/:slug/page`, published pages of
   approved sites only) and keeping the answer in Cloudflare's edge cache
   for a minute. The browser never talks to the studio.
+- `/f/<slug>` and `GET /__timbrr/share?slug=…`: a form's share page (the
+  studio's docs/forms.md, "Share link"). The page shows the site's logo or
+  name, the live form (`TbForm`, so it sends, checks and thanks as the Form
+  block's does) and a line with the site's name, address and domain; a
+  link that is off, or never was, is "This form is closed" with a 404. The
+  server asks `GET /api/public/sites/:slug/share/:shareSlug` (a dev or
+  staging address, the working copy) and keeps the answer a minute at the
+  edge. It is the one route other sites may frame, since it is what the
+  embed snippet frames (`frame-ancestors *`, and every other page keeps
+  `'self'` and the studio), and it is never indexed. It wins over a site's
+  own page at `/f/<something>`. `scripts/check-share.mjs` checks it.
 - `GET /sitemap.xml` and `GET /robots.txt`, from the published pages. With
   no `NUXT_PUBLIC_SITE` (the starter, the shared canvas) robots.txt turns
   every crawler away and every page says `X-Robots-Tag: noindex`, since
   Cloudflare's managed robots.txt can put an "Allow: /" in front of ours.
   A site mustn't ship its own `public/robots.txt` or `public/sitemap.xml`,
   which would shadow these.
+- `/__timbrr/preview/<token>`: a preview link (the studio's
+  docs/publishing.md, "Preview links"): a page's working copy, not live
+  yet, for someone the team shared it with, drawn like any page
+  (`useTimbrrPage` with `source`) under a slim bar, with comments pinned to
+  blocks. `/__timbrr/share/<token>` (GET) and `/__timbrr/share/<token>/comments`
+  (POST) pass the read and a comment on to the studio from the site's
+  server, the comment with the visitor's address and the relay secret as a
+  form send does. Never cached, never indexed; on a dev address these paths
+  skip the sign-in gate, since the token is the key. Comment words are
+  only ever drawn as text.
 - `/__timbrr/canvas` and `/__timbrr/manifest.json`: what the studio edits
   the site through. In the studio, Site settings → Site code is where the
   builder finds them (staff only); a site whose code is deployed sets it to

@@ -6,8 +6,11 @@
 //
 // What the canvas page provides (docs/manifest.md § Inline editing):
 //  selected, dragging   refs: the selected block's id; a block moved by its tab
+//  chosen               ref: more placements picked with it (shift, Cmd or Ctrl), outlined too
 //  hovered              ref: the locked placement under the pointer, for its tab
 //  editable             ref: false when the studio says this person can only look
+//  changed              ref: { [block id]: [field paths] } a reviewer sees marked as
+//                       changed since the last publish (an added block: [])
 //  library              ref: false when this person can't open the Library
 //  active               ref: { id, field, kind } of the one field being typed into
 //                       ('text' or 'rich'); a rich field keeps its editor while
@@ -16,7 +19,7 @@
 //  activate, release    take `active`, and give it up
 //  edit                 a field's new value: a string, or a rich-text document
 //  focus, blur          the caret is in a field (with what it allows there), or left
-//  open                 a locked placement's Edit in Library
+//  open                 a locked placement's Edit in the Library
 //  toolsFor, labelFor   a field's formatting tools and its name, from its block
 export const CANVAS_KEY = Symbol('timbrr-canvas');
 export const BLOCK_KEY = Symbol('timbrr-block');
@@ -72,6 +75,19 @@ export function useFieldShown() {
   if (hasWords(value)) return true;
   const active = canvas?.active?.value;
   return Boolean(active && scope && active.id === scope.id && active.field === field);
+ };
+}
+
+// For <TbText>: whether a reviewer's canvas marks this field as changed since
+// the last publish (canvas.changed). A field matches a changed path that is
+// it, inside it, or holds it (a whole row that's new). Never on the site.
+export function useFieldChanged() {
+ const canvas = useCanvas();
+ const scope = useBlockScope();
+ return (field) => {
+  const id = scope?.lock?.id ?? scope?.id;
+  const paths = id ? canvas?.changed?.value?.[id] : null;
+  return Array.isArray(paths) && paths.some((path) => path === field || path.startsWith(`${field}.`) || field.startsWith(`${path}.`));
  };
 }
 
