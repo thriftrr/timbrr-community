@@ -13,6 +13,8 @@ for (const pathname of ['/logo.png', '/wp-login.php', '/sitemap.xml', '/_nuxt/x'
 for (const agent of ['Googlebot/2.1', 'Mozilla/5.0 (compatible; bingbot)', 'Baiduspider', 'Yahoo! Slurp', 'Slack-ImgProxy link preview', 'SomeCrawler']) equal(missedPath({ pathname: '/old-menu', userAgent: agent }), '', agent);
 equal(missedPath({ method: 'POST', pathname: '/old-menu', userAgent: ua }), '');
 equal(missedPath({ pathname: '/v1.2/menu', userAgent: ua }), '/v1.2/menu', 'a dot in a folder is not an extension');
+for (const pathname of ['/menu.html', '/about/team.HTM']) equal(missedPath({ pathname, userAgent: ua }), pathname, `an old website's page counts: ${pathname}`);
+equal(missedPath({ pathname: '/menu.html.bak', userAgent: ua }), '', 'a file that only starts like a page does not');
 
 const calls = [];
 const studio = async (url, init) => (calls.push({ url, init }), { ok: true, status: 204 });
