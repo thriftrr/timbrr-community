@@ -51,7 +51,7 @@ export function studioApi(event) {
 // The studio's gate for this address, coming back to `next`.
 export function gateUrl(event, { slug, kind }, next) {
  const query = new URLSearchParams({ site: slug, kind, next });
- return `${studioApi(event)}/auth/preview?${query}`;
+ return `${studioApi(event)}/forestrr/auth/preview?${query}`;
 }
 
 // Whether the token opens the site: true, false, or null when the studio
