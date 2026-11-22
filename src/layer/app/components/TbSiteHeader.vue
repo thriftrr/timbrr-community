@@ -1031,6 +1031,12 @@
   .tb-site-header--left.tb-site-header--menu-right .tb-site-header__links {
    justify-content: flex-end;
   }
+
+  /* Right: the menu and the buttons as one group, the menu straight before
+     the buttons, so the icons go after them (FB-140). */
+  .tb-site-header--left.tb-site-header--menu-right .tb-site-header__icons {
+   order: 1;
+  }
  }
 
  /* Logo centered: the icons, the name and the buttons on one row, and the

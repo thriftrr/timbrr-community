@@ -234,8 +234,9 @@ A definition may list `without: [...]`: look fields (`background`,
 the inspector doesn't offer it.
 
 The header's `menuAt` (`left` | `center` | `right`) is where the menu sits on
-the bar when `layout` is `left`: after the logo, in the middle, or on the
-right beside the buttons.
+the bar when `layout` is `left`: after the logo, in the middle of the room
+between the logo and the buttons, or on the right, straight before the
+buttons, with the icons moved after them (FB-140). Phones are unchanged.
 
 In the canvas, a block's tab names how it's set (its `layout`, and its
 `background` when that isn't the first option), and on the selected block a
