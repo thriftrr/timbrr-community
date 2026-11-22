@@ -151,7 +151,7 @@
         <StudioDemoIcon name="check" :size="16" class="sd-try__check" />
         <span>Done. That's how it works on your site too.</span>
         <button type="button" class="sd-try__link" @click="room = next.room">Next: {{ next.label }}</button>
-        <a class="sd-try__link" href="/start">Start yours</a>
+        <a class="sd-try__link" href="/forestrr/start">Start yours</a>
        </template>
        <template v-else>{{ tryText ?? current.try }}</template>
       </div>
@@ -160,7 +160,7 @@
     </div>
     <p class="sd-toast" :class="{ 'is-on': message, 'has-link': message && signup }" role="status" aria-live="polite" @mouseenter="hold" @mouseleave="message && hide(2400)" @focusin="hold" @focusout="message && hide(2400)">
      {{ message }}
-     <a v-if="message && signup" class="sd-toast__link" href="/start">Start yours</a>
+     <a v-if="message && signup" class="sd-toast__link" href="/forestrr/start">Start yours</a>
     </p>
     <p v-if="frozen" class="sd-frozen">Runs in Preview and on the site</p>
    </div>
