@@ -3,8 +3,7 @@
  // buttons and small print, beside a tall photo on either side. Centered
  // stacks the text in one column with the photo under it, when there is one.
  // Full bleed runs the photo edge to edge behind the words, darkened so
- // light text reads on any picture, and it's what a see-through header can
- // sit on: the header's height is added to the room above the words.
+ // light text reads on any picture.
  const props = defineProps({ data: { type: Object, required: true } });
  // Empty fields aren't drawn, but one being typed into on the canvas stays.
  const shows = useFieldShown();
@@ -110,7 +109,7 @@
   display: flex;
   align-items: center;
   min-height: clamp(440px, 52vw, 680px);
-  padding-block: calc(var(--site-space-above, var(--site-space)) * 1.4 + var(--tb-header-height, 0px)) calc(var(--site-space-below, var(--site-space)) * 1.4);
+  padding-block: calc(var(--site-space-above, var(--site-space)) * 1.4) calc(var(--site-space-below, var(--site-space)) * 1.4);
   overflow: hidden;
   background: var(--site-dark);
  }

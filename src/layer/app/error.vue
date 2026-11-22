@@ -26,7 +26,7 @@
  // The home page's read, for the site's look. A home that won't load either
  // leaves the plain page.
  const home = missing.value && !linkGone.value && !asked.startsWith('/__timbrr/') ? await useTimbrrPage('/', { quiet: true }).catch(() => null) : null;
- const site = computed(() => (home ? { ...home.site.value, overHero: false } : null));
+ const site = computed(() => (home ? home.site.value : null));
  const framed = computed(() => Boolean(site.value && (site.value.name || site.value.domain)));
  const popular = computed(() => (site.value?.nav ?? []).filter((item) => typeof item?.to === 'string' && item.to !== asked).slice(0, 4));
  const hours = computed(() => groupHours(site.value?.details?.hours));

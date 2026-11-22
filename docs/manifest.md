@@ -493,9 +493,7 @@ an optional `details` (Site details: `{ phone, email, street, city, region,
 postal, timezone, note, hours: [{ closed, open, close }] }`, null from an
 older studio). The canvas keeps only strings and items of that shape, at
 most 40 a level, and at most seven rows of hours; every link goes through
-`safeHref()`. It works out one thing itself, `overHero`: whether the page's
-first block is a full-bleed Hero, the one thing a see-through header can sit
-over. `useTimbrrPage` does the same on a published page.
+`safeHref()`.
 
 **NavItem `layout`** says how an item opens: `link` draws no menu (its
 children are kept, not drawn, so switching to a link and back loses
@@ -546,7 +544,6 @@ with the defaults (`headerFromSite`), so there's one way of drawing them.
  showSocial: false,                    // the site's social icons, from site.details.social
  start: '',                            // the studio's starting look; the site ignores it
  sticky: 'never',                      // 'never' | 'always' | 'up'
- transparent: false,
  phone: {
   style: 'accordion',                  // 'accordion' | 'drill' | 'full'
   pins: { button: false, phone: false, cart: false },
@@ -573,10 +570,8 @@ A frame saved in the shape before this one (`style`, `cta`, `bar`; a
 footer's `style`) still draws: the components read everything through
 `upgradeHeader` and `upgradeFooter`, pure functions that return the new
 shape and hand new-shape data back untouched. `layout` is what marks the new
-shape. `transparent` only applies with `overHero`, and draws solid otherwise.
-It goes solid after 30px of scroll or while a menu is open, and while it
-applies the header sets `--tb-header-height` on the document root, so a
-full-bleed Hero can pad for it.
+shape. The see-through header was removed (FB-137): `headerSchema` drops a
+stored `transparent`, so a header saved with it draws solid.
 
 The two blocks draw through those same components, so what's built in the
 Library is what a page shows. They read the site's name and details from
@@ -589,16 +584,14 @@ canvas, so with `stage: true` the first block (a `site_header` or
 `site_footer`; anything else draws as usual) goes on a stand-in page instead
 of the blocks: a striped hero and placeholder rows, tall enough to scroll,
 with the frame drawn by `<TbFrameStage>` through the same component a page
-uses. Its `site` is the one sent, with `frame: { [side]: <the block's data> }`
-and `overHero: true`, so a see-through header always has something to sit
-over. There are no block frames, no selection, no typing and no drops, and
+uses. Its `site` is the one sent, with `frame: { [side]: <the block's data> }`. There are no block frames, no selection, no typing and no drops, and
 clicking never sends `timbrr:click`, so the studio's panel stays open. A
 click on a header sends `timbrr:part` instead, with the block's `id` and
 `part`, the panel section it belongs to: `announce` (the announcement or
 small links), `logo`, `menu`, `buttons` (buttons and icons) or `look`
 (the bar itself). The phone menu's toggle sends nothing. The
 header's own controls work and links still don't go anywhere. The frame's
-document scrolls, so sticky, slide-away and see-through run as on a live
+document scrolls, so sticky and slide-away run as on a live
 page, which is why the studio gives this frame a fixed height, and why the
 canvas sends no `timbrr:size` here. Its width is what the header's phone
 menu goes by, under 860px.

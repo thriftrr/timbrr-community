@@ -4,7 +4,7 @@
  // what's built is what the site shows. The site's name and details come
  // from the canvas; with no site to read, as on the starter's block shelf, a
  // placeholder stands in. The Library's stage doesn't come through here:
- // this is the header alone, with no hero to be see-through over.
+ // this is the header alone.
  // `showMenu` is never saved: the studio's hover preview of a phone menu
  // style sets it, to draw the menu opened (FB-111).
  const props = defineProps({ data: { type: Object, required: true } });

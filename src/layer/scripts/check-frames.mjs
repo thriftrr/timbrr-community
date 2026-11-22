@@ -26,7 +26,6 @@ const GROUPS = {
  'defaults': () => {
   equal(HEADER_DEFAULTS.layout, 'left');
   equal(HEADER_DEFAULTS.sticky, 'never');
-  equal(HEADER_DEFAULTS.transparent, false);
   equal(HEADER_DEFAULTS.phone.style, 'accordion');
   deepEqual(HEADER_DEFAULTS.logo, { src: '', alt: '' });
   deepEqual(HEADER_DEFAULTS.icons.phone, { on: false });

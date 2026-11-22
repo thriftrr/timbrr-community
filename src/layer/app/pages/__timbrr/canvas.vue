@@ -101,7 +101,7 @@ import { createInsights } from '../../utils/insights-canvas.js';
 
  const text = (value, max) => (typeof value === 'string' ? value.slice(0, max) : '');
 
- function siteFrom(value, firstBlock, brand) {
+ function siteFrom(value, brand) {
   if (!value || typeof value !== 'object') return null;
   return {
    brand: normalizeBrand(brand),
@@ -111,7 +111,6 @@ import { createInsights } from '../../utils/insights-canvas.js';
    cta: buttonFrom(value.cta),
    details: detailsFrom(value.details),
    language: /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/i.test(value.language ?? '') ? value.language : 'en',
-   overHero: isHeroBleed(firstBlock),
    // The connected Shopify store ({ domain, token, apiVersion, shopUrl },
    // a public token), or null: the shop blocks read it straight from here.
    shop: shopConfig(value.shop),
@@ -414,7 +413,7 @@ import { createInsights } from '../../utils/insights-canvas.js';
   if (message.type === 'timbrr:doc') {
    blocks.value = Array.isArray(message.blocks) ? message.blocks : [];
    theme.value = message.theme && typeof message.theme === 'object' ? message.theme : {};
-   site.value = siteFrom(message.site, blocks.value[0], theme.value.brand);
+   site.value = siteFrom(message.site, theme.value.brand);
    forms.value = message.forms && typeof message.forms === 'object' ? message.forms : {};
    const sent = message.collections && typeof message.collections === 'object' ? message.collections : {};
    collections.value = { lists: sent.lists && typeof sent.lists === 'object' ? sent.lists : {}, raw: sent.raw && typeof sent.raw === 'object' ? sent.raw : {} };

@@ -14,8 +14,7 @@
  const here = useRequestURL();
  const { site: home, style } = await useTimbrrPage('/');
  if (!home.value.search.on) throw createError({ statusCode: 404, statusMessage: 'Page Not Found', message: 'Nothing is published at /search.', fatal: import.meta.client });
- // Never see-through: there's no hero here for it to sit over.
- const site = computed(() => ({ ...home.value, overHero: false }));
+ const site = home;
 
  const first = (value) => String([value].flat()[0] ?? '');
  const all = (value) => [value].flat().flatMap((one) => (typeof one === 'string' ? one.split(',') : []));
