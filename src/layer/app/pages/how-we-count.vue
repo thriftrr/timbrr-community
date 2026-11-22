@@ -10,7 +10,7 @@
  const here = useRequestURL();
  const { site: home, style } = await useTimbrrPage('/');
  if (!home.value.analytics.on) throw createError({ statusCode: 404, statusMessage: 'Page Not Found', message: `Nothing is published at ${HOW_WE_COUNT_PATH}.`, fatal: import.meta.client });
- const site = computed(() => ({ ...home.value, overHero: false }));
+ const site = home;
 
  const name = computed(() => site.value.name || site.value.domain || 'this site');
  const counted = computed(() => countedLines(site.value.analytics));

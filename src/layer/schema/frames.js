@@ -110,7 +110,6 @@ export const headerSchema = z.object({
  // changed since and put it back. The site never reads it.
  start: z.string().max(40).default(''),
  sticky: z.enum(['never', 'always', 'up']).default('never'),
- transparent: z.boolean().default(false),
  phone: z
   .object({
    style: z.enum(['accordion', 'drill', 'full']).default('accordion'),

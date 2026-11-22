@@ -21,13 +21,13 @@
  //
  // The header itself is `.tb-site-header`, so a theme's rules keep reaching
  // what they always did. The shell around it is the one root element: it's
- // what sticks, and a see-through header's shell takes up no room, so the
- // hero runs up behind the header.
+ // what sticks. A see-through header was removed (FB-137): a stored
+ // `transparent` is dropped by headerSchema and the header draws solid.
  import { NuxtLink } from '#components';
  import { headerData, headerFromSite, megaColumns, paletteVar, socialLinks, telHref } from '../../schema/frames.js';
 
  const props = defineProps({
-  site: { type: Object, required: true }, // { name, domain, nav: NavItem[], cta?: NavItem, details?, overHero?, frame?: { header } }
+  site: { type: Object, required: true }, // { name, domain, nav: NavItem[], cta?: NavItem, details?, frame?: { header } }
   showMenu: { type: Boolean, default: false }, // open the menu, at its first item with more under it: the studio's preview of a phone menu style
  });
 
@@ -38,7 +38,6 @@
  const open = ref(null); // the index of the open menu item
  const pinned = ref(null); // the one a click opened
  const sheetOpen = ref(false);
- const pastHero = ref(false); // the hero under a see-through header has scrolled by
  const hidden = ref(false); // scrolled away, with sticky set to 'up'
 
  const chosen = computed(() => props.site.frame?.header);
@@ -174,16 +173,8 @@
   return words.join('').length + icons.value.length * 4 > 70;
  });
 
- const seeThrough = computed(() => Boolean(header.value?.transparent && props.site.overHero));
- // See-through stays see-through all the way down (FB-112): over the hero in
- // the dark band's ink (`clear`), past it in the page's own ink (`bare`).
- const closed = computed(() => open.value === null && !sheetOpen.value);
- const clear = computed(() => seeThrough.value && !pastHero.value && closed.value);
- const bare = computed(() => seeThrough.value && pastHero.value && closed.value);
  const away = computed(() => header.value?.sticky === 'up' && hidden.value && open.value === null && !sheetOpen.value);
- // A see-through header stuck over the page would be light words on light
- // paper with no script to turn it solid, so it only sticks once there is one.
- const sticks = computed(() => header.value && header.value.sticky !== 'never' && (!seeThrough.value || live.value));
+ const sticks = computed(() => header.value && header.value.sticky !== 'never');
 
  // Items with a label to show; anything else is left out.
  function named(list) {
@@ -315,43 +306,17 @@
 
  function onScroll() {
   const y = Math.max(0, window.scrollY);
-  pastHero.value = heroGone();
   const moved = y - lastY;
   if (Math.abs(moved) < 4) return; // a phone's jitter isn't a change of direction
   hidden.value = moved > 0 && y > 90;
   lastY = y;
  }
 
- // The hero is the page's first block; it's gone once its bottom is above
- // the header's.
- function heroGone() {
-  const hero = document.querySelector('.tb-page__main > *');
-  if (!hero || !bar.value) return window.scrollY > 30;
-  return hero.getBoundingClientRect().bottom <= bar.value.getBoundingClientRect().bottom;
- }
-
  function follow(on) {
   window.removeEventListener('scroll', onScroll);
   if (!on) return;
   lastY = Math.max(0, window.scrollY);
-  pastHero.value = heroGone();
   window.addEventListener('scroll', onScroll, { passive: true });
- }
-
- // A hero that bleeds up behind the header needs to know how tall it is.
- let sizes;
-
- function measure(on) {
-  sizes?.disconnect();
-  sizes = null;
-  const rootStyle = document.documentElement.style;
-  if (!on || !bar.value) {
-   rootStyle.removeProperty('--tb-header-height');
-   return;
-  }
-  const el = bar.value;
-  sizes = new ResizeObserver(() => rootStyle.setProperty('--tb-header-height', `${el.offsetHeight}px`));
-  sizes.observe(el);
  }
 
  onMounted(() => {
@@ -359,8 +324,7 @@
   document.addEventListener('keydown', onKey);
   document.addEventListener('pointerdown', onPress);
   // The stage changes all of these as the panel is edited.
-  watch(() => header.value?.sticky === 'up' || seeThrough.value, follow, { immediate: true });
-  watch(seeThrough, measure, { immediate: true, flush: 'post' });
+  watch(() => header.value?.sticky === 'up', follow, { immediate: true });
   watch(
    () => props.showMenu && header.value?.phone.style,
    (on) => {
@@ -377,16 +341,15 @@
   document.removeEventListener('keydown', onKey);
   document.removeEventListener('pointerdown', onPress);
   follow(false);
-  measure(false);
  });
 </script>
 
 <template>
- <div v-if="header" class="tb-site-header-shell" :class="{ 'is-sticky': sticks, 'is-through': seeThrough }">
+ <div v-if="header" class="tb-site-header-shell" :class="{ 'is-sticky': sticks }">
   <header
    ref="bar"
    class="tb-site-header"
-   :class="[`tb-site-header--${layout}`, `tb-site-header--menu-${header.menuAt ?? 'left'}`, `tb-site-header--phone-${header.phone.style}`, palette.custom ? 'tb-site-header--bg-custom' : `tb-site-header--bg-${header.look.background}`, palette.button && 'tb-site-header--btn-custom', palette.font && `tb-site-header--font-${palette.font}`, `tb-site-header--height-${header.look.height}`, `tb-site-header--edge-${header.look.edge}`, `tb-site-header--cta-${header.look.button}`, `tb-site-header--logo-${header.look.logo}`, { 'is-live': live, 'is-clear': clear, 'is-bare': bare, 'is-away': away, 'is-crowded': crowded }]"
+   :class="[`tb-site-header--${layout}`, `tb-site-header--menu-${header.menuAt ?? 'left'}`, `tb-site-header--phone-${header.phone.style}`, palette.custom ? 'tb-site-header--bg-custom' : `tb-site-header--bg-${header.look.background}`, palette.button && 'tb-site-header--btn-custom', palette.font && `tb-site-header--font-${palette.font}`, `tb-site-header--height-${header.look.height}`, `tb-site-header--edge-${header.look.edge}`, `tb-site-header--cta-${header.look.button}`, `tb-site-header--logo-${header.look.logo}`, { 'is-live': live, 'is-away': away, 'is-crowded': crowded }]"
    :style="palette.style"
    @click="onClick"
    @focusin="hidden = false"
@@ -605,8 +568,7 @@
     classes), and the rest stay on properties themes leave alone. */
 
  /* The shell is what sticks, and it holds the header above the page's
-    blocks. A see-through header takes up no room in it, so the hero runs up
-    behind; --tb-header-height tells the hero how much to pad for it. */
+    blocks. */
  .tb-site-header-shell {
   position: relative;
   z-index: 40;
@@ -615,27 +577,6 @@
  .tb-site-header-shell.is-sticky {
   position: sticky;
   top: 0;
- }
-
- .tb-site-header-shell.is-through {
-  flex: none;
-  height: 0;
- }
-
- .tb-site-header-shell.is-through > .tb-site-header {
-  position: absolute;
-  top: 0;
-  right: 0;
-  left: 0;
- }
-
- /* In the canvas's Render view, the locked wrapper around a see-through
-    header keeps a box the header's size, so the note still shows under the
-    pointer. */
- .tb-canvas__chrome:has(> .tb-site-header-shell.is-through) {
-  z-index: 1;
-  height: var(--tb-header-height, 0);
-  margin-bottom: calc(-1 * var(--tb-header-height, 0px));
  }
 
  /* Inside the canvas's own wrappers the shade, the note and a block's tab go
@@ -659,30 +600,6 @@
 
  .tb-site-header.is-away {
   transform: translateY(-110%);
- }
-
- /* See-through: no background and no rule, all the way down. Over the hero
-    the bar and the utility row take the dark band's ink (written on the
-    variables, so everything in them follows); past it they keep the page's
-    own. An open menu always turns it solid, and that holds with no script
-    too. */
- :root .tb-site-header:is(.is-clear, .is-bare):not(:has(.tb-site-header__menu[open])) {
-  border-bottom-color: transparent;
-  background: transparent;
- }
-
- .tb-site-header:is(.is-clear, .is-bare):not(:has(.tb-site-header__menu[open])) .tb-site-header__utility {
-  border-bottom-color: transparent;
- }
-
- .tb-site-header.is-clear:not(:has(.tb-site-header__menu[open])) :is(.tb-site-header__bar, .tb-site-header__utility) {
-  --site-accent: var(--site-dark-ink);
-  --site-accent-ink: var(--site-dark);
-  --site-heading: var(--site-dark-ink);
-  --site-body: var(--site-dark-ink);
-  --site-muted: color-mix(in srgb, var(--site-dark-ink) 75%, transparent);
-  --site-border: color-mix(in srgb, var(--site-dark-ink) 30%, transparent);
-  --site-surface: color-mix(in srgb, var(--site-dark-ink) 12%, transparent);
  }
 
  /* The announcement: one line in the brand color, linked if it has an
@@ -1113,6 +1030,12 @@
 
   .tb-site-header--left.tb-site-header--menu-right .tb-site-header__links {
    justify-content: flex-end;
+  }
+
+  /* Right: the menu and the buttons as one group, the menu straight before
+     the buttons, so the icons go after them (FB-140). */
+  .tb-site-header--left.tb-site-header--menu-right .tb-site-header__icons {
+   order: 1;
   }
  }
 
@@ -1577,12 +1500,12 @@
   padding-block: 18px;
  }
 
- .tb-site-header--edge-none:not(.is-clear, .is-bare),
- .tb-site-header--edge-shadow:not(.is-clear, .is-bare) {
+ .tb-site-header--edge-none.tb-site-header,
+ .tb-site-header--edge-shadow.tb-site-header {
   border-bottom-color: transparent;
  }
 
- .tb-site-header--edge-shadow:not(.is-clear, .is-bare) {
+ .tb-site-header--edge-shadow.tb-site-header {
   box-shadow: 0 2px 14px color-mix(in srgb, var(--site-heading) 10%, transparent);
  }
 
@@ -1613,7 +1536,7 @@
 
  /* The page's own colors are kept for what opens out of the bar: the
     dropdowns and the phone menu stay on the page's background. */
- :is(.tb-site-header--bg-brand, .tb-site-header--bg-dark, .tb-site-header--bg-custom):not(.is-clear, .is-bare) {
+ :is(.tb-site-header--bg-brand, .tb-site-header--bg-dark, .tb-site-header--bg-custom).tb-site-header {
   --tb-page-accent: var(--site-accent);
   --tb-page-accent-ink: var(--site-accent-ink);
   --tb-page-heading: var(--site-heading);
@@ -1624,7 +1547,7 @@
   background: var(--tb-look-bg);
  }
 
- :is(.tb-site-header--bg-brand, .tb-site-header--bg-dark, .tb-site-header--bg-custom):not(.is-clear, .is-bare) :is(.tb-site-header__bar, .tb-site-header__utility) {
+ :is(.tb-site-header--bg-brand, .tb-site-header--bg-dark, .tb-site-header--bg-custom).tb-site-header :is(.tb-site-header__bar, .tb-site-header__utility) {
   --site-heading: var(--tb-look-ink);
   --site-body: var(--tb-look-ink);
   --site-muted: color-mix(in srgb, var(--tb-look-ink) 78%, transparent);
@@ -1634,12 +1557,12 @@
 
  /* On the brand color the button can't be the brand color too: it turns
     over, ink for its background and the brand color for its words. */
- .tb-site-header--bg-brand:not(.is-clear, .is-bare) .tb-site-header__bar {
+ .tb-site-header--bg-brand.tb-site-header .tb-site-header__bar {
   --site-accent: var(--tb-look-ink);
   --site-accent-ink: var(--tb-look-bg);
  }
 
- :where(.tb-site-header--bg-brand, .tb-site-header--bg-dark, .tb-site-header--bg-custom):not(.is-clear, .is-bare) :where(.tb-site-header__panel, .tb-site-header__sheet) {
+ :where(.tb-site-header--bg-brand, .tb-site-header--bg-dark, .tb-site-header--bg-custom).tb-site-header :where(.tb-site-header__panel, .tb-site-header__sheet) {
   --site-accent: var(--tb-page-accent);
   --site-accent-ink: var(--tb-page-accent-ink);
   --site-heading: var(--tb-page-heading);
@@ -1658,12 +1581,12 @@
   --site-accent-ink: var(--tb-look-bg);
  }
 
- .tb-site-header--btn-custom:not(.is-clear, .is-bare) .tb-site-header__cta:not(.tb-site-header__cta--outline) {
+ .tb-site-header--btn-custom.tb-site-header .tb-site-header__cta:not(.tb-site-header__cta--outline) {
   background: var(--tb-btn-bg);
   color: var(--tb-btn-ink);
  }
 
- .tb-site-header--btn-custom.tb-site-header--cta-outline:not(.is-clear, .is-bare) .tb-site-header__cta[data-tb-button='primary'] {
+ .tb-site-header--btn-custom.tb-site-header--cta-outline.tb-site-header .tb-site-header__cta[data-tb-button='primary'] {
   background: transparent;
   color: var(--tb-btn-bg);
  }

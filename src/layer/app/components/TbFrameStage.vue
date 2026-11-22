@@ -2,11 +2,10 @@
  // A header or footer from the Library, on a stand-in page (docs/manifest.md
  // § The stage). The block's data goes in as this page's frame and it's drawn
  // by the same component a real page uses, so what's on the stage is what the
- // site shows. Its hero is always full-bleed, so a see-through header has
- // something to be see-through over.
+ // site shows.
  //
  // Unlike the rest of the canvas this page scrolls, in the frame's own
- // document, so sticky, slide-away and see-through all run as they would on a
+ // document, so sticky and slide-away run as they would on a
  // live page. The studio gives the frame a fixed height. The header's own
  // controls work, by clicking them. Nothing here can be selected or typed
  // into, and the stand-in page is hidden from anything reading the frame.
@@ -21,7 +20,6 @@
  const framed = computed(() => ({
   ...props.site,
   name: props.site?.name || props.site?.domain || 'Your site',
-  overHero: true,
   frame: { [side.value]: props.block.data ?? {} },
  }));
 </script>
@@ -79,7 +77,7 @@
   flex-direction: column;
   justify-content: flex-end;
   min-height: 460px;
-  padding-block: calc(var(--tb-header-height, 0px) + 72px) 56px;
+  padding-block: 72px 56px;
   background: repeating-linear-gradient(135deg, var(--site-dark) 0 10px, color-mix(in srgb, var(--site-dark) 92%, var(--site-dark-ink)) 10px 20px);
   color: var(--site-dark-ink);
  }

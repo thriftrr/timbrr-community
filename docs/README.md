@@ -310,7 +310,6 @@ take one `site` object:
  ],
  cta: { label: 'Order online', kind: 'external', to: 'https://order.buroak.coffee' }, // optional
  details: { phone: '(815) 555-0142', street: '', city: '', region: '', postal: '', hours: [] }, // optional: Site details
- overHero: false, // true when the page opens on a full-bleed Hero
 }
 ```
 
@@ -338,15 +337,14 @@ header itself, so a theme's `:root` rules keep reaching it. It sits inside a
 new root, `.tb-site-header-shell`, which is what sticks, and layouts and
 states add classes: `tb-site-header--left`, `--center`, `--button`,
 `--phone-accordion`, `--phone-drill`, `--phone-full`, and `is-open`,
-`is-clear`, `is-away` and `is-live`. An item with a menu opens from a
+`is-away` and `is-live`. An item with a menu opens from a
 `<button class="tb-site-header__link">` now, not a link, so a theme that
 styles `a.tb-site-header__link` needs `.tb-site-header__link` for those. The
 footer's `tb-site-footer--full` is `tb-site-footer--columns` now.
 
 A theme's `:root` rules outrank a single class and tie with two, and
 component styles load in no fixed order. So where these components must beat
-a theme, they use three: `:root .tb-site-header.is-clear` turns a see-through
-header's background and rule off, whatever the theme draws there.
+a theme, they use three classes or more.
 
 The studio's canvas draws them around the page in its Render view, from the
 `site` it sends: the name, the address, and the site's top-level pages after

@@ -38,11 +38,9 @@ export async function useTimbrrPage(path, { source = '', quiet = false } = {}) {
  const fetched = source ? useFetch(source, { retry: false }) : useFetch('/__timbrr/page', { query: { path: address }, retry: false });
 
  // The site as its header and footer draw it: { name, domain, nav, accent,
- // frame, details, overHero, search }. `frame` is the page's header and footer from
+ // frame, details, search }. `frame` is the page's header and footer from
  // the Library (docs/README.md § Header and footer), null from an older
- // studio; `details` the business's phone, address and hours, null from one;
- // `overHero` whether the page opens on a full-bleed hero, the one thing a
- // see-through header can sit over.
+ // studio; `details` the business's phone, address and hours, null from one.
  const page = computed(() => fetched.data.value?.page ?? {});
  const blocks = computed(() => (Array.isArray(page.value.blocks) ? page.value.blocks : []));
  const site = computed(() => {
@@ -56,7 +54,6 @@ export async function useTimbrrPage(path, { source = '', quiet = false } = {}) {
    frame: frame && typeof frame === 'object' ? frame : null,
    details: value.details && typeof value.details === 'object' ? value.details : null,
    brand: normalizeBrand(value.brand),
-   overHero: isHeroBleed(blocks.value[0]),
    language: LANGUAGE.test(value.language ?? '') ? value.language : 'en',
    // Site search's settings (utils/search.js): off unless the studio says on.
    search: searchSettings(value.search),
@@ -303,16 +300,6 @@ function tellStudioMissed() {
 
 function text(value) {
  return typeof value === 'string' ? value.trim() : '';
-}
-
-// A page that opens on a full-bleed hero, the only thing a see-through
-// header can sit over. The canvas asks the same.
-// Blocks that fill the top of the page edge to edge with a picture or a
-// video, so a see-through header can sit over them: a Hero set to full
-// bleed, and North Wall's video hero in any of its layouts.
-const ALWAYS_BLEEDS = new Set(['northwall_video_hero']);
-export function isHeroBleed(block) {
- return (block?.type === 'hero' && block.data?.layout === 'bleed') || ALWAYS_BLEEDS.has(block?.type);
 }
 
 // A share image's full address: an https one as it is, a path on the site

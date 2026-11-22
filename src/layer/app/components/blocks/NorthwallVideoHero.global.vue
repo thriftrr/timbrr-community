@@ -5,7 +5,7 @@
  // motion, and never on the studio's canvas, where it would only distract;
  // either way the picture stands in. Anything that moves for more than a
  // few seconds needs a way to stop it, so there's a pause button in the
- // corner. A see-through header sits over the top, as on a full-bleed Hero.
+ // corner.
  const props = defineProps({ data: { type: Object, required: true } });
  const shows = useFieldShown();
  const canvas = useCanvas();
@@ -96,7 +96,7 @@
   display: flex;
   align-items: center;
   min-height: max(520px, var(--tb-screen, 100svh));
-  padding-block: calc(var(--site-space-above, var(--site-space)) * 1.2 + var(--tb-header-height, 0px)) calc(var(--site-space-below, var(--site-space)) * 1.2 + var(--nw-vhero-ridge, 0px));
+  padding-block: calc(var(--site-space-above, var(--site-space)) * 1.2) calc(var(--site-space-below, var(--site-space)) * 1.2 + var(--nw-vhero-ridge, 0px));
   overflow: hidden;
   background: var(--site-dark);
  }
