@@ -43,7 +43,7 @@ export default defineBlock({
   { key: 'image', label: 'Poster', widget: 'image', when: { kind: 'video' }, help: 'Shown until the video plays.' },
   { key: 'image', label: 'Image', widget: 'image', when: { kind: 'embed' }, help: 'Shown when the link has no player, or none yet.' },
   // `media` asks the studio for Choose from media beside the box (docs/media.md there).
-  { key: 'video_url', label: 'Video address', widget: 'text', media: 'video', when: { kind: 'video' }, placeholder: 'https://…/clip.mp4', help: 'A video from Media, or a link to an .mp4 or .webm file. For YouTube or Vimeo, use Embed link.' },
+  { key: 'video_url', label: 'Video address', widget: 'text', media: 'video', stream: true, when: { kind: 'video' }, placeholder: 'https://…/clip.mp4', help: 'A video from Media, or a link to an .mp4 or .webm file. For YouTube or Vimeo, use Embed link.' },
   { key: 'captions_url', label: 'Captions', widget: 'text', media: 'file', when: { kind: 'video' }, placeholder: 'https://…/captions.vtt', help: 'A WebVTT (.vtt) file from Media, so people who can’t hear it can follow along. A video from another site needs to allow it to be shown here.' },
   { key: 'transcript_url', label: 'Transcript', widget: 'text', format: 'url', when: { kind: 'video' }, placeholder: 'https://…', help: 'Optional: a page or file with everything said and shown, shown as a link under the video.' },
   { key: 'embed_url', label: 'Embed link', widget: 'text', format: 'url', when: { kind: 'embed' }, placeholder: 'https://youtu.be/…', help: 'A YouTube or Vimeo link. Anything else shows as a plain link.' },
