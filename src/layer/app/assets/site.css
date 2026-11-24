@@ -477,6 +477,133 @@ html:has(.tb-site-header-shell.is-sticky) {
  }
 }
 
+/* The Book a time and Order blocks (Booking.global.vue, Order.global.vue):
+   a form of choices in a grid, the person's details, one button. Here, not
+   in either block, so each draws right without the other on the page. */
+.tb-booking__headline {
+ margin: 0;
+ font-size: calc(clamp(26px, 2vw + 14px, 36px) * var(--site-heading-scale, 1));
+}
+
+.tb-booking__body {
+ margin: 12px 0 0;
+ color: var(--site-body);
+}
+
+.tb-booking__form {
+ display: grid;
+ gap: 20px;
+ margin-top: 24px;
+}
+
+.tb-booking__set {
+ display: grid;
+ gap: 8px;
+ margin: 0;
+ padding: 0;
+ border: 0;
+ min-width: 0;
+}
+
+.tb-booking__legend {
+ margin-bottom: 8px;
+ font-size: 13px;
+ font-weight: 600;
+ letter-spacing: 0.06em;
+ text-transform: uppercase;
+ color: var(--site-body);
+}
+
+.tb-booking__zone {
+ font-weight: 400;
+ text-transform: none;
+ letter-spacing: 0;
+}
+
+.tb-booking__grid {
+ display: grid;
+ grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+ gap: 8px;
+}
+
+.tb-booking__more {
+ margin-top: 8px;
+}
+
+.tb-booking__grid--small {
+ grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+}
+
+.tb-booking__choice {
+ position: relative;
+ display: grid;
+ justify-items: center;
+ gap: 2px;
+ padding: 10px 8px;
+ border: 1px solid var(--site-border);
+ border-radius: var(--site-radius, 8px);
+ font-weight: 600;
+ cursor: pointer;
+}
+
+.tb-booking__choice--row {
+ justify-items: start;
+ padding: 12px 14px;
+}
+
+.tb-booking__choice input {
+ position: absolute;
+ opacity: 0;
+ pointer-events: none;
+}
+
+.tb-booking__choice.is-on {
+ border-color: var(--site-accent);
+ box-shadow: inset 0 0 0 1px var(--site-accent);
+}
+
+.tb-booking__choice:focus-within {
+ outline: 2px solid var(--site-accent);
+ outline-offset: 2px;
+}
+
+.tb-booking__line {
+ font-size: 13px;
+ font-weight: 400;
+ color: var(--site-body);
+}
+
+.tb-booking__who {
+ display: grid;
+ gap: 12px;
+}
+
+.tb-booking__field {
+ display: grid;
+ gap: 4px;
+ font-size: 14px;
+}
+
+.tb-booking__go {
+ justify-content: center;
+ width: 100%;
+ font: inherit;
+ cursor: pointer;
+}
+
+.tb-booking__problem {
+ margin: 0;
+ color: #b42318;
+}
+
+.tb-booking__done {
+ margin: 24px 0 0;
+ padding: 12px 14px;
+ border-left: 3px solid var(--site-accent);
+ background: color-mix(in srgb, var(--site-accent) 8%, transparent);
+ font-weight: 600;
+}
+
 /* ── The pages a site serves ── */
 
 /* A published page (pages/[...slug].vue): the site's header, the page's
