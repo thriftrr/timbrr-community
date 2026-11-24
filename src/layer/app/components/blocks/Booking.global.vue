@@ -42,9 +42,11 @@
  const done = ref('');
 
  const ymd = (date) => new Intl.DateTimeFormat('en-CA', { timeZone: zone.value, year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
+ const weeks = ref(1);
+ const horizon = computed(() => Math.max(1, Math.min(service.value?.horizonDays ?? 14, 365)));
  const days = computed(() => {
   const out = [];
-  for (let i = 0; i < 14; i++) {
+  for (let i = 0; i < Math.min(weeks.value * 14, horizon.value); i++) {
    const date = new Date(Date.now() + i * 86_400_000);
    out.push({ value: ymd(date), week: new Intl.DateTimeFormat('en-US', { timeZone: zone.value, weekday: 'short' }).format(date), label: new Intl.DateTimeFormat('en-US', { timeZone: zone.value, month: 'short', day: 'numeric' }).format(date) });
   }
@@ -94,6 +96,7 @@
   if (now && party.value > now.maxParty) party.value = now.maxParty;
   if (now && !now.staff?.some((person) => person.id === staff.value)) staff.value = '';
  });
+ watch(pick, () => (weeks.value = 1));
  watch([pick, staff, party, day], loadTimes);
 
  async function book() {
@@ -164,6 +167,7 @@
        <span class="tb-booking__line">{{ one.label }}</span>
       </label>
      </div>
+     <button v-if="days.length < horizon" type="button" class="tb-button tb-booking__more" @click="weeks++">Later days</button>
     </fieldset>
 
     <fieldset v-if="service && day" class="tb-booking__set" :aria-busy="loadingTimes ? 'true' : 'false'">
@@ -242,6 +246,10 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
   gap: 8px;
+ }
+
+ .tb-booking__more {
+  margin-top: 8px;
  }
 
  .tb-booking__grid--small {
