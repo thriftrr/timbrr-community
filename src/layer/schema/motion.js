@@ -265,6 +265,7 @@ export const MOTION_CSS = [
   '.m.m-ph-none,.m-ph-none .m-i{opacity:1!important;transform:none!important;transition:none!important}.m-ph-none img{animation:none!important}}',
  '@media (prefers-reduced-motion: reduce) {\n  .m, .m-i { opacity: 1 !important; transform: none !important; transition: none !important; animation: none !important; }\n}',
  '@media (prefers-reduced-motion: reduce){.m-px img{animation:none!important}}',
+ '@media print{.m,.m-i{opacity:1!important;transform:none!important;transition:none!important}}',
 ].join('\n');
 
 // Before first paint: the start state applies only where the observer can end it.
@@ -272,15 +273,18 @@ export const MOTION_HEAD_SCRIPT = "if('IntersectionObserver'in window&&!matchMed
 
 // At the end of the body: marks each stagger's items (an own `--i`; a stagger
 // with none fades as one), shows blocks already scrolled past at once, and
-// adds m-in as each block comes on screen. One observer for the page.
+// adds m-in as each block comes on screen. One observer, and window.__tbMotion
+// sets up whatever blocks are new (m-ok marks the done ones: a class, so a
+// re-rendered element loses it with its m-in); the layer calls it after each
+// in-site navigation, which doesn't run this script again.
 export const MOTION_SCRIPT =
  "(()=>{const d=document,c=d.documentElement.classList;if(!c.contains('m-js'))return;" +
- "const o=new IntersectionObserver(es=>es.forEach(e=>{const b=e.target,t=+(b.dataset.mAt||.2),every=b.dataset.mPlays==='every';" +
+ "const o=window.__tbO||(window.__tbO=new IntersectionObserver(es=>es.forEach(e=>{const b=e.target,t=+(b.dataset.mAt||.2),every=b.dataset.mPlays==='every';" +
  "if(e.isIntersecting&&(e.intersectionRatio>=t||e.intersectionRect.height>=innerHeight*t)){b.classList.remove('m-now');b.classList.add('m-in');if(!every)o.unobserve(b)}" +
- "else if(every&&!e.isIntersecting&&e.boundingClientRect.top>0)b.classList.remove('m-in')}),{threshold:[0,.1,.2,.3,.4,.5,.6,.7,.8,.9]});" +
- "d.querySelectorAll('.m').forEach(b=>{if(b.classList.contains('m-st')){const it=[...b.querySelectorAll('[data-motion-item]')],n=it.length,f=b.dataset.mFrom;" +
+ "else if(every&&!e.isIntersecting&&e.boundingClientRect.top>0)b.classList.remove('m-in')}),{threshold:[0,.1,.2,.3,.4,.5,.6,.7,.8,.9]}));" +
+ "(window.__tbMotion=()=>d.querySelectorAll('.m:not(.m-ok)').forEach(b=>{b.classList.add('m-ok');if(b.classList.contains('m-st')){const it=[...b.querySelectorAll('[data-motion-item]')],n=it.length,f=b.dataset.mFrom;" +
  "if(!n)b.classList.remove('m-st');it.forEach((e,i)=>{e.classList.add('m-i');e.style.setProperty('--i',f==='end'?n-1-i:f==='center'?Math.abs(i-(n-1)/2):i)})}" +
- "if(b.classList.contains('m-px'))return;if(b.getBoundingClientRect().bottom<0)b.classList.add('m-now','m-in');else o.observe(b)})})()";
+ "if(b.classList.contains('m-px'))return;if(b.getBoundingClientRect().bottom<0)b.classList.add('m-now','m-in');else o.observe(b)}))()})()";
 
 // The page's head for its motion: nothing at all with Intensity Off or no
 // block that moves. `canvas`: the studio's canvas, which never hides
