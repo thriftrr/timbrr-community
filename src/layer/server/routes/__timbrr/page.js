@@ -32,10 +32,11 @@ export default defineEventHandler(async (event) => {
  if (found && gated && !preview) {
   let gift = giftToken(event);
   const asked = String(query.gift ?? '');
-  if (page.access?.locked && isMemberToken(asked) && asked !== gift) {
-   const spent = await askMembers(event, 'gift', { method: 'POST', body: { token: asked }, token: '' });
-   if (spent.status === 200) {
-    gift = asked;
+  if (page.access?.locked && isMemberToken(asked)) {
+   // The cookie holds a grant the studio made for this one open, never the link's own token.
+   const spent = await askMembers(event, 'gift', { method: 'POST', body: { token: asked, ...(gift ? { grant: gift } : {}) }, token: '' });
+   if (spent.status === 200 && isMemberToken(spent.data?.grant)) {
+    gift = spent.data.grant;
     setGiftCookie(event, gift);
    }
   }

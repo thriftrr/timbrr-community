@@ -6,8 +6,8 @@ import { visitorAddress } from './visitor.js';
 // Members (the studio's docs/members.md): a visitor's sign-in lives in this
 // site's own httpOnly cookie (tb_member), set here from the token the studio
 // answers a sign-in with, and passed back to the studio as x-timbrr-member.
-// The browser never sees it. A gift link's token rides in tb_gift for a day,
-// so reloading a gifted entry isn't a second use.
+// The browser never sees it. A gift link's grant (not the link's own token)
+// rides in tb_gift for a day, so reloading a gifted entry isn't a second use.
 export const MEMBER_COOKIE = 'tb_member';
 export const GIFT_COOKIE = 'tb_gift';
 const TOKEN = /^[A-Za-z0-9_-]{16,128}$/;
