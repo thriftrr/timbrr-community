@@ -104,6 +104,24 @@ export const THIRD_PARTIES = [
   source: 'https://support.google.com/youtube/answer/171780 and https://policies.google.com/technologies/cookies/embedded (2026-11-19): neither names the embed’s cookies',
  },
  {
+  id: 'cloudflare_stream',
+  name: 'Cloudflare Stream',
+  kind: 'load',
+  // A video the site streams from its studio library (streamSrc,
+  // app/utils/blocks.js): Stream's player on the studio account's own
+  // customer host. Only a page whose Media block holds a streamed video is
+  // listed as using this (the studio reads the block's address).
+  origins: ['*.cloudflarestream.com'],
+  via: ['streamSrc'],
+  what: 'A video from this site played on the page, in Cloudflare Stream’s player, at the size that fits the visitor’s connection.',
+  collects: 'The visitor’s IP address and browser details when the player opens, and how much of the video was watched, which the site’s studio counts as minutes.',
+  processor: 'Cloudflare',
+  // Not looked up yet: Cloudflare's Stream docs do not say which cookies the
+  // embedded player sets. Test in a browser before stating any.
+  cookies: TO_BE_VERIFIED,
+  source: 'https://developers.cloudflare.com/stream/viewing-videos/using-the-stream-player/ (2026-11-23): no cookie list found',
+ },
+ {
   id: 'vimeo',
   name: 'Vimeo',
   kind: 'load',

@@ -8,7 +8,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { buildManifest, componentName } from '../schema/manifest.js';
 import { SITE_LOADS, THIRD_PARTIES, cookieProblem, originMatches } from '../schema/third-parties.js';
-import { calculatorTotal, embedFrame, priceNumber } from '../app/utils/blocks.js';
+import { calculatorTotal, embedFrame, priceNumber, streamSrc } from '../app/utils/blocks.js';
 import { safeHref } from '../app/utils/timbrr.js';
 
 // A link never leaves for another host by a back slash or a control character a browser drops.
@@ -41,6 +41,24 @@ equal(calculatorTotal(data, 3, []), 89);
 equal(calculatorTotal(data, 3, [true]), 134);
 equal(calculatorTotal(data, 3, [true, true]), 164);
 equal(calculatorTotal({ price: '', extra: '', addons: [] }, 4, []), 0);
+
+// A streamed video (the studio's docs/video.md): only Stream's player on a customer host, rebuilt from its parts.
+const UID = '0123456789abcdef0123456789abcdef';
+equal(streamSrc(`https://customer-abc123xyz.cloudflarestream.com/${UID}/iframe`), `https://customer-abc123xyz.cloudflarestream.com/${UID}/iframe`);
+equal(streamSrc(`https://customer-abc123xyz.cloudflarestream.com/${UID}/iframe#media=AbCdEfGh12345678`), `https://customer-abc123xyz.cloudflarestream.com/${UID}/iframe`, 'the library id stays out of the frame');
+for (const bad of [
+ `http://customer-abc123xyz.cloudflarestream.com/${UID}/iframe`,
+ `https://customer-abc123xyz.cloudflarestream.com.evil.example/${UID}/iframe`,
+ `https://evil.example/customer-abc123xyz.cloudflarestream.com/${UID}/iframe`,
+ `https://customer-abc123xyz.cloudflarestream.com/${UID}/iframe?autoplay=true`,
+ `https://customer-abc123xyz.cloudflarestream.com/${UID}/manifest/video.m3u8`,
+ `https://customer-abc123xyz.cloudflarestream.com/../${UID}/iframe`,
+ `https://videodelivery.net/${UID}/iframe`,
+ 'javascript:alert(1)',
+ '',
+ null,
+])
+ equal(streamSrc(bad), undefined, String(bad));
 
 console.log('ok  embedFrame, priceNumber, calculatorTotal');
 
@@ -124,6 +142,7 @@ equal(loadsNeeded("embedSrc(props.value)").join(), 'youtube,vimeo');
 equal(loadsNeeded("<TbShopBuy />").join(), 'shopify');
 equal(loadsNeeded('<iframe src="https://tile.openstreetmap.org/1/1/1.png">').join(), 'openstreetmap');
 equal(loadsNeeded('no third party here').length, 0);
+equal(loadsNeeded('streamSrc(props.data.video_url)').join(), 'cloudflare_stream');
 
 const layer = { name: '@timbrr/community', version: '0.0.0', tier: 'community' };
 const definitions = [];
