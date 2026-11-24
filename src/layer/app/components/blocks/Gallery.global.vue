@@ -36,7 +36,7 @@
     :aria-label="data.layout === 'slider' ? (typeof data.headline === 'string' && data.headline) || 'Slides' : undefined"
     role="list"
    >
-    <li v-for="(item, index) in data.items" :key="index">
+    <li v-for="(item, index) in data.items" :key="index" data-motion-item>
      <figure class="tb-gallery__item">
       <TbImage :image="item.image" :field="`items.${index}.image`" :ratio="ratio(item, index)" />
       <TbText v-if="shows(`items.${index}.caption`, item.caption)" :data="data" :field="`items.${index}.caption`" tag="figcaption" class="tb-gallery__caption" />

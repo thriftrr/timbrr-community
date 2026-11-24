@@ -93,7 +93,7 @@
     <TbText v-if="shows('headline', data.headline)" :data="data" field="headline" tag="h2" class="tb-heading" />
    </header>
    <ul v-if="data.items.length" ref="el" class="tb-stats__list" :class="`tb-stats__list--${across}`" role="list">
-    <li v-for="(item, index) in data.items" :key="index" class="tb-stats__item">
+    <li v-for="(item, index) in data.items" :key="index" data-motion-item class="tb-stats__item">
      <p class="tb-stats__value">
       <span v-if="frames">{{ frames[index] }}</span>
       <TbText v-else :data="data" :field="`items.${index}.value`" />
