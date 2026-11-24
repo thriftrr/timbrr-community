@@ -96,6 +96,15 @@ it, so searching the tray still finds it. Why, and how pages move over:
   email is `/booking/<token>`, where they can cancel. Needs the Bookings
   add-on; without it the block draws nothing on the live site, and on a dev
   or staging address booking answers that it opens once the site is live.
+- `order` Order: the café's menu with a cart, then pickup or delivery and a
+  time (or, from a table code's `?table=` link, to the table), a name and
+  email, and Stripe Checkout on the owner's own account (the studio's
+  docs/ordering.md). Relayed through `/__timbrr/ordering/*`; the studio prices
+  the cart from the menu, the browser sends only ids and counts. Needs the
+  Ordering add-on and Payments taking money; without them the block draws
+  nothing on the live site, and on a dev or staging address ordering answers
+  that it opens once the site is live. Shares its form styles with `booking`
+  in `site.css`.
 - `table` Table: rows and columns under an optional heading, as real table
   markup. Cells merge across and down, each column lines up left, center or
   right, the first row and the first column can be headings, and it draws
