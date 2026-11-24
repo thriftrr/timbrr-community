@@ -61,6 +61,8 @@ export async function useTimbrrPage(path, { source = '', quiet = false } = {}) {
    search: searchSettings(value.search),
    // Analytics as the studio says it (utils/how-we-count.js): /how-we-count and its footer link.
    analytics: analyticsSettings(fetched.data.value?.analytics),
+   // Payments taking gifts (the studio's docs/payments.md): the Donate block draws only then.
+   payments: value.payments === true,
   };
  });
  // On a dev or staging address (the note the server writes says it is one),
