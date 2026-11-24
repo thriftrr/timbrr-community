@@ -65,6 +65,8 @@ export async function useTimbrrPage(path, { source = '', quiet = false } = {}) {
    payments: value.payments === true,
    // Bookings on (the studio's docs/bookings.md): the Booking block draws only then.
    bookings: value.bookings === true,
+   // Ordering on and Payments taking money (the studio's docs/ordering.md): the Order block draws only then.
+   ordering: value.ordering === true,
   };
  });
  // On a dev or staging address (the note the server writes says it is one),
