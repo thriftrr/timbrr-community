@@ -381,6 +381,29 @@ same in a layout:
 </template>
 ```
 
+## Languages
+
+A site with the studio's Languages add-on (the studio's docs/languages.md)
+serves each other language at `/<code>/...`: the catch-all asks the studio
+for that path like any other, and the studio answers with the English page
+with its published translation over it, or a 404. The answer then carries:
+
+- `site.language`: the page's language, for `<html lang>` (as before);
+- `site.languages`: `[{ code, label, native, href, current, banner }]`, the
+  main language first, only languages whose home page is live. Two or more,
+  and the header's language icon (`icons.language`) draws one short code a
+  language (`aria-current` on this one, `hreflang` and `lang` on each);
+  fewer, and it draws nothing. `TbLanguageBanner` shows the first-visit
+  line when the browser's language is another live one with a banner: one
+  closable line, kept closed in `localStorage`, and it never redirects;
+- `page.alternates`: `[{ lang, path }]`, every published version of the
+  page, main first. `useTimbrrPage` writes an `hreflang` link for each and
+  `x-default` for the first.
+
+All of it is checked on the way in (`app/utils/languages.js`,
+`scripts/check-languages.mjs`). An older studio sends none of it, and
+nothing changes.
+
 ## Members
 
 The studio's Members add-on (its docs/members.md): visitors sign in with

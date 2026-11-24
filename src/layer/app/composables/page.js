@@ -73,6 +73,8 @@ export async function useTimbrrPage(path, { source = '', quiet = false } = {}) {
    ordering: value.ordering === true,
    // Members on (the studio's docs/members.md): { header } says whether the header shows Sign in.
    members: value.members && typeof value.members === 'object' ? { header: value.members.header !== false } : null,
+   // Languages (the studio's docs/languages.md): the header's switcher and the first-visit banner, [] for one language.
+   languages: languageList(value.languages),
   };
  });
  // On a dev or staging address (the note the server writes says it is one),
@@ -220,7 +222,8 @@ export async function useTimbrrPage(path, { source = '', quiet = false } = {}) {
  else {
   useHead({
    htmlAttrs: { lang: () => site.value.language, 'data-tb-a': () => analytics.value?.events, 'data-tb-p': () => analytics.value?.where },
-   link: () => (head.value.canonical ? [{ rel: 'canonical', href: head.value.canonical }] : []),
+   // Each language version of the page (hreflang), and x-default the main one.
+   link: () => [...(head.value.canonical ? [{ rel: 'canonical', href: head.value.canonical }] : []), ...alternateLinks(page.value.alternates, origin.value)],
    script: () => (analytics.value ? [{ key: 'timbrr-analytics', src: '/__timbrr/a.js', defer: true }] : []),
   });
   // Motion (docs/motion.md): its CSS, the head snippet that turns the

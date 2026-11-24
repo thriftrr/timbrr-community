@@ -20,6 +20,7 @@
 <template>
  <div class="tb-page" :style="style">
   <a href="#main" class="tb-skip">Skip to main content</a>
+  <TbLanguageBanner v-if="site.languages.length" :languages="site.languages" />
   <TbSiteHeader v-if="framed" :site="site" />
   <main id="main" tabindex="-1" class="tb-page__main">
    <TbBlocks :blocks="blocks" />
