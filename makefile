@@ -77,3 +77,4 @@ check:
 	cd src && node layer/scripts/build-analytics.mjs --check
 	cd src && node layer/scripts/check-analytics.mjs
 	cd src && node layer/scripts/check-own-blocks.mjs
+	cd src && node layer/scripts/check-texting.mjs
