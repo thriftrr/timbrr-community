@@ -47,6 +47,7 @@ import { createInsights } from '../../utils/insights-canvas.js';
  const site = shallowRef(null); // the site's name, address, menu, details and frames, for its header and footer
  useHead({ htmlAttrs: { lang: () => site.value?.language ?? 'en' } });
  const forms = useTimbrrForms(); // the forms this page can show, as the site draws them
+ const ownBlocks = useTimbrrOwnBlocks(); // the site's own blocks' definitions, by type
  // The entries its collection blocks draw, sent by the studio (composables/collections.js).
  // Set from the start, so a Collection list here never asks the site itself.
  const collections = useTimbrrCollections();
@@ -415,6 +416,7 @@ import { createInsights } from '../../utils/insights-canvas.js';
    theme.value = message.theme && typeof message.theme === 'object' ? message.theme : {};
    site.value = siteFrom(message.site, theme.value.brand);
    forms.value = message.forms && typeof message.forms === 'object' ? message.forms : {};
+   ownBlocks.value = message.ownBlocks && typeof message.ownBlocks === 'object' ? message.ownBlocks : {};
    const sent = message.collections && typeof message.collections === 'object' ? message.collections : {};
    collections.value = { lists: sent.lists && typeof sent.lists === 'object' ? sent.lists : {}, raw: sent.raw && typeof sent.raw === 'object' ? sent.raw : {} };
    mode.value = message.mode === 'render' ? 'render' : 'full';
