@@ -30,7 +30,7 @@
     <TbText v-if="shows('headline', data.headline)" :data="data" field="headline" tag="h2" class="tb-heading" />
    </header>
    <ul v-if="data.items.length" class="tb-team__grid" :class="{ 'tb-team__grid--fours': fours }" role="list">
-    <li v-for="(item, index) in data.items" :key="index" class="tb-card tb-team__card">
+    <li v-for="(item, index) in data.items" :key="index" data-motion-item class="tb-card tb-team__card">
      <TbImage v-if="photos[index]" :image="item.image" :field="`items.${index}.image`" ratio="1 / 1" class="tb-team__photo" />
      <span v-else class="tb-team__photo tb-team__initials" aria-hidden="true">{{ initials(item.title) }}</span>
      <div class="tb-team__text">

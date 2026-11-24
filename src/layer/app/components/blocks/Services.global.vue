@@ -15,7 +15,7 @@
     <TbText v-if="shows('headline', data.headline)" :data="data" field="headline" tag="h2" class="tb-heading" />
    </header>
    <ul v-if="data.items.length" class="tb-services__list" :class="{ 'tb-services__list--one': data.items.length === 1 }" role="list">
-    <li v-for="(item, index) in data.items" :key="index" class="tb-card tb-services__item">
+    <li v-for="(item, index) in data.items" :key="index" data-motion-item class="tb-card tb-services__item">
      <div class="tb-services__text">
       <TbText :data="data" :field="`items.${index}.title`" tag="h3" class="tb-services__title" />
       <TbRich v-if="shows(`items.${index}.body`, item.body)" :data="data" :field="`items.${index}.body`" class="tb-services__body" />

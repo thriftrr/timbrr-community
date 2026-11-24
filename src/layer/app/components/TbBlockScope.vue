@@ -26,6 +26,7 @@
  const props = defineProps({
   block: { type: Object, required: true },
   def: { type: Object, default: null },
+  motion: { type: Object, default: null }, // motionAttrs (schema/motion.js): class, style and data for the root, or null
  });
 
  const canvas = useCanvas();
@@ -129,7 +130,7 @@
 </script>
 
 <template>
- <component :is="component" v-if="!canvas && data" :id="anchor" :data="data" :class="[look, own]" :data-block-id="block.id" />
+ <component :is="component" v-if="!canvas && data" :id="anchor" :data="data" :class="[look, own, motion?.class]" :style="motion?.style" v-bind="motion?.data ?? {}" :data-block-id="block.id" />
  <div
   v-else-if="canvas"
   class="tb-frame"
@@ -150,7 +151,7 @@
   @pointerleave="hover(false)"
   @dblclick="open"
  >
-  <component :is="component" v-if="data" :data="data" :class="[look, own]" />
+  <component :is="component" v-if="data" :data="data" :class="[look, own, motion?.class]" :style="motion?.style" v-bind="motion?.data ?? {}" />
   <div v-else-if="block.type.startsWith('own_')" class="tb-frame__missing">This block isn't published yet, or was deleted. Publish it in the Library to show it here.</div>
   <div v-else class="tb-frame__missing">This site can't show “{{ block.type }}” blocks. Its code doesn't have them.</div>
   <span v-if="changed" class="tb-frame__changed">Changed</span>

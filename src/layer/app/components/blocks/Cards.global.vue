@@ -49,6 +49,7 @@
     <li
      v-for="(item, index) in data.items"
      :key="index"
+     data-motion-item
      class="tb-cards__card"
      :class="{ 'tb-card': boxed, 'tb-cards__card--link': hrefs[index], 'tb-cards__card--stretched': hrefs[index] && !typing }"
     >

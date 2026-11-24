@@ -47,7 +47,7 @@
  </div>
  <div v-else-if="kind === 'grid'" :id="anchor" class="tb-own__grid" :class="[gap, { 'tb-own__grid--phone-2': node.phone === 2 }, extra]" :style="{ '--tb-own-columns': node.columns }">
   <template v-if="node.field">
-   <div v-for="(_, index) in rows" :key="index" class="tb-own__item" :class="{ 'tb-own__item--row': node.item.kind === 'row', 'tb-own__past-phone': pastPhone(index), [`tb-own--gap-${(node.item.gap ?? '').toLowerCase()}`]: node.item.gap }">
+   <div v-for="(_, index) in rows" :key="index" class="tb-own__item" data-motion-item :class="{ 'tb-own__item--row': node.item.kind === 'row', 'tb-own__past-phone': pastPhone(index), [`tb-own--gap-${(node.item.gap ?? '').toLowerCase()}`]: node.item.gap }">
     <TbOwnNode v-for="(child, at) in node.item.items" :key="at" :node="child" :row="{ list: node.field, index }" />
    </div>
   </template>

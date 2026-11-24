@@ -24,6 +24,7 @@
  // development.
  import { WYS_TOOLS } from '#timbrr/define';
  import { footerData, headerData, navItem, navList } from '../../../schema/frames.js';
+ import { motionHead } from '../../../schema/motion.js';
 import { createInsights } from '../../utils/insights-canvas.js';
  import { definitions } from '#timbrr/blocks';
 
@@ -470,6 +471,8 @@ import { createInsights } from '../../utils/insights-canvas.js';
    insights.scale(ui.value);
   } else if (message.type === 'timbrr:format' && typeof message.tool === 'string') {
    editor.value?.format(message.tool, typeof message.href === 'string' ? message.href : '');
+  } else if (message.type === 'timbrr:replay' && typeof message.id === 'string') {
+   replay(message.id);
   } else if (message.type === 'timbrr:release') {
    // The studio's keyboard went somewhere else (the inspector, the tray):
    // the open editor goes back to text.
@@ -868,6 +871,29 @@ import { createInsights } from '../../utils/insights-canvas.js';
  // applied the way a live page applies them (composables/page.js).
  const brandOnly = computed(() => brandStyle(theme.value.accent, theme.value.brand));
  useBrandHead(brandOnly, () => theme.value.brand);
+ // Motion's CSS (docs/motion.md), for Replay only: the canvas never sets
+ // html.m-js, so no block is ever hidden waiting to arrive.
+ const motionCss = computed(() => motionHead(theme.value.brand, { canvas: true })?.css);
+ useHead({ style: () => (motionCss.value ? [{ key: 'timbrr-motion', innerHTML: motionCss.value }] : []) });
+ // Replay (`timbrr:replay`): the block's start state with no transition,
+ // then let go, so it arrives as on the live site. A stagger's items are
+ // marked the way the live page's script marks them.
+ function replay(id) {
+  const block = document.querySelector(`[data-block-id="${CSS.escape(id)}"] > .m`);
+  if (!block) return;
+  if (block.classList.contains('m-st')) {
+   const items = [...block.querySelectorAll('[data-motion-item]')];
+   if (!items.length) block.classList.remove('m-st');
+   const from = block.dataset.mFrom;
+   items.forEach((item, i) => {
+    item.classList.add('m-i');
+    item.style.setProperty('--i', String(from === 'end' ? items.length - 1 - i : from === 'center' ? Math.abs(i - (items.length - 1) / 2) : i));
+   });
+  }
+  block.classList.add('m-replay');
+  void block.offsetWidth;
+  requestAnimationFrame(() => block.classList.remove('m-replay'));
+ }
  const themeStyle = computed(() => ({ ...brandOnly.value, '--tb-ui': ui.value }));
 </script>
 

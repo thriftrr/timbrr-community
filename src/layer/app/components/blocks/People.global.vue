@@ -39,7 +39,7 @@
     :aria-label="slider ? (typeof data.headline === 'string' && data.headline) || 'Slides' : undefined"
     role="list"
    >
-    <li v-for="(item, index) in data.items" :key="index" class="tb-card tb-people__card">
+    <li v-for="(item, index) in data.items" :key="index" data-motion-item class="tb-card tb-people__card">
      <TbImage v-if="photos[index]" :image="item.image" :field="`items.${index}.image`" ratio="1 / 1" sizes="96px" class="tb-people__photo" />
      <span v-else class="tb-people__photo tb-people__initials" aria-hidden="true">{{ initials(item.title) }}</span>
      <div class="tb-people__text">

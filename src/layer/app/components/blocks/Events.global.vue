@@ -19,7 +19,7 @@
     <TbText v-if="shows('headline', data.headline)" :data="data" field="headline" tag="h2" class="tb-heading" />
    </header>
    <ul v-if="data.items.length" class="tb-events__list" role="list">
-    <li v-for="(item, index) in data.items" :key="index" class="tb-events__item">
+    <li v-for="(item, index) in data.items" :key="index" data-motion-item class="tb-events__item">
      <TbText v-if="shows(`items.${index}.eyebrow`, item.eyebrow)" :data="data" :field="`items.${index}.eyebrow`" tag="p" class="tb-events__date" />
      <span v-else class="tb-events__date" aria-hidden="true"></span>
      <div class="tb-events__text">
