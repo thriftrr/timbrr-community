@@ -17,6 +17,7 @@
 // answers in the same shape. Then nothing follows a draft, no redirect is
 // followed, and the whole answer comes back too, as `data`. `quiet` sets
 // no head tags of the page's and loads no analytics (see below).
+import { motionHead, pageMotion } from '../../schema/motion.js';
 
 const HEX = /^#[0-9a-f]{6}$/i;
 // A BCP 47 tag, as the studio's Settings stores it (sites.seo.language): <html lang>, WCAG 3.1.1.
@@ -209,6 +210,14 @@ export async function useTimbrrPage(path, { source = '', quiet = false } = {}) {
    htmlAttrs: { lang: () => site.value.language, 'data-tb-a': () => analytics.value?.events, 'data-tb-p': () => analytics.value?.where },
    link: () => (head.value.canonical ? [{ rel: 'canonical', href: head.value.canonical }] : []),
    script: () => (analytics.value ? [{ key: 'timbrr-analytics', src: '/__timbrr/a.js', defer: true }] : []),
+  });
+  // Motion (docs/motion.md): its CSS, the head snippet that turns the
+  // start state on, and the observer at the end of the body, only on a page
+  // where something moves. Inline, so the page's nonce marks them.
+  const motion = computed(() => motionHead(site.value.brand, { any: pageMotion(blocks.value, site.value.brand).any }));
+  useHead({
+   style: () => (motion.value ? [{ key: 'timbrr-motion', innerHTML: motion.value.css }] : []),
+   script: () => (motion.value ? [{ key: 'timbrr-motion-head', innerHTML: motion.value.head }, { key: 'timbrr-motion', innerHTML: motion.value.body, tagPosition: 'bodyClose' }] : []),
   });
   useSeoMeta({
    title: () => head.value.title,

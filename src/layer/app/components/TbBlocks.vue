@@ -4,6 +4,7 @@
  // canvas, hidden blocks still show (faded) and unknown ones say so.
  import { definitions } from '#timbrr/blocks';
  import { checkOwnBlock, ownBlockDef } from '../../schema/own-block.js';
+ import { blockMotion, motionAttrs } from '../../schema/motion.js';
 
  const props = defineProps({
   blocks: { type: Array, default: () => [] },
@@ -29,10 +30,15 @@
   return out;
  });
  const defOf = (type) => byType.get(type) ?? ownDefs.value.get(type) ?? null;
+ // How each block arrives (docs/motion.md): only a page's own blocks, never
+ // a column's or a repeat's; the first shown block defaults to None.
+ const site = useTimbrrSite();
+ const first = computed(() => props.blocks.find((block) => !block.hidden)?.id);
+ const motionOf = (block) => (nested ? null : motionAttrs(blockMotion(block, { brand: site?.value?.brand, first: block.id === first.value })));
 </script>
 
 <template>
  <template v-for="block in blocks" :key="block.id">
-  <TbBlockScope v-if="canvas || !block.hidden" :block="block" :def="defOf(block.type)" />
+  <TbBlockScope v-if="canvas || !block.hidden" :block="block" :def="defOf(block.type)" :motion="motionOf(block)" />
  </template>
 </template>

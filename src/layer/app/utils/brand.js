@@ -11,6 +11,8 @@
 // The brand color itself stays sites.accent; it's in BRAND_COLORS for the
 // editor, under `accent`.
 
+import { cleanSiteMotion } from '../../schema/motion.js';
+
 export const BRAND_COLORS = [
  { key: 'accent', variable: '--site-accent', label: 'Brand', note: 'Buttons, links and highlights.', fallback: '#2f6b4f' },
  { key: 'accentInk', variable: '--site-accent-ink', label: 'Text on brand', note: 'Picked for contrast unless set.', fallback: '' },
@@ -173,6 +175,9 @@ export function normalizeBrand(input) {
  if (logo) out.logo = logo;
  const favicon = image(raw.favicon);
  if (favicon) out.favicon = favicon;
+ // Motion (docs/motion.md): Intensity and what new sections do. None is Off.
+ const motion = cleanSiteMotion(raw.motion);
+ if (motion) out.motion = motion;
  return out;
 }
 
