@@ -3,7 +3,8 @@
 // page, even with the footer turned off; the relay posts only to the
 // studio's report route, stays off on dev and staging and caps the body;
 // the form has the hidden bot box and shows visitors' text only as text;
-// the pay page says payments are paused. Reads the files; no Nuxt.
+// the pay page says payments are paused; the join page asks yearly only
+// for plans the studio offers it on. Reads the files; no Nuxt.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -25,4 +26,8 @@ assert.match(page, /v-model="hp" tabindex="-1"/);
 assert.ok(!/v-html/.test(page));
 assert.match(page, /content: 'noindex'/);
 assert.match(read('app/pages/pay/[token].vue'), /v-else-if="pay\.paused[^"]*"[^>]*>Payments are paused for this site\./);
+// Members: yearly only where the studio offers it (one charge, $1,000 at most).
+const joinPage = read('app/pages/join.vue');
+assert.match(joinPage, /interval: yearlyFor\(plan\) \? 'year' : 'month'/, 'a monthly-only plan never asks for yearly');
+assert.match(joinPage, /v-if="anyYearly"/, 'no switch when no plan has yearly');
 console.log('check-report: ok');
