@@ -86,6 +86,10 @@ it, so searching the tray still finds it. Why, and how pages move over:
   Open now, plus a service area and details of its own.
 - `cta` Call to action: a banner or band with one or two buttons.
 - `form` Form: a form from the site's Forms in the studio.
+- `signup` Sign-up: an email box that puts visitors on the site's own email
+  list (the studio's docs/marketing.md). They confirm from an email first;
+  `/__timbrr/signup` relays it to the studio, live site only. Replaces the
+  retired `text_club`. "Text me too" keeps a phone number; texts aren't sent yet.
 - `donate` Donate: three amounts and Other for a fund, then Stripe Checkout on
   the owner's own account (the studio's docs/payments.md). Needs the Payments
   add-on and a connected bank; without them it draws nothing on the live site.
@@ -182,7 +186,8 @@ replaces it).
 
 A Form block shows a form from the studio's Forms, and sends for real
 (`docs/manifest.md` § Forms). The retired `request_quote` and `text_club` draw
-real fields and send nothing until they're converted. Every block's tray
+real fields and send nothing until they're converted (Sign-up is
+`text_club`'s working replacement). Every block's tray
 description is the design's;
 a few (hours and contact details "from settings", events "past ones
 hide", specials "expire themselves") describe where they're headed, not
