@@ -75,6 +75,8 @@ export async function useTimbrrPage(path, { source = '', quiet = false } = {}) {
    members: value.members && typeof value.members === 'object' ? { header: value.members.header !== false } : null,
    // Languages (the studio's docs/languages.md): the header's switcher and the first-visit banner, [] for one language.
    languages: languageList(value.languages),
+   // Site chat on (the studio's docs/site-chat.md): { name } for the chat button, null while off.
+   chat: value.chat && typeof value.chat.name === 'string' && value.chat.name.trim() ? { name: value.chat.name.trim().slice(0, 24) } : null,
   };
  });
  // On a dev or staging address (the note the server writes says it is one),

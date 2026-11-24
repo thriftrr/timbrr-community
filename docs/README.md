@@ -404,6 +404,19 @@ All of it is checked on the way in (`app/utils/languages.js`,
 `scripts/check-languages.mjs`). An older studio sends none of it, and
 nothing changes.
 
+## Site chat
+
+While the studio's Site chat add-on is on and its switch is (the studio's
+docs/site-chat.md), the page answer carries `site.chat: { name }` and the
+catch-all page loads `TbSiteChat` lazily: a button in the bottom corner and a
+native modal dialog. It always says "An assistant. Not a person." The browser
+posts to `/__timbrr/chat/ask` and `/__timbrr/chat/handover`, which relay to
+the studio with the relay secret and the visitor's address; on a dev or
+staging address they answer 404. The chat's id is kept in `sessionStorage`
+only. A 410 from the studio (chat turned off since the page was cached) hides
+the button. An older studio sends no `chat`, and nothing changes.
+`scripts/check-chat.mjs` checks it.
+
 ## Members
 
 The studio's Members add-on (its docs/members.md): visitors sign in with
