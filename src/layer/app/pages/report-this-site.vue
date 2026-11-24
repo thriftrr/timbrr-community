@@ -25,6 +25,7 @@
  const busy = ref(false);
  const done = ref(false);
  const problem = ref('');
+ const thanks = ref(null);
  // The page they came from, when the footer link passed it.
  const page = computed(() => (typeof route.query.from === 'string' && route.query.from.startsWith('/') ? route.query.from.slice(0, 300) : ''));
 
@@ -39,6 +40,9 @@
   try {
    await $fetch('/__timbrr/report', { method: 'POST', body: { reason: reason.value, details: details.value, email: email.value, page: page.value, hp: hp.value } });
    done.value = true;
+   // The form, and the button that had focus, are gone: land on the thank you.
+   await nextTick();
+   thanks.value?.focus();
   } catch (err) {
    problem.value = err?.data?.message || "Couldn't send that just now. Try again in a minute.";
   } finally {
@@ -60,7 +64,7 @@
     <h1 class="tb-heading tb-report__title">Report this site</h1>
     <p class="tb-report__lede">{{ name }} runs on Timbrr. If something here is illegal, a scam, or yours, tell us. This goes to the Timbrr team, not to the site's owner.</p>
 
-    <p v-if="done" class="tb-report__done" role="status">Thank you. The Timbrr team will look at it.</p>
+    <p v-if="done" ref="thanks" class="tb-report__done" role="status" tabindex="-1">Thank you. The Timbrr team will look at it.</p>
     <form v-else class="tb-report__form" novalidate @submit.prevent="send">
      <fieldset class="tb-report__reasons">
       <legend class="tb-report__label">What's wrong?</legend>
