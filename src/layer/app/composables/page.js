@@ -33,6 +33,7 @@ export async function useTimbrrPage(path, { source = '', quiet = false } = {}) {
  const here = useRequestURL();
  const nuxtApp = useNuxtApp(); // navigateTo after an await needs the app it started in
  const forms = useTimbrrForms();
+ const ownBlocks = useTimbrrOwnBlocks();
  // No second try: a 502 means the site's server already gave the studio
  // its chance (and its 8 seconds).
  const fetched = source ? useFetch(source, { retry: false }) : useFetch('/__timbrr/page', { query: { path: address }, retry: false });
@@ -231,8 +232,11 @@ export async function useTimbrrPage(path, { source = '', quiet = false } = {}) {
  // component, outlives the page, and would empty the next page's forms when this
  // page's data is cleared.
  watch(page, (value) => (forms.value = value.forms ?? {}));
+ // The own blocks it shows, the same way (useTimbrrOwnBlocks).
+ watch(page, (value) => (ownBlocks.value = value.ownBlocks ?? {}));
  await fetched;
  forms.value = page.value.forms ?? {};
+ ownBlocks.value = page.value.ownBlocks ?? {};
  // A dev or staging address whose access ran out while it was open: going
  // back through the server lands on the studio's gate.
  if (import.meta.client && fetched.error.value?.statusCode === 401) {

@@ -21,6 +21,7 @@
  // it selects all of it, and the first carries the ink tab, the handle for
  // the whole piece.
  import { blockData, componentName } from '#timbrr/manifest';
+ import TbOwnBlock from './TbOwnBlock.vue';
 
  const props = defineProps({
   block: { type: Object, required: true },
@@ -41,7 +42,8 @@
  if (canvas && props.block.lock) provide(CANVAS_KEY, { ...canvas, editable: ref(false) });
 
  const data = computed(() => (props.def ? blockData(props.def, props.block.data) : null));
- const component = computed(() => (props.def ? componentName(props.def.type) : null));
+ // A site's own block (def.own) is drawn by the one interpreter, TbOwnBlock.
+ const component = computed(() => (props.def?.own ? TbOwnBlock : props.def ? componentName(props.def.type) : null));
 
  // How the block sits on the page (site.css, § The look of a block), set on
  // its root. A retired block has none of these keys, so it gets none.
@@ -149,6 +151,7 @@
   @dblclick="open"
  >
   <component :is="component" v-if="data" :data="data" :class="[look, own]" />
+  <div v-else-if="block.type.startsWith('own_')" class="tb-frame__missing">This block isn't published yet, or was deleted. Publish it in the Library to show it here.</div>
   <div v-else class="tb-frame__missing">This site can't show “{{ block.type }}” blocks. Its code doesn't have them.</div>
   <span v-if="changed" class="tb-frame__changed">Changed</span>
   <span
