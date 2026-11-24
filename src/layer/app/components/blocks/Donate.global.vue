@@ -11,6 +11,8 @@
  const canvas = useCanvas();
  const site = useTimbrrSite();
  const route = useRoute();
+ // The block's own id: the studio reads the fund from this live block, not from the request.
+ const scope = useBlockScope();
  const id = useId();
  const shown = computed(() => Boolean(canvas) || site?.value?.payments === true);
  const amounts = computed(() => [props.data.amount1, props.data.amount2, props.data.amount3].filter((value) => Number.isInteger(value) && value >= 1));
@@ -28,7 +30,7 @@
   busy.value = true;
   problem.value = '';
   try {
-   const answer = await $fetch('/__timbrr/pay/donate', { method: 'POST', body: { cents: Math.round(dollars.value * 100), fund: props.data.fund, page: route.path } });
+   const answer = await $fetch('/__timbrr/pay/donate', { method: 'POST', body: { cents: Math.round(dollars.value * 100), block: scope?.id, page: route.path } });
    if (!/^https:\/\/checkout\.stripe\.com\//.test(answer?.url ?? '')) throw new Error('no checkout');
    window.location.assign(answer.url);
   } catch (err) {
