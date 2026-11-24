@@ -57,6 +57,20 @@ export function embedSrc(link) {
  return undefined;
 }
 
+// A video streamed through Cloudflare Stream from the studio's library
+// (the studio's docs/video.md): Stream's player, rebuilt from the account's
+// customer code and the video's id alone, so nothing else typed into a page
+// reaches the frame. The studio writes `#media=<id>` after it, which stays
+// out of the frame. Anything else comes back undefined.
+const STREAM_SRC = /^https:\/\/customer-([a-z0-9]{8,64})\.cloudflarestream\.com\/([a-f0-9]{32})\/iframe(?:#media=[A-Za-z0-9_-]{16})?$/;
+
+export function streamSrc(link) {
+ const match = STREAM_SRC.exec(String(link ?? '').trim());
+ if (!match) return undefined;
+ const host = `customer-${match[1]}.cloudflarestream.com`;
+ return `https://${host}/${match[2]}/iframe`;
+}
+
 // What an Embed block frames: the first https address in what was typed,
 // which may be the address alone or a service's whole embed code, when its
 // host is on EMBED_HOSTS. Nothing

@@ -9,11 +9,14 @@
  const shows = useFieldShown();
 
  const canvas = useCanvas();
- const video = computed(() => (props.data.kind === 'video' ? safeSrc(props.data.video_url) : undefined));
- const player = computed(() => (props.data.kind === 'embed' ? embedSrc(props.data.embed_url) : undefined));
+ // A video streamed from the studio plays in Stream's own player (captions
+ // are Stream's, under its CC button); any other video in <video>.
+ const streamed = computed(() => (props.data.kind === 'video' ? streamSrc(props.data.video_url) : undefined));
+ const video = computed(() => (props.data.kind === 'video' && !streamed.value ? safeSrc(props.data.video_url) : undefined));
+ const player = computed(() => streamed.value ?? (props.data.kind === 'embed' ? embedSrc(props.data.embed_url) : undefined));
  const outLink = computed(() => (props.data.kind === 'embed' && !player.value ? safeHref(props.data.embed_url) : undefined));
  const captions = computed(() => (video.value ? safeSrc(props.data.captions_url) : undefined));
- const transcript = computed(() => (video.value ? safeHref(props.data.transcript_url) : undefined));
+ const transcript = computed(() => (video.value || streamed.value ? safeHref(props.data.transcript_url) : undefined));
  const site = useTimbrrSite();
  const language = computed(() => site?.value?.language || 'en');
 </script>
