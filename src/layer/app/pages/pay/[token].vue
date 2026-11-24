@@ -109,6 +109,7 @@
      </button>
     </div>
     <p v-else-if="pay.status === 'off'" class="tb-pay__note">This link is turned off.</p>
+    <p v-else-if="pay.paused && pay.status !== 'paid'" class="tb-pay__note">Payments are paused for this site. Nothing was charged.</p>
     <p v-else-if="!pay.open && pay.status !== 'paid'" class="tb-pay__note">{{ site.name || 'This site' }} can't take payments right now. Try again later.</p>
     <p v-if="problem" class="tb-pay__problem" role="alert">{{ problem }}</p>
     <p class="tb-note tb-pay__secure">Paid securely through Stripe. Card, Apple Pay or Google Pay.</p>

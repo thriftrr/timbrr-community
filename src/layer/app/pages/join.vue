@@ -10,6 +10,11 @@
  const { data, error } = own ? { data: ref(null), error: ref(null) } : await useFetch('/__timbrr/members/plans', { key: 'tb-members-plans', retry: false, default: () => null });
  const plans = computed(() => data.value?.plans ?? []);
  const yearly = ref(false);
+ // Yearly is one charge, so the studio offers it only up to $100 a month (no
+ // charge over $1,000, its docs/payments-safety.md): a plan without
+ // yearlyCents is monthly only, and the switch hides when none has it.
+ const anyYearly = computed(() => plans.value.some((plan) => plan.yearlyCents));
+ const yearlyFor = (plan) => yearly.value && Boolean(plan.yearlyCents);
  const busy = ref('');
  const problem = ref('');
  const money = (cents) => (Number(cents || 0) / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: cents % 100 ? 2 : 0 });
@@ -19,7 +24,7 @@
   busy.value = plan.id;
   problem.value = '';
   try {
-   const answer = await $fetch('/__timbrr/members/join', { method: 'POST', body: { plan: plan.id, interval: yearly.value ? 'year' : 'month' } });
+   const answer = await $fetch('/__timbrr/members/join', { method: 'POST', body: { plan: plan.id, interval: yearlyFor(plan) ? 'year' : 'month' } });
    if (!/^https:\/\/checkout\.stripe\.com\//.test(answer?.url ?? '')) throw new Error('no checkout');
    window.location.assign(answer.url);
   } catch (err) {
@@ -40,7 +45,7 @@
   <p class="tb-members__lede">Change or cancel any time. No contract.</p>
   <p v-if="error || data?.open === false" class="tb-members__lede">{{ site.name || 'This site' }} isn't taking new members right now.</p>
   <template v-else>
-   <div v-if="plans.length" class="tb-members__switch" role="group" aria-label="Billing">
+   <div v-if="anyYearly" class="tb-members__switch" role="group" aria-label="Billing">
     <button type="button" class="tb-button" :class="yearly ? 'tb-button--outline' : 'tb-button--solid'" :aria-pressed="!yearly" @click="yearly = false">Monthly</button>
     <button type="button" class="tb-button" :class="yearly ? 'tb-button--solid' : 'tb-button--outline'" :aria-pressed="yearly" @click="yearly = true">Yearly, 2 months free</button>
    </div>
@@ -58,7 +63,7 @@
       <h2 class="tb-heading">{{ plan.name }}</h2>
       <p v-if="plan.line">{{ plan.line }}</p>
      </div>
-     <span class="tb-members__price">{{ yearly ? `${money(plan.yearlyCents)} a year` : `${money(plan.monthlyCents)} a month` }}</span>
+     <span class="tb-members__price">{{ yearlyFor(plan) ? `${money(plan.yearlyCents)} a year` : `${money(plan.monthlyCents)} a month${yearly ? ', monthly only' : ''}` }}</span>
      <button v-if="data?.canJoin" type="button" class="tb-button tb-button--solid" :disabled="Boolean(busy)" @click="pick(plan)">{{ busy === plan.id ? 'Opening Stripe…' : plan.trialDays ? `Start ${plan.trialDays}-day free trial` : 'Choose' }}</button>
     </li>
    </ul>
