@@ -87,6 +87,12 @@
  const legalLinks = computed(() => [...named(footer.value?.legal_links).map(linked), ...(props.site.analytics?.howWeCountLink ? [{ label: 'How we count visits', link: { is: NuxtLink, to: HOW_WE_COUNT_PATH } }] : [])]);
  const legal = computed(() => footer.value?.legal.trim() || `© ${year} ${name.value}`);
 
+ // "Report this site" (the studio's docs/payments-safety.md): on every
+ // site, small, even when the owner turned the footer off, so it can't be
+ // hidden. It names the page it came from.
+ const route = useRoute();
+ const report = computed(() => ({ path: REPORT_PATH, query: route.path.startsWith('/__timbrr') ? {} : { from: route.path } }));
+
  // The floating button, when it's on and has both words and somewhere to go.
  const floating = computed(() => {
   const row = footer.value?.floating;
@@ -182,12 +188,25 @@
      <component :is="entry.link.is" :to="entry.link.to" :href="entry.link.href" class="tb-site-footer__link">{{ entry.label }}</component>
     </li>
    </ul>
-   <span class="tb-site-footer__built">Built on Timbrr</span>
+   <span class="tb-site-footer__built">Built on Timbrr · <NuxtLink :to="report" class="tb-site-footer__link" rel="nofollow">Report this site</NuxtLink></span>
   </div>
  </footer>
+ <p v-else class="tb-site-report"><NuxtLink :to="report" rel="nofollow">Report this site</NuxtLink></p>
 </template>
 
 <style>
+ .tb-site-report {
+  margin: 0;
+  padding: 12px var(--site-gutter, 20px);
+  font-size: 12px;
+  text-align: center;
+  color: var(--site-body);
+ }
+
+ .tb-site-report a {
+  color: inherit;
+ }
+
  /* The dark band closing the page: the name in the display face, then the
     links in columns, then a ruled-off line of small print. Every color is
     the dark band's ink mixed down, so it reads on whatever --site-dark is. */
