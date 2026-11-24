@@ -63,6 +63,8 @@ export async function useTimbrrPage(path, { source = '', quiet = false } = {}) {
    analytics: analyticsSettings(fetched.data.value?.analytics),
    // Payments taking gifts (the studio's docs/payments.md): the Donate block draws only then.
    payments: value.payments === true,
+   // Bookings on (the studio's docs/bookings.md): the Booking block draws only then.
+   bookings: value.bookings === true,
   };
  });
  // On a dev or staging address (the note the server writes says it is one),
