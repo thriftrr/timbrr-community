@@ -76,3 +76,4 @@ check:
 	cd src && node layer/scripts/check-missed.mjs
 	cd src && node layer/scripts/build-analytics.mjs --check
 	cd src && node layer/scripts/check-analytics.mjs
+	cd src && node layer/scripts/check-own-blocks.mjs
