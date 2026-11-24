@@ -86,6 +86,9 @@ it, so searching the tray still finds it. Why, and how pages move over:
   Open now, plus a service area and details of its own.
 - `cta` Call to action: a banner or band with one or two buttons.
 - `form` Form: a form from the site's Forms in the studio.
+- `donate` Donate: three amounts and Other for a fund, then Stripe Checkout on
+  the owner's own account (the studio's docs/payments.md). Needs the Payments
+  add-on and a connected bank; without them it draws nothing on the live site.
 - `table` Table: rows and columns under an optional heading, as real table
   markup. Cells merge across and down, each column lines up left, center or
   right, the first row and the first column can be headings, and it draws
