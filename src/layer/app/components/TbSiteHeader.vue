@@ -103,6 +103,7 @@
   finder.value.open(from);
  }
 
+ const languages = computed(() => languageList(props.site.languages));
  const phone = computed(() => String(props.site.details?.phone ?? '').trim());
  const dial = computed(() => telHref(phone.value));
  const icons = computed(() => {
@@ -113,7 +114,9 @@
    set.account.on && { key: 'account', text: 'Sign in', link: linkTo(set.account) },
    set.cart.on && { key: 'cart', label: 'Cart', link: linkTo(set.cart) },
    set.phone.on && phone.value && { key: 'phone', text: phone.value, link: linkTo({ to: dial.value }) },
-   set.language.on && { key: 'language', text: set.language.label.trim() || 'EN', link: linkTo(set.language) },
+   // The language switcher (the studio's docs/languages.md): one short code a
+   // language, once a second one is live; the icon draws nothing before that.
+   ...(set.language.on ? languages.value.map((one) => ({ key: `language-${one.code}`, text: one.label, lang: one.code, current: one.current, link: { is: 'a', href: one.href } })) : []),
   ].filter(Boolean);
  });
 
@@ -435,7 +438,7 @@
     </nav>
 
     <div v-if="layout !== 'button' && (icons.length || socials.length)" class="tb-site-header__icons">
-     <component :is="icon.link.is" v-for="icon in icons" :key="icon.key" :to="icon.link.to" :href="icon.link.href" class="tb-site-header__icon" :aria-label="icon.label" :aria-haspopup="icon.open ? 'dialog' : undefined" @click="icon.open?.($event)">
+     <component :is="icon.link.is" v-for="icon in icons" :key="icon.key" :to="icon.link.to" :href="icon.link.href" class="tb-site-header__icon" :aria-label="icon.label" :aria-haspopup="icon.open ? 'dialog' : undefined" :aria-current="icon.current ? 'true' : undefined" :hreflang="icon.lang" :lang="icon.lang" @click="icon.open?.($event)">
       <svg v-if="icon.key === 'search'" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
        <circle cx="7" cy="7" r="5" />
        <path d="M11 11l3.5 3.5" />
@@ -551,7 +554,7 @@
          <component :is="entry.link.is" :to="entry.link.to" :href="entry.link.href" class="tb-site-header__sheet-link">{{ entry.label }}</component>
         </li>
         <li v-for="icon in menuIcons" :key="icon.key">
-         <component :is="icon.link.is" :to="icon.link.to" :href="icon.link.href" class="tb-site-header__sheet-link" :aria-haspopup="icon.open ? 'dialog' : undefined" @click="icon.open?.($event)">{{ icon.text ?? icon.label }}</component>
+         <component :is="icon.link.is" :to="icon.link.to" :href="icon.link.href" class="tb-site-header__sheet-link" :aria-haspopup="icon.open ? 'dialog' : undefined" :aria-current="icon.current ? 'true' : undefined" :hreflang="icon.lang" :lang="icon.lang" @click="icon.open?.($event)">{{ icon.text ?? icon.label }}</component>
         </li>
        </ul>
        <component :is="secondary.link.is" v-if="secondary" :to="secondary.link.to" :href="secondary.link.href" data-tb-button="secondary" class="tb-site-header__cta tb-site-header__cta--outline tb-site-header__cta--wide">{{ secondary.label }}</component>
@@ -775,6 +778,13 @@
 
  a.tb-site-header__icon:hover {
   color: var(--site-heading);
+ }
+
+ /* The language the page is in, in the switcher. */
+ .tb-site-header__icon[aria-current],
+ .tb-site-header__sheet-link[aria-current] {
+  text-decoration: underline;
+  text-underline-offset: 3px;
  }
 
  /* The site's social icons (FB-122): a row of marks beside the other icons,
