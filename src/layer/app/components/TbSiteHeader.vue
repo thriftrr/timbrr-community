@@ -60,6 +60,10 @@
  });
 
  // `at` is where the item is in the header's own menu, for the studio's stage.
+ // Members on, with the header link (the studio's docs/members.md): Sign in at
+ // the end of the menu, or Account once signed in (useTimbrrMemberIn).
+ const memberIn = useTimbrrMemberIn();
+ const memberItem = computed(() => (props.site?.members?.header ? { ...linked({ label: memberIn.value ? 'Account' : 'Sign in', to: memberIn.value ? '/account' : '/members' }), at: -1, kind: 'link', children: [], columns: [], feature: null, button: null } : null));
  const items = computed(() =>
   (header.value?.menu ?? []).map((item, at) => ({ item, at })).filter(({ item }) => named([item]).length).map(({ item, at }) => {
    const children = item.layout === 'link' ? [] : named(item.children).map(linked);
@@ -68,7 +72,7 @@
    const feature = kind === 'mega' && item.feature ? { ...item.feature, link: linkTo(item.feature), src: safeSrc(item.feature.image?.src) } : null;
    const button = kind === 'mega' && item.button ? { ...item.button, link: linkTo(item.button) } : null;
    return { ...linked(item), at, kind, children, columns: kind === 'mega' ? megaColumns(children) : [], feature, button };
-  }),
+  }).concat(memberItem.value ? [memberItem.value] : []),
  );
  const announce = computed(() => {
   const notice = header.value?.announce;

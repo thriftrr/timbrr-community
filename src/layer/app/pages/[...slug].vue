@@ -9,7 +9,9 @@
  // its address, like the starter's index.vue for /.
  definePageMeta({ layout: false });
 
- const { site, blocks, style } = await useTimbrrPage();
+ const { site, page, blocks, style } = await useTimbrrPage();
+ // A locked page or entry (the studio's docs/members.md) comes as its teaser; the join box follows it.
+ const locked = computed(() => (page.value.access?.locked === true ? page.value.access : null));
 
  // As on the canvas: a site with no name or address to show isn't framed.
  const framed = computed(() => Boolean(site.value.name || site.value.domain));
@@ -21,6 +23,7 @@
   <TbSiteHeader v-if="framed" :site="site" />
   <main id="main" tabindex="-1" class="tb-page__main">
    <TbBlocks :blocks="blocks" />
+   <TbMembersGate v-if="locked" :access="locked" />
   </main>
   <TbSiteFooter v-if="framed" :site="site" />
  </div>
