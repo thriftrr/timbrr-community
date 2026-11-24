@@ -89,6 +89,13 @@ it, so searching the tray still finds it. Why, and how pages move over:
 - `donate` Donate: three amounts and Other for a fund, then Stripe Checkout on
   the owner's own account (the studio's docs/payments.md). Needs the Payments
   add-on and a connected bank; without them it draws nothing on the live site.
+- `booking` Book a time: services and classes, or (preset Reserve a table) a
+  table by party size, then a day and one of the free times, then a name and
+  email (the studio's docs/bookings.md). Relayed through `/__timbrr/bookings/*`;
+  a deposit goes through Stripe Checkout. The guest's link in every booking
+  email is `/booking/<token>`, where they can cancel. Needs the Bookings
+  add-on; without it the block draws nothing on the live site, and on a dev
+  or staging address booking answers that it opens once the site is live.
 - `table` Table: rows and columns under an optional heading, as real table
   markup. Cells merge across and down, each column lines up left, center or
   right, the first row and the first column can be headings, and it draws
