@@ -108,7 +108,9 @@
  watch([day, menu], loadTimes, { immediate: true });
 
  // ── Paying ──
- const who = reactive({ name: '', email: '', phone: '', note: '', address: '', zip: '' });
+ // textOk: the "Text me when it's ready" box (the studio's docs/texting.md),
+ // never ticked for them, shown only when the site can text.
+ const who = reactive({ name: '', email: '', phone: '', textOk: false, note: '', address: '', zip: '' });
  const busy = ref(false);
  const ready = computed(() => lines.value.length && (table.value || at.value) && !short.value);
  async function order() {
@@ -199,7 +201,8 @@
      <div class="tb-booking__who">
       <label class="tb-booking__field"><span>Name</span><input v-model="who.name" class="tb-form__control" autocomplete="name" required maxlength="120" /></label>
       <label class="tb-booking__field"><span>Email</span><input v-model="who.email" class="tb-form__control" type="email" autocomplete="email" required maxlength="254" /></label>
-      <label class="tb-booking__field"><span>Phone <small>(if you like)</small></span><input v-model="who.phone" class="tb-form__control" type="tel" autocomplete="tel" maxlength="40" /></label>
+      <label class="tb-booking__field"><span>Phone <small>{{ who.textOk ? '(for texts)' : '(if you like)' }}</small></span><input v-model="who.phone" class="tb-form__control" type="tel" autocomplete="tel" maxlength="40" :required="who.textOk" /></label>
+      <label v-if="menu?.texting" class="tb-booking__check"><input v-model="who.textOk" type="checkbox" /> <span>{{ menu.texting.consent }}<small v-if="who.textOk"> US numbers only. Otherwise we'll email you instead.</small></span></label>
       <template v-if="kind === 'delivery' && !table">
        <label class="tb-booking__field"><span>Street address</span><input v-model="who.address" class="tb-form__control" autocomplete="street-address" required maxlength="300" /></label>
        <label class="tb-booking__field"><span>ZIP code</span><input v-model="who.zip" class="tb-form__control" autocomplete="postal-code" inputmode="numeric" required maxlength="5" pattern="\d{5}" /></label>

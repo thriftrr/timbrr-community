@@ -37,7 +37,9 @@
  const times = ref([]);
  const loadingTimes = ref(false);
  const at = ref(0);
- const guest = reactive({ name: '', email: '', phone: '', note: '' });
+ // textOk: the "Text me" box (the studio's docs/texting.md), never ticked for
+ // them, shown only when the site can text (services answers `texting`).
+ const guest = reactive({ name: '', email: '', phone: '', textOk: false, note: '' });
  const busy = ref(false);
  const done = ref('');
 
@@ -185,7 +187,8 @@
     <div v-if="at" class="tb-booking__who">
      <label class="tb-booking__field"><span>Name</span><input v-model="guest.name" class="tb-form__control" autocomplete="name" required maxlength="120" /></label>
      <label class="tb-booking__field"><span>Email</span><input v-model="guest.email" class="tb-form__control" type="email" autocomplete="email" required maxlength="254" /></label>
-     <label class="tb-booking__field"><span>Phone <small>(if you like)</small></span><input v-model="guest.phone" class="tb-form__control" type="tel" autocomplete="tel" maxlength="40" /></label>
+     <label class="tb-booking__field"><span>Phone <small>{{ guest.textOk ? '(for texts)' : '(if you like)' }}</small></span><input v-model="guest.phone" class="tb-form__control" type="tel" autocomplete="tel" maxlength="40" :required="guest.textOk" /></label>
+     <label v-if="list?.texting" class="tb-booking__check"><input v-model="guest.textOk" type="checkbox" /> <span>{{ list.texting.consent }}<small v-if="guest.textOk"> US numbers only. Otherwise we'll email you instead.</small></span></label>
      <label class="tb-booking__field"><span>Anything we should know?</span><textarea v-model="guest.note" class="tb-form__control" rows="2" maxlength="500" /></label>
     </div>
 

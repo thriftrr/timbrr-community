@@ -584,6 +584,22 @@ html:has(.tb-site-header-shell.is-sticky) {
  font-size: 14px;
 }
 
+.tb-booking__check {
+ display: flex;
+ gap: 8px;
+ align-items: flex-start;
+ font-size: 14px;
+}
+
+.tb-booking__check input {
+ margin-top: 3px;
+}
+
+.tb-booking__check small {
+ display: block;
+ opacity: 0.75;
+}
+
 .tb-booking__go {
  justify-content: center;
  width: 100%;
