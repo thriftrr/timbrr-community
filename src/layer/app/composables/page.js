@@ -37,7 +37,11 @@ export async function useTimbrrPage(path, { source = '', quiet = false } = {}) {
  const ownBlocks = useTimbrrOwnBlocks();
  // No second try: a 502 means the site's server already gave the studio
  // its chance (and its 8 seconds).
- const fetched = source ? useFetch(source, { retry: false }) : useFetch('/__timbrr/page', { query: { path: address }, retry: false });
+ // A gift link's ?gift= and Preview as's ?as= ride along (the studio's
+ // docs/members.md); the site's server decides what each may do.
+ const gift = computed(() => (typeof route.query.gift === 'string' ? route.query.gift : undefined));
+ const as = computed(() => (typeof route.query.as === 'string' ? route.query.as : undefined));
+ const fetched = source ? useFetch(source, { retry: false }) : useFetch('/__timbrr/page', { query: { path: address, gift, as }, retry: false });
 
  // The site as its header and footer draw it: { name, domain, nav, accent,
  // frame, details, search }. `frame` is the page's header and footer from
@@ -67,6 +71,8 @@ export async function useTimbrrPage(path, { source = '', quiet = false } = {}) {
    bookings: value.bookings === true,
    // Ordering on and Payments taking money (the studio's docs/ordering.md): the Order block draws only then.
    ordering: value.ordering === true,
+   // Members on (the studio's docs/members.md): { header } says whether the header shows Sign in.
+   members: value.members && typeof value.members === 'object' ? { header: value.members.header !== false } : null,
   };
  });
  // On a dev or staging address (the note the server writes says it is one),

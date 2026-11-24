@@ -381,6 +381,40 @@ same in a layout:
 </template>
 ```
 
+## Members
+
+The studio's Members add-on (its docs/members.md): visitors sign in with
+their email, and an owner locks pages, sections and entries to members or
+to some paid plans. What the layer does:
+
+- **Locked content never reaches the edge copy.** The studio's public page
+  read holds only a locked page's teaser (its first block; an entry's first
+  block and a few paragraphs), `page.access` (`{ locked, who, plans,
+  preview }`) and, when Members only sections were left out,
+  `page.membersSections`. `/__timbrr/page` then asks the studio's uncached
+  `members/page` read again for a visitor holding the `tb_member` or
+  `tb_gift` cookie, and never lets the browser keep such a page
+  (`private, no-store`).
+- **The join box.** Under a locked page's teaser, `TbMembersGate` says who
+  it's for and links to `/members` (free) or `/join` (plans).
+- **Routes.** `/members` (an email, then a link or a 6-digit code; no
+  password), `/join` (plans, monthly or yearly at ten months, Stripe
+  Checkout on the owner's account), `/account` (plan, Manage billing on
+  Stripe's own page, Sign out here or everywhere). An owner's own published
+  page at one of these addresses wins, drawn by `TbPublishedPage`.
+- **The cookie.** `/__timbrr/members/*` relays to the studio with the relay
+  secret and the visitor's address. `verify` answers with a session token,
+  which goes into `tb_member` (httpOnly, Secure, SameSite=Lax, 30 days) and
+  never to the browser; every later call sends it as `x-timbrr-member`.
+  `signout` clears it. A gift link's `?gift=` is spent once and kept in
+  `tb_gift` for a day.
+- **The header.** With Members on and the owner's header switch on
+  (`site.members.header`), the menu ends with Sign in, or Account once
+  signed in (`useTimbrrMemberIn`, worked out on the server from the cookie).
+- **Dev and staging.** Signing in answers that it opens once the site is
+  live; `?as=visitor|member|<plan id>` on the page's address is passed to the
+  draft read, which is the studio's Preview as.
+
 ## Closed days and not-found reports
 
 Both come from the studio's Business details and the Worker's own 404s.
