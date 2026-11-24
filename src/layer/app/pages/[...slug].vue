@@ -27,5 +27,6 @@
    <TbMembersGate v-if="locked" :access="locked" />
   </main>
   <TbSiteFooter v-if="framed" :site="site" />
+  <LazyTbSiteChat v-if="site.chat" :name="site.chat.name" />
  </div>
 </template>
