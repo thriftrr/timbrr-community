@@ -4,12 +4,12 @@
  // Pick a plan, and Sign out (here or everywhere). Not signed in: to /members.
  definePageMeta({ layout: false });
  const route = useRoute();
- const { own, site, style } = await useTimbrrMembersFrame('Your account');
- const memberIn = useTimbrrMemberIn();
- const { data, error } = own ? { data: ref(null), error: ref(null) } : await useFetch('/__timbrr/members/me', { key: 'tb-members-me', retry: false, default: () => null });
+ const nuxtApp = useNuxtApp();
+ const { own, site, style, memberIn } = await useTimbrrMembersFrame('Your account');
+ const { data, error } = own ? { data: ref(null), error: ref(null) } : await nuxtApp.runWithContext(() => useFetch('/__timbrr/members/me', { key: 'tb-members-me', retry: false, default: () => null }));
  if (!own && error.value?.statusCode === 401 || error.value?.statusCode === 404) {
   memberIn.value = false;
-  await navigateTo('/members?back=/account', { replace: true });
+  await nuxtApp.runWithContext(() => navigateTo('/members?back=/account', { replace: true }));
  }
  const me = computed(() => data.value?.member ?? null);
  const busy = ref(false);

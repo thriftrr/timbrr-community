@@ -105,6 +105,9 @@
  }
 
  .tb-jobs__apply {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
   flex: none;
   margin-left: auto;
   font-size: 15px;

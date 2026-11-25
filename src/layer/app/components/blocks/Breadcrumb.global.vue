@@ -47,6 +47,9 @@
  }
 
  .tb-breadcrumb__step a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
   font-weight: 600;
   color: var(--site-accent);
   text-decoration: none;

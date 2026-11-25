@@ -192,6 +192,9 @@
  }
 
  .tb-contact-details__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
   color: inherit;
   text-decoration: none;
   overflow-wrap: anywhere;

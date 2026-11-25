@@ -5,9 +5,9 @@
  // card at the start. Not signed in, the button signs in first and comes back.
  definePageMeta({ layout: false });
  const route = useRoute();
- const { own, site, style } = await useTimbrrMembersFrame('Pick your plan');
- const memberIn = useTimbrrMemberIn();
- const { data, error } = own ? { data: ref(null), error: ref(null) } : await useFetch('/__timbrr/members/plans', { key: 'tb-members-plans', retry: false, default: () => null });
+ const nuxtApp = useNuxtApp();
+ const { own, site, style, memberIn } = await useTimbrrMembersFrame('Pick your plan');
+ const { data, error } = own ? { data: ref(null), error: ref(null) } : await nuxtApp.runWithContext(() => useFetch('/__timbrr/members/plans', { key: 'tb-members-plans', retry: false, default: () => null }));
  const plans = computed(() => data.value?.plans ?? []);
  const yearly = ref(false);
  // Yearly is one charge, so the studio offers it only up to $100 a month (no

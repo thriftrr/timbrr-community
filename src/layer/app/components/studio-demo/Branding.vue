@@ -66,7 +66,7 @@
    <section class="br-sec" aria-labelledby="br-logo">
     <h3 id="br-logo" class="br-sec__head">Logo</h3>
     <div class="br-logo">
-     <img class="br-logo__img" :src="artSrc(logo.art)" alt="" />
+     <img loading="lazy" decoding="async" class="br-logo__img" :src="artSrc(logo.art)" alt="" />
      <div class="br-logo__name">
       <p>{{ logo.name }}</p>
       <p class="sd-help">In the header and footer</p>

@@ -429,6 +429,10 @@
  }
 
  .tb-site-footer__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding-block: 1px;
   color: inherit;
   text-decoration: none;
   overflow-wrap: anywhere;

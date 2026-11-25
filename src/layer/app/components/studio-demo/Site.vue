@@ -28,10 +28,10 @@
     <p class="ss-lead">{{ data.lead }}</p>
     <span v-if="data.button" class="ss-button">{{ data.button }}</span>
    </div>
-   <img class="ss-art" :src="artSrc(data.art)" alt="" />
+   <img loading="lazy" decoding="async" class="ss-art" :src="artSrc(data.art)" alt="" />
   </div>
   <div v-else-if="type === 'text_image'" class="ss-split ss-split--flip">
-   <img class="ss-art" :src="artSrc(data.art)" alt="" />
+   <img loading="lazy" decoding="async" class="ss-art" :src="artSrc(data.art)" alt="" />
    <div>
     <h2 class="ss-title">{{ data.headline }}</h2>
     <p class="ss-lead">{{ data.body }}</p>
@@ -40,7 +40,7 @@
   <template v-else-if="type === 'gallery'">
    <h2 class="ss-title">{{ data.headline }}</h2>
    <div class="ss-grid">
-    <img v-for="art in data.items" :key="art" class="ss-art ss-art--tile" :src="artSrc(art)" alt="" />
+    <img loading="lazy" decoding="async" v-for="art in data.items" :key="art" class="ss-art ss-art--tile" :src="artSrc(art)" alt="" />
    </div>
   </template>
   <template v-else-if="type === 'cards'">

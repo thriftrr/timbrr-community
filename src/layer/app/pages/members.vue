@@ -6,8 +6,7 @@
  // site) is where they go after.
  definePageMeta({ layout: false });
  const route = useRoute();
- const { own, site, style } = await useTimbrrMembersFrame('Sign in');
- const memberIn = useTimbrrMemberIn();
+ const { own, site, style, memberIn } = await useTimbrrMembersFrame('Sign in');
  const back = computed(() => {
   const to = String(route.query.back ?? '');
   return /^\/(?![/\\])[A-Za-z0-9/_?=&.%-]{0,400}$/.test(to) && !to.startsWith('/members') ? to : '/account';

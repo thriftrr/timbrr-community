@@ -203,7 +203,7 @@
     <ul v-if="mode === 'icons' && (shown.length || uploading)" class="me-grid">
      <li v-if="uploading" class="me-tile is-uploading">
       <span class="me-tile__pic">
-       <img :src="artSrc(uploading.art)" alt="" />
+       <img loading="lazy" decoding="async" :src="artSrc(uploading.art)" alt="" />
        <span class="me-progress" aria-hidden="true"><span /></span>
       </span>
       <span class="me-tile__name"><span class="me-tile__file">{{ uploading.name }}</span></span>
@@ -211,7 +211,7 @@
      </li>
      <li v-for="entry in shown" :key="entry.id">
       <button type="button" class="me-tile" :aria-pressed="entry.id === selected" @click="pick(entry.id)" @dblclick="openBox(entry.id)">
-       <span class="me-tile__pic"><img :src="artSrc(entry.art)" :alt="entry.alt" /></span>
+       <span class="me-tile__pic"><img loading="lazy" decoding="async" :src="artSrc(entry.art)" :alt="entry.alt" /></span>
        <span class="me-tile__name">
         <span class="me-tile__file">{{ entry.name }}</span>
         <span v-if="entry.isNew" class="sd-badge sd-badge--live">New</span>
@@ -239,7 +239,7 @@
       <tr v-if="uploading" class="is-uploading">
        <td>
         <span class="me-row__name">
-         <img :src="artSrc(uploading.art)" alt="" class="me-row__thumb" />
+         <img loading="lazy" decoding="async" :src="artSrc(uploading.art)" alt="" class="me-row__thumb" />
          <span class="me-row__file">{{ uploading.name }}<span class="me-progress" aria-hidden="true"><span /></span></span>
         </span>
        </td>
@@ -250,7 +250,7 @@
       <tr v-for="entry in shown" :key="entry.id" :class="{ 'is-selected': entry.id === selected }" @click="pick(entry.id)" @dblclick="openBox(entry.id)">
        <td>
         <button type="button" class="me-row__name" :aria-pressed="entry.id === selected">
-         <img :src="artSrc(entry.art)" :alt="entry.alt" class="me-row__thumb" />
+         <img loading="lazy" decoding="async" :src="artSrc(entry.art)" :alt="entry.alt" class="me-row__thumb" />
          <span class="me-row__file">{{ entry.name }}</span>
          <span v-if="entry.isNew" class="sd-badge sd-badge--live">New</span>
          <span v-if="needsAlt(entry)" class="me-flag" title="Needs alt text"><StudioDemoIcon name="alert-triangle" :size="13" /><span class="sd-sr">Needs alt text</span></span>
@@ -276,7 +276,7 @@
     <template v-if="file">
      <div class="me-detail__body sd-pane">
       <button type="button" class="me-preview" :aria-label="`Open ${file.name} large`" @click="openBox()">
-       <img :src="artSrc(file.art)" :alt="file.alt" />
+       <img loading="lazy" decoding="async" :src="artSrc(file.art)" :alt="file.alt" />
       </button>
       <div class="me-name">
        <div class="me-name__text">
@@ -356,7 +356,7 @@
    </div>
    <div class="me-box__stage">
     <button type="button" class="me-box__btn" aria-label="Previous file" :disabled="shown.length < 2" @click="step(-1)"><StudioDemoIcon name="chevron-left" :size="20" /></button>
-    <img :src="artSrc(litFile.art)" :alt="litFile.alt" />
+    <img loading="lazy" decoding="async" :src="artSrc(litFile.art)" :alt="litFile.alt" />
     <button type="button" class="me-box__btn" aria-label="Next file" :disabled="shown.length < 2" @click="step(1)"><StudioDemoIcon name="chevron-right" :size="20" /></button>
    </div>
    <p class="me-box__alt">{{ litFile.alt || (litFile.kind === 'PDF' ? size(litFile) : 'No alt text yet') }}</p>

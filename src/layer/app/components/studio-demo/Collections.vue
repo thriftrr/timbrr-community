@@ -214,7 +214,7 @@
         </td>
         <td>
          <button type="button" class="co-open" :class="{ 'is-blank': !item.name.trim() }" @click.stop="open(item.id)">
-          <img v-if="item.art" class="co-thumb" :src="artSrc(item.art)" alt="" />
+          <img loading="lazy" decoding="async" v-if="item.art" class="co-thumb" :src="artSrc(item.art)" alt="" />
           <span>{{ title(item) }}</span>
          </button>
         </td>
@@ -252,7 +252,7 @@
     </div>
     <template v-if="entry">
      <div class="co-ehead">
-      <img v-if="entry.art" class="co-ehead__pic" :src="artSrc(entry.art)" alt="" />
+      <img loading="lazy" decoding="async" v-if="entry.art" class="co-ehead__pic" :src="artSrc(entry.art)" alt="" />
       <span v-else class="co-ehead__icon" aria-hidden="true"><StudioDemoIcon :name="ICONS[col.key]" :size="18" /></span>
       <div class="co-ehead__name">
        <p class="co-ehead__title" :class="{ 'is-blank': !entry.name.trim() }">{{ title(entry) }}</p>
@@ -287,7 +287,7 @@
        <p id="co-art" class="sd-label">Picture</p>
        <div class="co-arts" role="group" aria-labelledby="co-art">
         <button v-for="(key, index) in ARTS" :key="key" type="button" class="co-art" :aria-pressed="entry.art === key" :aria-label="`Picture ${index + 1}`" @click="(entry.art = key), edit()">
-         <img :src="artSrc(key)" alt="" />
+         <img loading="lazy" decoding="async" :src="artSrc(key)" alt="" />
         </button>
        </div>
        <p class="sd-help">From the site’s Media.</p>

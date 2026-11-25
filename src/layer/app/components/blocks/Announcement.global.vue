@@ -99,6 +99,9 @@
  }
 
  .tb-announcement__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
   min-width: 0;
   border-radius: 2px;
   font-weight: 700;

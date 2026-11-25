@@ -25,7 +25,7 @@ export const MOTION_TIMES = Object.freeze({ quick: 280, normal: 480, calm: 800 }
 export const MOTION_EASES = Object.freeze({
  smooth: 'cubic-bezier(.22,1,.36,1)',
  gentle: 'cubic-bezier(.65,0,.35,1)',
- settle: 'cubic-bezier(.34,1.56,.64,1)',
+ settle: 'cubic-bezier(.16,1,.3,1)',
  spring: 'linear(0,.009,.035 2.1%,.141,.281 6.7%,.723 12.9%,.938 16.7%,1.017,1.077,1.121,1.149 24.3%,1.159,1.163,1.161,1.154 29.9%,1.129 32.8%,1.051 39.6%,1.017 43.1%,.991,.977 51%,.974 53.8%,.975 57.1%,.997 69.8%,1.003 76.9%,1)',
 });
 export const MOTION_INTENSITIES = Object.freeze([
@@ -49,7 +49,7 @@ export const MOTION_PRESETS = Object.freeze([
  { key: 'fade-up', label: 'Fade up', note: 'Rises a little as it fades in.', from: { y: 's', opacity: 0 } },
  { key: 'slide-in', label: 'Slide in', note: 'Comes in from the left. Change Sideways to come from the right.', from: { x: '-l', opacity: 0 } },
  { key: 'zoom', label: 'Zoom', note: 'Grows a touch as it fades in.', from: { scale: 0.92, opacity: 0 } },
- { key: 'rise-settle', label: 'Rise and settle', note: 'Rises, overshoots a hair, settles.', from: { y: 'm', scale: 0.98, opacity: 0 }, time: { ms: 640, ease: 'settle' } },
+ { key: 'rise-settle', label: 'Rise and settle', note: 'Rises, then settles.', from: { y: 'm', scale: 0.98, opacity: 0 }, time: { ms: 640, ease: 'settle' } },
  { key: 'stagger', label: 'One after another', note: 'Its cards or rows arrive one by one. The block itself stays still.', from: { y: 's', opacity: 0 }, items: true },
  { key: 'parallax', label: 'Parallax', note: 'Its pictures drift as the page scrolls. Lively only.', scroll: true },
  { key: 'fade', label: 'Fade', note: 'Fades in where it is.', from: { opacity: 0 }, hidden: true },
