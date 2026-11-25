@@ -673,6 +673,9 @@
  }
 
  .tb-site-header__name {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
   flex: none;
   font-family: var(--site-font-display);
   font-size: 20px;

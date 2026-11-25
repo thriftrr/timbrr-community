@@ -169,6 +169,10 @@
  }
 
  .tb-team__link {
+  display: inline-flex;
+  min-height: 24px;
+  align-items: center;
+  min-height: 24px;
   border-radius: 4px;
   color: var(--site-accent);
   text-decoration: none;

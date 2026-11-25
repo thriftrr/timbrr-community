@@ -166,6 +166,7 @@
  .tb-carousel__arrow {
   display: inline-grid;
   place-items: center;
+  min-width: 24px;
   width: 40px;
   height: 40px;
   border: 1.5px solid var(--site-border);

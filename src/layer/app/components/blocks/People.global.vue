@@ -181,6 +181,9 @@
  }
 
  .tb-people__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
   border-radius: 4px;
   color: var(--site-accent);
   text-decoration: none;

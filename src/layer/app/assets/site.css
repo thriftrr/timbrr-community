@@ -535,6 +535,7 @@ html:has(.tb-site-header-shell.is-sticky) {
 }
 
 .tb-booking__choice {
+ min-height: 24px;
  position: relative;
  display: grid;
  justify-items: center;
@@ -552,6 +553,7 @@ html:has(.tb-site-header-shell.is-sticky) {
 }
 
 .tb-booking__choice input {
+ min-height: 24px;
  position: absolute;
  opacity: 0;
  pointer-events: none;

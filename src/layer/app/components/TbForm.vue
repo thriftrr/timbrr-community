@@ -528,6 +528,10 @@
   margin-top: 24px;
  }
 
+ .tb-form__body--compact .tb-form__control {
+  min-height: 24px;
+ }
+
  .tb-form__body--compact .tb-form__grid {
   margin-top: 0;
   gap: 10px;

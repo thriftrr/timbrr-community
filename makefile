@@ -78,3 +78,4 @@ check:
 	cd src && node layer/scripts/check-analytics.mjs
 	cd src && node layer/scripts/check-own-blocks.mjs
 	cd src && node layer/scripts/check-texting.mjs
+	cd src && node layer/scripts/check-community.mjs

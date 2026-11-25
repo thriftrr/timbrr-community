@@ -136,6 +136,7 @@
  /* The calendar: a card of the next four weeks. */
  .tb-book__calendar {
   display: block;
+  min-height: 24px;
   border: 1px solid var(--site-border);
   border-radius: var(--site-radius);
   padding: clamp(16px, 2vw, 20px);
