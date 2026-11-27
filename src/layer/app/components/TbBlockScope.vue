@@ -20,6 +20,12 @@
  // Locked blocks). It's one piece on the page, its placement: any block of
  // it selects all of it, and the first carries the ink tab, the handle for
  // the whole piece.
+ //
+ // A part of a collection's page design around an entry's story (lock.kind
+ // 'design', docs/README.md § Collections, "Page builder") is locked the same
+ // way, and says so all the time, never by fading (the studio's D17): the
+ // design's own text at full strength under a tint and a dashed outline, and
+ // a pill, "From the Program page design · Edit design", on its first block.
  import { blockData, componentName } from '#timbrr/manifest';
  import TbOwnBlock from './TbOwnBlock.vue';
 
@@ -139,6 +145,7 @@
    'is-hidden': block.hidden,
    'is-dragging': dragged,
    'is-locked': block.lock,
+   'is-design': block.lock?.kind === 'design',
    'is-hovered': hovered,
    'is-first': block.lock?.index === 0,
    'is-last': block.lock && block.lock.index === block.lock.count - 1,
@@ -166,13 +173,18 @@
    <span v-if="canvas.editable.value" class="tb-frame__grip" aria-hidden="true">
     <svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="2" cy="2" r="1.5" /><circle cx="8" cy="2" r="1.5" /><circle cx="2" cy="7" r="1.5" /><circle cx="8" cy="7" r="1.5" /><circle cx="2" cy="12" r="1.5" /><circle cx="8" cy="12" r="1.5" /></svg>
    </span>
-   <svg v-if="block.lock" class="tb-frame__link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+   <svg v-if="block.lock?.kind === 'design'" class="tb-frame__link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <rect x="4" y="11" width="16" height="10" rx="2" />
+    <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+   </svg>
+   <svg v-else-if="block.lock" class="tb-frame__link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
     <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
     <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
    </svg>
-   <span v-if="block.lock">{{ block.lock.name }} · shared<template v-if="Number.isInteger(block.lock.pages)"> · on {{ block.lock.pages }} {{ block.lock.pages === 1 ? 'page' : 'pages' }}</template><template v-if="block.hidden"> · hidden</template></span>
+   <span v-if="block.lock?.kind === 'design'">From the {{ block.lock.name }} design</span>
+   <span v-else-if="block.lock">{{ block.lock.name }} · shared<template v-if="Number.isInteger(block.lock.pages)"> · on {{ block.lock.pages }} {{ block.lock.pages === 1 ? 'page' : 'pages' }}</template><template v-if="block.hidden"> · hidden</template></span>
    <span v-else>{{ def?.label ?? block.type }}<template v-if="inColumn"> · in a column</template><template v-for="part in summary" :key="part"> · {{ part }}</template><template v-if="block.hidden"> · hidden</template></span>
-   <button v-if="block.lock && canvas.library.value" type="button" class="tb-frame__open" @click="open">Edit in the Library</button>
+   <button v-if="block.lock && canvas.library.value" type="button" class="tb-frame__open" @click="open">{{ block.lock.kind === 'design' ? 'Edit design' : 'Edit in the Library' }}</button>
    <button v-if="canStyle" type="button" class="tb-frame__style" aria-haspopup="true" :aria-expanded="styling ? 'true' : 'false'" :aria-controls="styling ? menuId : undefined" @click.stop="styling = !styling">Style ▾</button>
   </span>
   <div v-if="styling && canStyle" :id="menuId" ref="menu" class="tb-frame__menu" role="group" aria-label="Style of this block" @keydown="onMenuKey" @click.stop>

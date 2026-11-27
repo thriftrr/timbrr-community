@@ -635,6 +635,42 @@ never asks for anything: `timbrr:doc`'s `collections` is `{ lists, raw }`
 A studio that sends no `collections` gets the stand-ins for a Collection list and a
 Entry field. Site search still draws its stand-in: it has no site to ask.
 
+### A collection's page design
+
+A collection's entry pages are drawn from its page design, a Library
+template the studio calls "<Singular> page" ("Program page"; the studio's
+docs/collections.md, "The page design" and "Page builder"; feedback round
+eleven D10 to D13). Every entry gets the same design, bound to it by the
+studio as it serves the page; the layer has two blocks for it and one key on
+an image.
+
+- `story_slot` ("Story slot"): where each entry's own blocks go, its
+  collection's Page builder field (`field`; '' is the first). Its settings
+  are the studio's `story_slot` widget's: `allow` (`any` or `only`, with
+  `only` listing block types), `starters`, `max` (0 is no limit) and `empty`;
+  the studio holds each entry's story to them. Served, the studio puts the
+  entry's blocks in the slot's place, as the page's own blocks. On the
+  canvas it sets `story` to the previewed entry's blocks, which the slot
+  draws inside a dashed frame tagged "Story · each entry's own", as the site
+  draws them (it provides no canvas to them: nothing in it is selected or
+  typed into); with no story, the frame says what goes there. A slot handed
+  a `story` on the live site draws it with `TbBlocks`.
+- `quick_facts` ("Quick facts"): a strip of `facts` (`[{ key, label, text
+  }]`, up to 4), the entry's values for the fields its collection picked,
+  set by the studio. None: nothing on the site, a stand-in on the canvas.
+  Its `quick_facts` widget is the studio's picker, which saves to the
+  collection.
+- An image value's `from` (`imageSchema`): the entry's picture field it comes
+  from. The studio puts that field's picture and its alt text in `src` and
+  `alt`; with no picture `src` is empty and nothing is drawn.
+- A block marked `band: 'signup'` (kept beside its data, like its classes)
+  is the sign-up band, which the studio leaves out of an entry that turned
+  "Show the sign-up band" off. The layer doesn't read it.
+
+In the studio's story editor the design's parts around an entry's story
+come as locked blocks with `lock.kind: 'design'` (Locked blocks, in
+docs/manifest.md).
+
 ### Collection-aware blocks of a site's own
 
 A site's own block can list entries its own way. It's an ordinary
