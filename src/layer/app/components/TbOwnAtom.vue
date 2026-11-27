@@ -8,6 +8,8 @@
  // live site (TbOwnBlock lists it on the canvas instead). Nothing here loads a
  // third party: video and embed atoms wait for the site's "What this site
  // collects" list to know about them.
+ import { ownAtomLook } from '../../schema/own-block.js';
+
  const props = defineProps({
   node: { type: Object, required: true },
   row: { type: Object, default: null }, // { list, index } inside a list's grid
@@ -27,6 +29,7 @@
  const tag = computed(() => (props.node === own.first.value && !props.row ? own.headTag.value : 'h3'));
  const styles = computed(() => [
   ...['size', 'color', 'font', 'weight', 'align', 'corners', 'shadow'].filter((key) => props.node[key]).map((key) => `tb-own--${key}-${String(props.node[key]).toLowerCase()}`),
+  ...ownAtomLook(props.node),
   props.node.class ?? '',
  ]);
  const anchor = computed(() => (canvas ? undefined : props.node.anchor));
@@ -44,7 +47,8 @@
  const buttons = computed(() => (Array.isArray(value.value) ? value.value.flatMap((button, index) => (shown(`${path.value}.${index}.label`, button?.label) ? [index] : [])) : []));
  const icon = computed(() => {
   const picked = value.value;
-  return Array.isArray(picked?.paths) ? picked.paths : (BUTTON_ICONS[picked] ?? null);
+  // A card icon too (check, star, heart…): a list's tick is one.
+  return Array.isArray(picked?.paths) ? picked.paths : (BUTTON_ICONS[picked] ?? CARD_ICONS[picked] ?? null);
  });
  const number = computed(() => {
   if (typeof value.value !== 'number' || !Number.isFinite(value.value)) return '';
@@ -69,6 +73,9 @@
 <template>
  <TbText v-if="node.atom === 'eyebrow' && shown(path, value)" :id="anchor" :data="data" :field="path" tag="p" class="tb-eyebrow tb-own__eyebrow" :class="styles" />
  <TbText v-else-if="node.atom === 'heading' && shown(path, value)" :id="anchor" :data="data" :field="path" :tag="tag" class="tb-heading tb-own__heading" :class="styles" />
+ <blockquote v-else-if="node.atom === 'quote' && shown(path, value)" :id="anchor" class="tb-own__quote" :class="styles">
+  <TbText :data="data" :field="path" tag="p" :multiline="field?.kind === 'textarea'" />
+ </blockquote>
  <TbText v-else-if="node.atom === 'text' && shown(path, value)" :id="anchor" :data="data" :field="path" tag="p" :multiline="field?.kind === 'textarea'" class="tb-own__text" :class="styles" />
  <TbRich v-else-if="node.atom === 'rich' && shown(path, value)" :id="anchor" :data="data" :field="path" class="tb-own__rich" :class="styles" />
  <figure v-else-if="node.atom === 'picture' && picture" :id="anchor" class="tb-own__picture" :class="styles">
