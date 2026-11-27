@@ -74,7 +74,7 @@
  // Nothing until the page is in the browser, then once a minute, so a tab
  // left open doesn't go on saying "open" after closing time.
  const status = ref(null);
- // Closed days now or in the next 45 days, for the note above the hours.
+ // Closed days and special hours now or in the next 45 days, above the hours.
  const closures = ref([]);
  let clock = null;
 
@@ -82,7 +82,7 @@
   const live = on('open_now') && !typedHours.value.length;
   status.value = live ? openNow(details.value?.hours, details.value?.timezone, new Date(), details.value?.closedDays) : null;
   // Told even over typed hours: a closed day is the business's, not the week's.
-  closures.value = upcomingClosures(details.value?.closedDays, details.value?.timezone);
+  closures.value = upcomingSpecialDays(details.value?.closedDays, details.value?.timezone);
  }
 
  onMounted(() => {
@@ -126,9 +126,8 @@
     </div>
     <div v-if="hasSide" class="tb-visit__side">
      <ul v-if="showHours && closures.length" class="tb-visit__closures" role="list">
-      <li v-for="closure in closures" :key="closure.words" class="tb-visit__closure">
-       <strong>Closed {{ closure.words }}</strong>
-       <span v-if="closure.note"> · {{ closure.note }}</span>
+      <li v-for="closure in closures" :key="closure.from + closure.to" class="tb-visit__closure">
+       <strong>{{ closure.line }}</strong>
       </li>
      </ul>
      <dl v-if="showHours" class="tb-card tb-visit__hours">

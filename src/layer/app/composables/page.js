@@ -24,6 +24,7 @@ const HEX = /^#[0-9a-f]{6}$/i;
 const LANGUAGE = /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/i;
 const DOMAIN = /^(?=.{4,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i;
 const LOCAL = /^(?:localhost|127\.0\.0\.1|\[::1\])$/;
+const LISTING_TYPE = /^[A-Z][A-Za-z]{1,40}$/;
 
 export async function useTimbrrPage(path, { source = '', quiet = false } = {}) {
  const route = useRoute();
@@ -59,6 +60,8 @@ export async function useTimbrrPage(path, { source = '', quiet = false } = {}) {
    nav: Array.isArray(value.nav) ? value.nav : [],
    frame: frame && typeof frame === 'object' ? frame : null,
    details: value.details && typeof value.details === 'object' ? value.details : null,
+   // What kind of business it is for search engines' structured data (utils/listing.js): { type }, a schema.org type the studio picked from the site's business type; null from an older studio.
+   listing: LISTING_TYPE.test(value.listing?.type ?? '') ? { type: value.listing.type } : null,
    brand: normalizeBrand(value.brand),
    language: LANGUAGE.test(value.language ?? '') ? value.language : 'en',
    // Site search's settings (utils/search.js): off unless the studio says on.
@@ -251,6 +254,17 @@ export async function useTimbrrPage(path, { source = '', quiet = false } = {}) {
    twitterDescription: () => head.value.shareDescription,
    twitterImage: () => head.value.image,
   });
+  // Structured data for Google and other search engines (utils/listing.js):
+  // the business on the home page and on a page with a Visit block, the
+  // WebSite on the home page, a breadcrumb trail elsewhere. JSON with every
+  // character that could close the script escaped (jsonLdText), never HTML.
+  const listing = computed(() => {
+   if (typeof page.value.path !== 'string' || head.value.robots) return '';
+   const footer = page.value.frame?.footer;
+   const graph = listingGraph({ site: site.value, path: page.value.path, title: page.value.title, origin: origin.value, image: head.value.image, blocks: blocks.value, legacySocial: footer && typeof footer === 'object' ? footer.social : [] });
+   return graph.length ? jsonLdText(graph.length === 1 ? graph[0] : graph) : '';
+  });
+  useHead({ script: () => (listing.value ? [{ key: 'timbrr-listing', type: 'application/ld+json', innerHTML: listing.value }] : []) });
  }
 
  // The forms the page shows, for the blocks and footer that name one. This has
