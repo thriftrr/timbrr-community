@@ -43,6 +43,13 @@ export const WIDGETS = [
  // from the collection's own list. The studio's picker also sets `kind` and
  // `from` on the block beside it.
  'collection_field',
+ // A collection's page design (docs/README.md § Collections, "The page design"):
+ // a story slot's settings (which blocks go in each entry's story, the ones a
+ // new entry starts with, how many, whether it can be empty), set together in
+ // the studio; and the quick facts strip's fields, which the studio keeps on
+ // the collection itself.
+ 'story_slot',
+ 'quick_facts',
  // A product in the site's connected Shopify store (docs/manifest.md §
  // Widgets): its handle, picked from a search of the store in the studio.
  'shop_product',
@@ -246,6 +253,11 @@ export const imageSchema = z.object({
  // The inspector's Optimize switch turned off for this placement: the
  // uploaded file alone, no srcset. Missing is on.
  optimize: z.literal(false).optional(),
+ // In a collection's page design: the entry's picture field this image comes
+ // from (docs/README.md § Collections, "The page design"). The studio puts that
+ // field's picture, and its alt text, in `src` and `alt` as it serves each
+ // entry's page; with none there `src` is empty and no image is drawn.
+ from: z.string().regex(/^[a-z][a-z0-9_]{0,39}$/).optional(),
 });
 
 // An icon drawn by its paths: each the `d` of one path on a 24 × 24 grid,

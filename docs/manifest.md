@@ -149,6 +149,11 @@ older value with no `altFrom` and no alt), so pages pick up alt written in
 the media library within a few minutes, without a publish. Any other value
 is refused.
 
+`from` (a field key, optional) is only in a collection's page design: the
+entry's picture field this image comes from (README § Collections, "A
+collection's page design"). The studio fills `src` and `alt` from it as it
+serves each entry's page; the layer only parses it.
+
 **Image delivery.** When the site answer's `site` carries `delivery`
 (`{ origin, widths, quality }`, set up by the Timbrr team; the key is left
 out when it's off), `mediaSrcset` lists Cloudflare resizing addresses
@@ -298,7 +303,7 @@ same-site paths). Nothing a page holds becomes markup.
   { "name": "bur-oak-site", "version": "0.0.0", "tier": "private" },
   { "name": "@timbrr/community", "version": "0.1.0", "tier": "community" }
  ],
- "widgets": ["text", "textarea", "html", "select", "buttons", "items", "image", "nav", "switch", "group", "form", "stepper", "number", "range", "date", "time", "checks", "color", "icon", "tags", "code", "hours", "table", "blocks", "collection", "collection_field", "shop_product", "shop_collection", "content", "content_field"],
+ "widgets": ["text", "textarea", "html", "select", "buttons", "items", "image", "nav", "switch", "group", "form", "stepper", "number", "range", "date", "time", "checks", "color", "icon", "tags", "code", "hours", "table", "blocks", "collection", "collection_field", "story_slot", "quick_facts", "shop_product", "shop_collection", "content", "content_field"],
  "blocks": [
   {
    "type": "hours", "tier": "base", "owner": null, "layer": "@timbrr/community",
@@ -622,6 +627,15 @@ Adding `lock` doesn't change the manifest version.
   first block's id as `move`, unless the canvas isn't editable.
 - No drop slot goes inside a chunk: an edge there moves to the
   chunk's nearer end, and that's the `index` sent.
+- `kind: 'design'` is a part of a collection's page design around an entry's
+  story, in the studio's story editor (README § Collections, "A collection's
+  page design"). It's locked the same way and says so all the time, never
+  by fading: the design's text at full strength under a warm tint
+  (multiplied, so dark ink stays dark), a dashed outline round the chunk
+  that darkens under the pointer, and on its first block a pill, "From the
+  Program page design", with an Edit design button always showing, which
+  asks the studio to open the design (`timbrr:open`, as Edit in the
+  Library does).
 
 **Drop slots.** While a drag is on (either kind), the canvas draws a slot on
 every edge the block could land on and lights the one it would land on now
