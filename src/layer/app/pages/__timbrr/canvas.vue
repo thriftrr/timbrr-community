@@ -135,7 +135,10 @@ import { createInsights } from '../../utils/insights-canvas.js';
   // do on the site (the studio's FB-156: they never did, since this dropped them).
   const from = value.social && typeof value.social === 'object' ? value.social : {};
   const social = Object.fromEntries(SOCIAL_NETWORKS.map((network) => [network, text(from[network], 300)]).filter(([, href]) => href));
-  return { ...Object.fromEntries(strings), hours, social };
+  // Closed days and special hours, and the header's automatic notice, so the
+  // header, footer and Visit read them here as on the site.
+  const closedDays = (Array.isArray(value.closedDays) ? value.closedDays : []).slice(0, 40).map((row) => ({ from: text(row?.from, 10), to: text(row?.to, 10), note: text(row?.note, 120), ...(row?.open && row?.close ? { open: text(row.open, 5), close: text(row.close, 5) } : {}) }));
+  return { ...Object.fromEntries(strings), hours, social, closedDays, notice: value.notice === true, country: text(value.country, 2), priceRange: text(value.priceRange, 4) };
  }
 
  function frameFrom(value, keep) {

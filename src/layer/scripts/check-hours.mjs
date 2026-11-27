@@ -3,7 +3,7 @@
 // Prints one line per case, or the first problem and exits 1. Every time is a
 // fixed moment in America/Chicago, which is UTC-5 on the dates below.
 import assert from 'node:assert/strict';
-import { formatTime, groupHours, openNow, upcomingClosures } from '../app/utils/hours.js';
+import { closedOn, closureNotice, formatTime, groupHours, openNow, specialOn, upcomingClosures, upcomingSpecialDays } from '../app/utils/hours.js';
 
 const ZONE = 'America/Chicago';
 const at = (date, time) => new Date(`${date}T${time}:00-05:00`);
@@ -133,6 +133,43 @@ const cases = {
   assert.deepEqual(said.map((row) => row.words), ['Oct 25 and 26', 'Dec 10 and 11', 'Nov 30 – Dec 2', 'Nov 9']);
   assert.deepEqual(upcomingClosures([{ from: '2026-12-25', to: '2026-12-25', note: 'x' }], ZONE, at(MON, '10:00')), []);
   assert.deepEqual(upcomingClosures(days, '', at(MON, '10:00')), []);
+ },
+ 'special hours replace the week that day': () => {
+  const days = [{ from: '2026-10-27', to: '2026-10-27', note: 'Short day', open: '09:00', close: '14:00' }];
+  assert.equal(closedOn(days, '2026-10-27'), null, 'special hours are not closed');
+  assert.equal(specialOn(days, '2026-10-27').note, 'Short day');
+  assert.equal(openNow(week, ZONE, at(TUE, '13:00'), days).label, 'Open until 2:00 pm');
+  assert.equal(openNow(week, ZONE, at(TUE, '15:00'), days).label, 'Closed · opens Wed 9:00 am');
+  // Monday evening: the next opening is Tuesday's, at Tuesday's own time.
+  const later = [{ from: '2026-10-27', to: '2026-10-27', note: '', open: '11:00', close: '14:00' }];
+  assert.equal(openNow(week, ZONE, at(MON, '18:00'), later).label, 'Closed · opens Tue 11:00 am');
+  assert.deepEqual(upcomingClosures(days, ZONE, at(MON, '10:00')), [], 'not a closure');
+ },
+ 'special days read as lines, soonest first': () => {
+  const days = [
+   { from: '2026-12-25', to: '2026-12-25', note: 'Christmas' },
+   { from: '2026-12-24', to: '2026-12-24', note: 'Christmas Eve', open: '09:00', close: '14:00' },
+   { from: '2026-12-30', to: '2027-01-01', note: '' },
+   { from: '2026-12-01', to: '2026-12-02', note: 'past' },
+  ];
+  const now = new Date('2026-12-20T16:00:00Z');
+  assert.deepEqual(upcomingSpecialDays(days, ZONE, now).map((day) => day.line), ['Thu Dec 24: 9:00 am – 2:00 pm (Christmas Eve)', 'Closed Fri Dec 25 (Christmas)', 'Closed Wed Dec 30 – Fri Jan 1']);
+  const christmas = new Date('2026-12-25T16:00:00Z');
+  assert.equal(upcomingSpecialDays(days, ZONE, christmas)[0].line, 'Closed today (Christmas)');
+  assert.equal(upcomingSpecialDays(days, ZONE, new Date('2026-12-30T16:00:00Z'))[0].line, 'Closed through Fri Jan 1');
+  assert.equal(upcomingSpecialDays(days, ZONE, new Date('2026-12-24T16:00:00Z'))[0].line, 'Today: 9:00 am – 2:00 pm (Christmas Eve)');
+  assert.deepEqual(upcomingSpecialDays(days, '', now), []);
+ },
+ 'the header notice: a closure within 7 days': () => {
+  const days = [
+   { from: '2026-12-24', to: '2026-12-24', note: 'Christmas Eve', open: '09:00', close: '14:00' },
+   { from: '2026-12-25', to: '2026-12-25', note: 'Christmas' },
+  ];
+  assert.equal(closureNotice(days, ZONE, new Date('2026-12-17T16:00:00Z')), '', 'eight days out says nothing');
+  assert.equal(closureNotice(days, ZONE, new Date('2026-12-18T16:00:00Z')), 'Closed Fri Dec 25 (Christmas)');
+  assert.equal(closureNotice(days, ZONE, new Date('2026-12-25T16:00:00Z')), 'Closed today (Christmas)');
+  assert.equal(closureNotice(days, ZONE, new Date('2026-12-26T16:00:00Z')), '');
+  assert.equal(closureNotice([days[0]], ZONE, new Date('2026-12-23T16:00:00Z')), '', 'special hours are no closure');
  },
  'no hours, no lines': () => {
   assert.deepEqual(groupHours([]), []);

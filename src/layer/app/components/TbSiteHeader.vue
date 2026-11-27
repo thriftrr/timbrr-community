@@ -74,9 +74,15 @@
    return { ...linked(item), at, kind, children, columns: kind === 'mega' ? megaColumns(children) : [], feature, button };
   }).concat(memberItem.value ? [memberItem.value] : []),
  );
+ // The header's own announcement wins. Without one, Site details' automatic
+ // notice (`notice`): the soonest closure covering today or starting in the
+ // next 7 days, by the date in the site's time zone when the page is drawn.
  const announce = computed(() => {
   const notice = header.value?.announce;
-  return notice?.on && notice.text.trim() ? linked(notice) : null;
+  if (notice?.on && notice.text.trim()) return linked(notice);
+  const details = props.site.details;
+  const text = header.value && details?.notice === true ? closureNotice(details.closedDays, details.timezone, new Date()) : '';
+  return text ? { text, link: { is: 'span' } } : null;
  });
  const utility = computed(() => (header.value?.utility.on ? named(header.value.utility.links).map(linked) : []));
  const primary = computed(() => button(header.value?.primary));

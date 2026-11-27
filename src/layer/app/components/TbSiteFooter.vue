@@ -78,6 +78,10 @@
  // to show.
  const details = computed(() => props.site.details ?? null);
  const hours = computed(() => (footer.value?.contact.hours ? groupHours(details.value?.hours) : []));
+ // Today's and the next two weeks' closed days and special hours, at most
+ // three, under the hours: worked out by the date in the site's own time
+ // zone when the page is drawn (pages are kept a minute at the edge).
+ const specials = computed(() => (hours.value.length ? upcomingSpecialDays(details.value?.closedDays, details.value?.timezone, new Date(), 14).slice(0, 3) : []));
  const address = computed(() => (footer.value?.contact.address ? addressLines(details.value) : []));
  const phone = computed(() => (footer.value?.contact.phone ? String(details.value?.phone ?? '').trim() : ''));
  const hasContact = computed(() => Boolean(hours.value.length || address.value.length || phone.value));
@@ -167,6 +171,9 @@
        <dd>{{ row.hours }}</dd>
       </div>
      </dl>
+     <ul v-if="specials.length" class="tb-site-footer__specials" role="list">
+      <li v-for="day in specials" :key="day.from + day.to">{{ day.line }}</li>
+     </ul>
     </div>
     <div v-if="address.length">
      <p class="tb-site-footer__heading">Visit</p>
@@ -481,6 +488,16 @@
 
  .tb-site-footer__hours dd {
   margin: 0;
+ }
+
+ /* Closed days and special hours, under the week. */
+ .tb-site-footer__specials {
+  display: grid;
+  gap: 2px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  font-weight: 600;
  }
 
  .tb-site-footer__address {

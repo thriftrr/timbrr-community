@@ -335,7 +335,8 @@ take one `site` object:
   ] },
  ],
  cta: { label: 'Order online', kind: 'external', to: 'https://order.buroak.coffee' }, // optional
- details: { phone: '(815) 555-0142', street: '', city: '', region: '', postal: '', hours: [] }, // optional: Site details
+ details: { phone: '(815) 555-0142', street: '', city: '', region: '', postal: '', hours: [], closedDays: [], notice: false, country: 'US', priceRange: '' }, // optional: Site details
+ listing: { type: 'CafeOrCoffeeShop' }, // optional: the schema.org type for structured data
 }
 ```
 
@@ -458,24 +459,50 @@ to some paid plans. What the layer does:
   live; `?as=visitor|member|<plan id>` on the page's address is passed to the
   draft read, which is the studio's Preview as.
 
-## Closed days and not-found reports
+## Closed days, special hours and not-found reports
 
 Both come from the studio's Business details and the Worker's own 404s.
 
-**Closed days.** The studio puts `details.closedDays` in the site's public
-answers: up to 20 `{ from, to, note }` spans of `YYYY-MM-DD` dates (`to` the
-same as `from` for one day, `note` up to 120 characters), sorted, in the
-site's time zone (`details.timezone`). They beat the weekly hours.
-`openNow(hours, timezone, now, closedDays)` in `app/utils/hours.js` answers
-`{ open: false, label: 'Closed today · Merry Christmas' }` on a covered date
-(`opens` still says when it ends, up to a week out), and the "opens Mon 9:00
-am" of any other day skips covered dates. `upcomingClosures(closedDays,
-timezone)` lists the spans covering today or starting in the next 45 days;
-the Visit block draws them as "Closed Dec 25 and 26 · Merry Christmas" above
-its hours. Like open now, both are worked out in the browser after the page
-loads (pages are cached for a minute), and say nothing without a time zone
-the browser knows. Check them with `node layer/scripts/check-hours.mjs`. The
-layer writes no schema.org markup, so there is no `specialOpeningHoursSpecification`.
+**Closed days and special hours.** The studio puts `details.closedDays` in
+the site's public answers: `{ from, to, note, open?, close? }` spans of
+`YYYY-MM-DD` dates (`to` the same as `from` for one day, `note` up to 120
+characters), in the site's time zone (`details.timezone`). A span with both
+`open` and `close` (`HH:MM`) is special hours: those days open at those
+times instead of the week's. Without them the business is shut. Both beat
+the weekly hours. In `app/utils/hours.js`:
+
+- `openNow(hours, timezone, now, closedDays)` answers `{ open: false, label:
+  'Closed today · Merry Christmas' }` on a closed date (`opens` still says
+  when it ends, up to a week out), uses a special day's own times, and the
+  "opens Mon 9:00 am" of any other day skips closed dates.
+- `upcomingSpecialDays(closedDays, timezone, now, within = 45)` lists both
+  kinds covering today or starting within `within` days, soonest first, each
+  with its `line`: "Closed Fri Dec 25 (Christmas)", "Thu Dec 24: 9:00 am –
+  2:00 pm (Christmas Eve)", "Closed today", "Closed through Sat Dec 26",
+  "Today: 9:00 am – 2:00 pm". `upcomingClosures` (closed spans only) stays
+  for older callers.
+- `closureNotice(closedDays, timezone, now, within = 7)`: the soonest
+  closure's line, or `''`.
+
+Where they show:
+
+- **Visit** draws `upcomingSpecialDays` above its hours (45 days), in the
+  browser after the page loads, like open now.
+- **The footer**, when it shows hours, adds up to three lines for today and
+  the next 14 days under them.
+- **The header**, when `details.notice` is true (Settings' "Tell visitors
+  before a closure"), shows the soonest closure covering today or starting
+  in the next 7 days in its announcement line, unlinked. The header's own
+  announcement, when on, wins. No new block.
+
+The footer and header work it out by the date in the site's time zone when
+the page is drawn (pages are cached for a minute). None of them say
+anything without a time zone the browser knows. Check them with `node
+layer/scripts/check-hours.mjs`.
+
+**Deploy order.** Every new field is optional, so the layer ships before or
+after the studio. But an older layer reads a special-hours span as closed,
+so ship the layer first.
 
 **Not-found reports.** When the Worker renders the 404 page for a published
 site (`useTimbrrPage`, on the server only), it posts one
@@ -488,6 +515,32 @@ path under `/_nuxt`, `/api`, `/.well-known` or `/__timbrr`, a user agent
 matching `bot|crawl|spider|slurp|preview`, or a dev or staging address. The
 studio lists what was missed most so its owner can add a redirect. Rules and
 request: `app/utils/missed.js`, checked by `node layer/scripts/check-missed.mjs`.
+
+## Structured data (JSON-LD)
+
+Every published page (`useTimbrrPage`, not `quiet`, not noindex) carries one
+`<script type="application/ld+json">`, built by `app/utils/listing.js`:
+
+- **The home page, and any page with a Visit block**: the business. Its
+  `@type` is `site.listing.type`, a schema.org type the studio picks from the
+  site's business type (Bakery, Store, ProfessionalService…). Without one
+  (an older studio) it's `LocalBusiness` when Site details has an address, a
+  phone or hours, else `Organization`. It has `name`, `url`, `logo` (the
+  brand's), `image` (the page's share picture, else the logo), `telephone`,
+  `email`, `address` (a `PostalAddress`, `addressCountry` from
+  `details.country`), `sameAs` (the social links, as the footer draws them),
+  and, not on an Organization, `openingHoursSpecification` (days with the
+  same hours share one), `specialOpeningHoursSpecification` (closed days and
+  special hours not over yet; closed is `00:00`–`00:00`) and `priceRange`
+  (`details.priceRange`, `$` to `$$$$`). A field with nothing in it is left out.
+- **The home page** also gets a `WebSite`.
+- **Any other page** gets a `BreadcrumbList`: Home, the menu item it sits
+  under if there is one, then the page.
+
+It's JSON, never HTML: `jsonLdText` escapes `<`, `>`, `&`, U+2028 and U+2029,
+so nothing typed into the studio can close the script. The CSP nonce plugin
+marks it like any inline script; browsers don't run it. Check it with `node
+layer/scripts/check-listing.mjs`.
 
 ## Collections
 

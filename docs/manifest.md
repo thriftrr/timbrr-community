@@ -497,7 +497,8 @@ items, NavItems: `{ label, kind: 'page' | 'external' | 'none', to,
 children?, layout?: 'link' | 'dropdown' | 'mega', desc?, group? }`, one
 level of children), an optional `cta` (one NavItem, the header's button) and
 an optional `details` (Site details: `{ phone, email, street, city, region,
-postal, timezone, note, hours: [{ closed, open, close }] }`, null from an
+postal, timezone, note, hours: [{ closed, open, close }], closedDays: [{ from,
+to, note, open?, close? }], notice, country, priceRange }`, null from an
 older studio). The canvas keeps only strings and items of that shape, at
 most 40 a level, and at most seven rows of hours; every link goes through
 `safeHref()`.
