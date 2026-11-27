@@ -13,6 +13,9 @@ import { z } from 'zod';
 //  ownBlockManifestEntry(doc)   the block as the studio's manifest lists it
 //  ownBlockDef(doc)             the block as the layer's renderer takes it
 //  ownBlockWarnings(doc, data)  what a placed block's content is missing (alt, link words)
+//  ownBlockData(doc, data)      what a placed block draws: its data, with the parts owners can't change at their starting values
+//  ownBoxLook(node)             a box's look as the layer draws it: classes, and the custom properties its numbers become
+//  ownAtomLook(node)            an atom's Mobile classes
 
 export const OWN_BLOCK_VERSION = 1;
 export const OWN_TYPE = /^own_[a-z0-9_]{1,44}$/;
@@ -32,6 +35,9 @@ export const OWN_BLOCK_LIMITS = Object.freeze({
  help: 140,
  description: 200,
  category: 40,
+ // Spacing and corners typed as numbers (the builder's "Lay it out"): whole pixels, from 0.
+ space: 160,
+ radius: 64,
 });
 export const OWN_LAYOUTS = ['stack', 'row', 'grid', 'split'];
 // The tray's five groups; any other category ("Events") is kept and shown as Content.
@@ -46,7 +52,19 @@ const SCALES = {
  shadow: ['none', 'soft', 'strong'],
  gap: ['S', 'M', 'L'],
  align: ['start', 'center', 'end'],
+ // A box's fill is a Branding surface; brand and dark repaint what's inside, as a band does.
+ fill: ['none', 'page', 'soft', 'brand', 'dark'],
+ // Fill the room it's given, or hug what it holds.
+ sizing: ['fill', 'hug'],
+ justify: ['start', 'center', 'end', 'between'],
 };
+// Gap and padding are a Branding step (S, M, L) or whole pixels; corners a
+// Branding choice or whole pixels. Numbers become custom properties the
+// layer's CSS reads (ownBoxLook), never a style string.
+const isPx = (value, max = OWN_BLOCK_LIMITS.space) => Number.isInteger(value) && value >= 0 && value <= max;
+const spaceOk = (value) => SCALES.gap.includes(value) || isPx(value);
+const padOk = (value) => isPx(value) || (Array.isArray(value) && value.length === 4 && value.every((side) => isPx(side)));
+const radiusOk = (value) => SCALES.corners.includes(value) || isPx(value, OWN_BLOCK_LIMITS.radius);
 export const OWN_RATIOS = ['1:1', '4:3', '3:2', '16:9', '3:4', '2:3', 'auto'];
 
 // Every atom: the field kinds it draws (null: no field, it's layout), the
@@ -54,6 +72,7 @@ export const OWN_RATIOS = ['1:1', '4:3', '3:2', '16:9', '3:4', '2:3', 'auto'];
 export const OWN_ATOMS = {
  eyebrow: { kinds: ['text'], keys: ['color', 'font', 'align'], max: [40, 80] },
  heading: { kinds: ['text'], keys: ['size', 'color', 'font', 'weight', 'align'], sizes: ['S', 'M', 'L', 'XL'], max: [70, 120] },
+ quote: { kinds: ['text', 'textarea'], keys: ['size', 'color', 'font', 'align'], sizes: ['S', 'M', 'L'], max: [200, 600] },
  text: { kinds: ['text', 'textarea'], keys: ['size', 'color', 'font', 'weight', 'align'], sizes: ['S', 'M'], max: [280, 1200] },
  rich: { kinds: ['html'], keys: ['size', 'color'], sizes: ['S', 'M'], max: [4000, 4000] },
  picture: { kinds: ['image'], keys: ['ratio', 'corners', 'shadow'] },
@@ -90,7 +109,11 @@ const KIND_KEYS = {
  tags: ['max'],
  items: ['min', 'max', 'phoneMax', 'fields', 'itemLabel'],
 };
-const FIELD_KEYS = ['key', 'kind', 'label', 'help', 'default', 'required', 'when'];
+// `fixed`: owners can't change it, so the inspector leaves it out and it always draws its starting value.
+const FIELD_KEYS = ['key', 'kind', 'label', 'help', 'default', 'required', 'fixed', 'when'];
+// What a box may set differently on Mobile, by kind. An atom's: its size, line-up and hidden.
+const BOX_MOBILE = { stack: ['gap', 'pad', 'align'], row: ['gap', 'pad', 'align', 'justify', 'direction'], grid: ['gap', 'pad'], split: ['gap', 'pad'] };
+const FRAME_KEYS = ['pad', 'fill', 'corners', 'shadow', 'sizing', 'mobile'];
 
 // Link words that say nothing about where they go. A block's defaults may not
 // use them; an owner's own words on a page only get a warning.
@@ -251,6 +274,9 @@ export function checkOwnBlock(input, { pro = false } = {}) {
   if (!plain(field.label, OWN_BLOCK_LIMITS.label)) fail(`${path}.label`, `Give the field a name, up to ${OWN_BLOCK_LIMITS.label} characters.`);
   if (field.help !== undefined && !(typeof field.help === 'string' && field.help.length <= OWN_BLOCK_LIMITS.help && !/[<>]/.test(field.help))) fail(`${path}.help`, `Help is plain text, up to ${OWN_BLOCK_LIMITS.help} characters.`);
   if (field.required !== undefined && typeof field.required !== 'boolean') fail(`${path}.required`, 'Required is true or false.');
+  if (field.fixed !== undefined && typeof field.fixed !== 'boolean') fail(`${path}.fixed`, 'Fixed is true or false.');
+  if (field.fixed === true && field.kind === 'image') fail(`${path}.fixed`, 'A picture is picked on each page, so owners can always change it.');
+  else if (field.fixed === true && field.default === undefined) fail(`${path}.default`, 'A part owners can’t change needs a starting value.');
   if (field.when !== undefined && !(isObject(field.when) && Object.keys(field.when).length <= 5)) fail(`${path}.when`, 'A when is an object of up to 5 conditions.');
   const int = (key, lo, hi) => field[key] === undefined || (Number.isInteger(field[key]) && field[key] >= lo && field[key] <= hi) || fail(`${path}.${key}`, `${key} is a whole number from ${lo} to ${hi}.`);
   if (field.kind === 'buttons') int('min', 0, OWN_BLOCK_LIMITS.buttons), int('max', 1, OWN_BLOCK_LIMITS.buttons);
@@ -302,8 +328,18 @@ export function checkOwnBlock(input, { pro = false } = {}) {
   const spec = OWN_ATOMS[node.atom];
   if (!spec) return fail(`${path}.atom`, LATER_ATOMS[node.atom] ? `${LATER_ATOMS[node.atom]} in a block is not available yet.` : `“${node.atom}” isn't an atom.`);
   if (depth > OWN_BLOCK_LIMITS.depth) fail(path, `A block is ${OWN_BLOCK_LIMITS.depth} levels deep at most.`);
-  stray(node, ['atom', 'field', 'class', 'anchor', ...spec.keys], path);
+  stray(node, ['atom', 'field', 'class', 'anchor', 'mobile', ...spec.keys], path);
   takesClass(node, path);
+  if (node.mobile !== undefined) {
+   const keys = ['hidden', ...(spec.sizes ? ['size'] : []), ...(spec.keys.includes('align') ? ['align'] : [])];
+   if (!isObject(node.mobile)) fail(`${path}.mobile`, 'What changes on Mobile is an object.');
+   else {
+    stray(node.mobile, keys, `${path}.mobile`);
+    if (node.mobile.size !== undefined && !spec.sizes?.includes(node.mobile.size)) fail(`${path}.mobile.size`, `size is one of ${(spec.sizes ?? []).join(', ')}.`);
+    choice(node.mobile, 'align', SCALES.align, `${path}.mobile`);
+    if (node.mobile.hidden !== undefined && typeof node.mobile.hidden !== 'boolean') fail(`${path}.mobile.hidden`, 'hidden is true or false.');
+   }
+  }
   for (const key of spec.keys) {
    if (key === 'size') choice(node, 'size', spec.sizes, path);
    else if (key === 'ratio') choice(node, 'ratio', OWN_RATIOS, path);
@@ -326,6 +362,20 @@ export function checkOwnBlock(input, { pro = false } = {}) {
    else if (!(Number.isInteger(field.max) && field.max >= 1 && field.max <= spec.max[1])) fail(`fields.${key}.max`, `A ${node.atom} holds up to ${spec.max[1]} characters.`);
   }
  };
+ // The look any box may take: padding, fill, corners, shadow, fill or hug, and what changes on Mobile.
+ const frame = (node, path, mobileKeys) => {
+  if (node.pad !== undefined && !padOk(node.pad)) fail(`${path}.pad`, `Padding is whole pixels from 0 to ${OWN_BLOCK_LIMITS.space}: one number, or four (top, right, bottom, left).`);
+  choice(node, 'fill', SCALES.fill, path), choice(node, 'shadow', SCALES.shadow, path), choice(node, 'sizing', SCALES.sizing, path);
+  if (node.corners !== undefined && !radiusOk(node.corners)) fail(`${path}.corners`, `Corners are ${SCALES.corners.join(', ')} or whole pixels from 0 to ${OWN_BLOCK_LIMITS.radius}.`);
+  if (node.mobile === undefined) return;
+  if (!isObject(node.mobile) || !mobileKeys) return fail(`${path}.mobile`, 'What changes on Mobile is an object.');
+  const mobile = node.mobile;
+  stray(mobile, mobileKeys, `${path}.mobile`);
+  if (mobile.gap !== undefined && !spaceOk(mobile.gap)) fail(`${path}.mobile.gap`, `gap is S, M, L or whole pixels from 0 to ${OWN_BLOCK_LIMITS.space}.`);
+  if (mobile.pad !== undefined && !padOk(mobile.pad)) fail(`${path}.mobile.pad`, `Padding is whole pixels from 0 to ${OWN_BLOCK_LIMITS.space}.`);
+  choice(mobile, 'align', SCALES.align, `${path}.mobile`), choice(mobile, 'justify', SCALES.justify, `${path}.mobile`), choice(mobile, 'direction', ['row', 'column'], `${path}.mobile`);
+ };
+ const gapOk = (node, path) => node.gap === undefined || spaceOk(node.gap) || fail(`${path}.gap`, `gap is S, M, L or whole pixels from 0 to ${OWN_BLOCK_LIMITS.space}.`);
  const box = (node, path, depth, list = '') => {
   if (!isObject(node)) return fail(path, 'Each piece is an object.');
   if (node.atom !== undefined) return atom(node, path, depth, list);
@@ -334,6 +384,8 @@ export function checkOwnBlock(input, { pro = false } = {}) {
   if (depth > OWN_BLOCK_LIMITS.depth - 1) return fail(path, `A box can’t go this deep: a block is ${OWN_BLOCK_LIMITS.depth} levels at most.`);
   if (node.kind === 'split' && depth !== 1) return fail(path, 'A split is only ever the whole block.');
   takesClass(node, path);
+  frame(node, path, BOX_MOBILE[node.kind]);
+  gapOk(node, path);
   const children = (key, max, nested = list) => {
    const items = node[key];
    if (!Array.isArray(items) || !items.length) return fail(`${path}.${key}`, `Put something in the ${node.kind}.`);
@@ -341,17 +393,18 @@ export function checkOwnBlock(input, { pro = false } = {}) {
    items.forEach((child, at) => box(child, `${path}.${key}.${at}`, depth + 1, nested));
   };
   if (node.kind === 'stack') {
-   stray(node, ['kind', 'align', 'width', 'gap', 'items', 'class', 'anchor'], path);
-   choice(node, 'align', ['start', 'center'], path), choice(node, 'width', ['narrow', 'wide'], path), choice(node, 'gap', SCALES.gap, path);
+   stray(node, ['kind', 'align', 'width', 'gap', 'items', 'class', 'anchor', ...FRAME_KEYS], path);
+   choice(node, 'align', SCALES.align, path), choice(node, 'width', ['narrow', 'wide'], path);
    children('items', OWN_BLOCK_LIMITS.nodes);
   } else if (node.kind === 'row') {
-   stray(node, ['kind', 'gap', 'align', 'wrap', 'items', 'class', 'anchor'], path);
-   choice(node, 'gap', SCALES.gap, path), choice(node, 'align', SCALES.align, path);
+   stray(node, ['kind', 'gap', 'align', 'justify', 'wrap', 'items', 'class', 'anchor', ...FRAME_KEYS], path);
+   choice(node, 'align', SCALES.align, path), choice(node, 'justify', SCALES.justify, path);
    if (node.wrap !== undefined && typeof node.wrap !== 'boolean') fail(`${path}.wrap`, 'wrap is true or false.');
    children('items', OWN_BLOCK_LIMITS.rowItems);
   } else if (node.kind === 'split') {
-   stray(node, ['kind', 'media', 'ratio', 'align', 'phone', 'slots', 'class', 'anchor'], path);
-   choice(node, 'media', ['left', 'right'], path), choice(node, 'ratio', ['50/50', '40/60', '60/40'], path), choice(node, 'align', SCALES.align, path), choice(node, 'phone', ['media_first', 'text_first'], path);
+   stray(node, ['kind', 'media', 'ratio', 'align', 'phone', 'gap', 'slots', 'class', 'anchor', ...FRAME_KEYS], path);
+   // behind: the picture fills the block and the words sit over it (Overlay).
+   choice(node, 'media', ['left', 'right', 'behind'], path), choice(node, 'ratio', ['50/50', '40/60', '60/40'], path), choice(node, 'align', SCALES.align, path), choice(node, 'phone', ['media_first', 'text_first'], path);
    if (!isObject(node.slots)) return fail(`${path}.slots`, 'A split has two slots: media and text.');
    stray(node.slots, ['media', 'text'], `${path}.slots`);
    for (const slot of ['media', 'text']) {
@@ -360,9 +413,11 @@ export function checkOwnBlock(input, { pro = false } = {}) {
     else items.forEach((child, at) => box(child, `${path}.slots.${slot}.${at}`, depth + 1, list));
    }
   } else {
-   stray(node, ['kind', 'columns', 'gap', 'phone', 'field', 'item', 'items', 'class', 'anchor'], path);
+   stray(node, ['kind', 'columns', 'gap', 'phone', 'carousel', 'field', 'item', 'items', 'class', 'anchor', ...FRAME_KEYS], path);
    if (!(Number.isInteger(node.columns) && node.columns >= 1 && node.columns <= OWN_BLOCK_LIMITS.columns)) fail(`${path}.columns`, `A grid has 1 to ${OWN_BLOCK_LIMITS.columns} columns.`);
-   choice(node, 'gap', SCALES.gap, path), choice(node, 'phone', [1, 2], path);
+   choice(node, 'phone', [1, 2], path);
+   if (node.carousel !== undefined && typeof node.carousel !== 'boolean') fail(`${path}.carousel`, 'carousel is true or false.');
+   if (node.carousel === true && node.field === undefined) fail(`${path}.carousel`, 'A carousel slides through a list’s items.');
    if (node.field !== undefined) {
     // A grid of a list: each item drawn by `item`, a stack or row of atoms on the list's fields.
     if (list) return fail(`${path}.field`, 'A list’s grid can’t sit inside another list.');
@@ -373,8 +428,11 @@ export function checkOwnBlock(input, { pro = false } = {}) {
     if (node.items !== undefined) fail(`${path}.items`, 'A grid repeats a list or holds pieces, not both.');
     const item = node.item;
     if (!isObject(item) || !['stack', 'row'].includes(item.kind)) return fail(`${path}.item`, 'Say how each item looks: a stack or a row.');
-    stray(item, ['kind', 'gap', 'align', 'items'], `${path}.item`);
-    choice(item, 'gap', SCALES.gap, `${path}.item`), choice(item, 'align', SCALES.align, `${path}.item`);
+    // Each item may be a card: padding, fill, corners and shadow.
+    stray(item, ['kind', 'gap', 'align', 'items', 'pad', 'fill', 'corners', 'shadow'], `${path}.item`);
+    choice(item, 'align', SCALES.align, `${path}.item`);
+    gapOk(item, `${path}.item`);
+    frame(item, `${path}.item`, null);
     if (!Array.isArray(item.items) || !item.items.length) return fail(`${path}.item.items`, 'Put something in each item.');
     item.items.forEach((child, at) => (isObject(child) && child.atom !== undefined ? atom(child, `${path}.item.items.${at}`, depth + 1, node.field) : fail(`${path}.item.items.${at}`, 'An item holds atoms only.')));
    } else {
@@ -442,13 +500,13 @@ function inspectorField(field) {
  if (field.kind === 'number') for (const key of ['min', 'max']) if (field[key] !== undefined) out[key] = field[key];
  if (field.kind === 'number' && (field.prefix || field.suffix)) out.unit = [field.prefix, field.suffix].filter(Boolean).join(' ');
  if (field.kind === 'tags') out.max = field.max ?? OWN_BLOCK_LIMITS.tags;
- if (field.kind === 'items') Object.assign(out, { subfields: field.fields.map(inspectorField), ...(field.itemLabel ? { itemLabel: field.itemLabel } : {}), ...(field.min !== undefined ? { min: field.min } : {}), max: field.max ?? OWN_BLOCK_LIMITS.items });
+ if (field.kind === 'items') Object.assign(out, { subfields: field.fields.filter((sub) => sub.fixed !== true).map(inspectorField), ...(field.itemLabel ? { itemLabel: field.itemLabel } : {}), ...(field.min !== undefined ? { min: field.min } : {}), max: field.max ?? OWN_BLOCK_LIMITS.items });
  return out;
 }
 
 // The inspector's fields, the look ones after, as any block's.
 export function ownBlockFields(doc) {
- return [...doc.fields.map(inspectorField), ...OWN_LOOK_FIELDS];
+ return [...doc.fields.filter((field) => field.fixed !== true).map(inspectorField), ...OWN_LOOK_FIELDS];
 }
 
 // The data a placed block holds: its fields' values, then the look's.
@@ -503,4 +561,55 @@ export function ownBlockWarnings(doc, data) {
  };
  look(doc?.fields ?? [], data ?? {}, '');
  return out;
+}
+
+// What a placed block draws: its data, with every part owners can't change
+// (`fixed`) at its starting value, whatever the page holds.
+export function ownBlockData(doc, data) {
+ const out = { ...(data ?? {}) };
+ for (const field of doc?.fields ?? []) {
+  if (field.fixed === true) out[field.key] = JSON.parse(JSON.stringify(field.default));
+  else if (field.kind === 'items' && Array.isArray(out[field.key]) && (field.fields ?? []).some((sub) => sub.fixed === true)) {
+   out[field.key] = out[field.key].map((row) => ({ ...row, ...Object.fromEntries(field.fields.filter((sub) => sub.fixed === true).map((sub) => [sub.key, JSON.parse(JSON.stringify(sub.default))])) }));
+  }
+ }
+ return out;
+}
+
+// A box's look as the layer draws it: { classes, style }. Every choice is a
+// class over --site-* tokens; a number (gap, padding, corners) becomes a
+// custom property in whole pixels, read by a fixed rule in the layer's CSS.
+// Mobile's own values sit beside them, used under the layer's Mobile width.
+const pxOf = (value) => `${value}px`;
+const spaceOf = (value) => (typeof value === 'number' ? pxOf(value) : `var(--tb-own-gap-${String(value).toLowerCase()})`);
+const padOf = (value) => (Array.isArray(value) ? value.map(pxOf).join(' ') : pxOf(value));
+export function ownBoxLook(node) {
+ const classes = [];
+ const style = {};
+ if (!isObject(node)) return { classes, style };
+ if (node.gap !== undefined) {
+  if (typeof node.gap === 'number') style['--tb-own-gap'] = pxOf(node.gap);
+  else classes.push(`tb-own--gap-${node.gap.toLowerCase()}`);
+ }
+ if (node.pad !== undefined) classes.push('tb-own--pad'), (style['--tb-own-pad'] = padOf(node.pad));
+ if (node.fill === 'page') classes.push('tb-own--fill', 'tb-own--fill-page');
+ else if (['soft', 'brand', 'dark'].includes(node.fill)) classes.push('tb-own--fill', `tb-look--${node.fill}`);
+ if (typeof node.corners === 'number') classes.push('tb-own--radius'), (style['--tb-own-radius'] = pxOf(node.corners));
+ else if (node.corners) classes.push(`tb-own--corners-${node.corners}`);
+ if (node.shadow && node.shadow !== 'none') classes.push(`tb-own--shadow-${node.shadow}`);
+ if (node.sizing === 'hug') classes.push('tb-own--hug');
+ if (node.justify) classes.push(`tb-own--justify-${node.justify}`);
+ const mobile = isObject(node.mobile) ? node.mobile : {};
+ if (mobile.gap !== undefined) classes.push('tb-own--m-gap'), (style['--tb-own-m-gap'] = spaceOf(mobile.gap));
+ if (mobile.pad !== undefined) classes.push('tb-own--m-pad'), (style['--tb-own-m-pad'] = padOf(mobile.pad));
+ if (mobile.align) classes.push(`tb-own--m-align-${mobile.align}`);
+ if (mobile.justify) classes.push(`tb-own--m-justify-${mobile.justify}`);
+ if (mobile.direction === 'row') classes.push('tb-own--m-row');
+ return { classes, style };
+}
+
+// An atom's Mobile classes: its size, its line-up, or hidden there.
+export function ownAtomLook(node) {
+ const mobile = isObject(node?.mobile) ? node.mobile : {};
+ return [mobile.size && `tb-own--m-size-${String(mobile.size).toLowerCase()}`, mobile.align && `tb-own--m-align-${mobile.align}`, mobile.hidden === true && 'tb-own--m-hidden'].filter(Boolean);
 }

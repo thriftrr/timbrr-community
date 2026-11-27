@@ -126,6 +126,44 @@ for (const [what, doc] of [
  pass(`refuses ${what}`);
 }
 
+// ── Feedback round eleven: box look, Mobile's own values, quote, carousel, fixed parts ──
+{
+ const comp = (name) => readFileSync(join(here, 'app/components', name), 'utf8');
+ const node = comp('TbOwnNode.vue');
+ const atom = comp('TbOwnAtom.vue');
+ const block = comp('TbOwnBlock.vue');
+ ok(/ownBoxLook/.test(node) && /:style="look\.style"/.test(node), 'TbOwnNode draws a box’s look from ownBoxLook');
+ ok(/tb-own__grid--carousel/.test(node) && /scroll-snap-type: x mandatory/.test(block), 'a list with carousel slides, with CSS alone');
+ ok(/node\.atom === 'quote'/.test(atom) && /ownAtomLook/.test(atom), 'TbOwnAtom draws a quote, and an atom’s Mobile classes');
+ ok(/ownBlockData\(doc\.value, props\.data\)/.test(block), 'a part owners can’t change draws its starting value');
+ for (const name of ['tb-own--pad', 'tb-own--radius', 'tb-own--hug', 'tb-own--m-gap', 'tb-own--m-pad', 'tb-own--m-hidden', 'tb-own__split--behind', 'tb-own__quote']) ok(block.includes(`.${name}`), `TbOwnBlock styles .${name}`);
+ pass('the round-eleven keys each have their CSS');
+ const card = {
+  schema: 1,
+  type: 'own_card',
+  label: 'Card',
+  layout: { kind: 'stack', gap: 16, pad: [24, 24, 24, 24], fill: 'soft', corners: 12, mobile: { gap: 8, pad: 16 }, items: [{ atom: 'heading', field: 'title', mobile: { size: 'S' } }, { atom: 'quote', field: 'words' }, { kind: 'grid', columns: 3, carousel: true, field: 'slides', item: { kind: 'stack', pad: 16, fill: 'page', corners: 'site', items: [{ atom: 'text', field: 'slides.name' }] } }] },
+  fields: [
+   { key: 'title', kind: 'text', label: 'Title', default: 'Youth climbing club', fixed: true },
+   { key: 'words', kind: 'textarea', label: 'Quote', default: 'Best afternoon all year.' },
+   { key: 'slides', kind: 'items', label: 'Slides', fields: [{ key: 'name', kind: 'text', label: 'Name' }], default: [{ name: 'One' }, { name: 'Two' }] },
+  ],
+ };
+ const checked = checkOwnBlock(structuredClone(card));
+ ok(checked.ok, JSON.stringify(checked.problems));
+ ok(!ownBlockDef(checked.doc).fields.some((field) => field.key === 'title'), 'a fixed part is not in the inspector');
+ pass('a card with numbers, a brand fill, Mobile values, a quote, a carousel and a fixed part checks');
+ for (const [what, layout] of [
+  ['a pixel string', { ...card.layout, pad: '24px' }],
+  ['a raw colour fill', { ...card.layout, fill: '#ff0000' }],
+  ['a gap past 160', { ...card.layout, gap: 400 }],
+  ['a Mobile key the box can’t take', { ...card.layout, mobile: { columns: 2 } }],
+ ]) {
+  ok(!checkOwnBlock({ ...structuredClone(card), layout }).ok, what);
+  pass(`refuses ${what}`);
+ }
+}
+
 // ── --render: draw them through a real site ──
 if (process.argv.includes('--render')) {
  const port = Number(process.env.PORT ?? 4998);
