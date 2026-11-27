@@ -52,7 +52,7 @@ page. The studio (`make up` in thriftrr/timbrr, on :3000) uses
 
 ## The blocks
 
-Timbrr's own library is 15 Core blocks, 7 Advanced ones a site turns on, the
+Timbrr's own library is 16 Core blocks, 7 Advanced ones a site turns on, the
 site's header and footer, and 24 retired blocks on their way out. The type is
 the file name in `blocks/` and the block's icon in the studio. Every block can
 also set its background, the space above and below it, and a line above it (Section, Spacer and
@@ -64,6 +64,8 @@ it, so searching the tray still finds it. Why, and how pages move over:
 
 - `hero` Hero: the page's opener, with its photo beside the words, centered or
   full-bleed behind them.
+- `copy` Copy: a headline and formatted text, and nothing else (no picture,
+  no buttons, no layout of its own). First in the tray's Content group.
 - `text_image` Text & image: words with a photo on either side, or none.
 - `media` Media: one image, video or embed link. Its Video address is a
   text field flagged `media: 'video'`, which asks the studio for Choose

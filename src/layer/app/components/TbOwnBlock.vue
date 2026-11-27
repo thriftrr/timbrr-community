@@ -12,7 +12,7 @@
  // own (the CSS below). On the canvas, what the content is missing (a picture
  // with no alt text, a vague link) is listed under the block; the live site
  // leaves such a picture out rather than draw it with no words.
- import { ownBlockWarnings } from '../../schema/own-block.js';
+ import { ownBlockData, ownBlockWarnings } from '../../schema/own-block.js';
 
  const props = defineProps({ data: { type: Object, required: true } });
  const canvas = useCanvas();
@@ -42,9 +42,11 @@
   return null;
  }
  const first = computed(() => firstHeading(doc.value?.layout));
- const warnings = computed(() => (canvas && doc.value ? ownBlockWarnings(doc.value, props.data) : []));
+ const warnings = computed(() => (canvas && doc.value ? ownBlockWarnings(doc.value, data.value) : []));
 
- provide(OWN_BLOCK_KEY, { data: computed(() => props.data), fields, first, headTag });
+ // Parts owners can't change (fixed) always draw their starting value.
+ const data = computed(() => (doc.value ? ownBlockData(doc.value, props.data) : props.data));
+ provide(OWN_BLOCK_KEY, { data, fields, first, headTag });
 </script>
 
 <template>
@@ -104,7 +106,7 @@
  .tb-own__item {
   display: flex;
   flex-direction: column;
-  gap: var(--tb-own-gap-s);
+  gap: var(--tb-own-item-gap, var(--tb-own-gap-s));
   min-width: 0;
  }
  .tb-own__item--row {
@@ -148,6 +150,121 @@
   --tb-own-gap: var(--tb-own-gap-l);
  }
 
+ .tb-own__stack--end {
+  align-items: flex-end;
+  text-align: end;
+ }
+
+ /* A box's own look (ownBoxLook in schema/own-block.js): numbers arrive as
+    custom properties in whole pixels; every other choice is a token. */
+ .tb-own--pad {
+  padding: var(--tb-own-pad);
+ }
+ .tb-own--fill {
+  border-radius: var(--tb-own-radius, 0);
+ }
+ .tb-own--fill-page {
+  background: var(--site-bg);
+ }
+ .tb-own--radius {
+  border-radius: var(--tb-own-radius);
+  overflow: hidden;
+ }
+ .tb-own--corners-site:not(.tb-own__picture) {
+  border-radius: var(--site-radius);
+  overflow: hidden;
+ }
+ .tb-own--corners-round:not(.tb-own__picture) {
+  overflow: hidden;
+ }
+ .tb-own--hug {
+  align-self: flex-start;
+  width: fit-content;
+  max-width: 100%;
+ }
+ .tb-own__row > .tb-own--hug {
+  flex: 0 0 auto;
+ }
+ .tb-own__stack--center > .tb-own--hug {
+  align-self: center;
+ }
+ .tb-own--justify-start {
+  justify-content: flex-start;
+ }
+ .tb-own--justify-center {
+  justify-content: center;
+ }
+ .tb-own--justify-end {
+  justify-content: flex-end;
+ }
+ .tb-own--justify-between {
+  justify-content: space-between;
+ }
+
+ /* A quote: the words, set off. */
+ .tb-own__quote {
+  margin: 0;
+  padding-left: 18px;
+  border-left: 3px solid var(--site-accent);
+  font-family: var(--site-font-display);
+  font-size: calc(22px * var(--site-heading-scale));
+  line-height: 1.4;
+  color: var(--site-heading);
+ }
+ .tb-own__quote.tb-own--size-s {
+  font-size: 17px;
+ }
+ .tb-own__quote.tb-own--size-l {
+  font-size: calc(clamp(24px, 3vw, 32px) * var(--site-heading-scale));
+ }
+ .tb-own__quote p {
+  margin: 0;
+  white-space: pre-line;
+ }
+
+ /* Overlay: the picture fills the block and the words sit over it, on a scrim. */
+ .tb-own__split--behind {
+  grid-template-columns: minmax(0, 1fr);
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--tb-own-radius, var(--site-radius));
+ }
+ .tb-own__split--behind > .tb-own__side {
+  grid-area: 1 / 1;
+ }
+ .tb-own__split--behind > .tb-own__side--media :is(figure, img, picture) {
+  height: 100%;
+  border-radius: 0;
+ }
+ .tb-own__split--behind > .tb-own__side--media img {
+  object-fit: cover;
+ }
+ .tb-own__split--behind > .tb-own__side--text {
+  position: relative;
+  z-index: 1;
+  align-self: end;
+  padding: var(--tb-own-gap-l);
+  background: linear-gradient(to top, color-mix(in srgb, var(--site-dark) 85%, transparent), transparent);
+ }
+
+ /* A list that slides: as many across as its columns, the rest a swipe away. */
+ .tb-own__grid--carousel {
+  grid-auto-flow: column;
+  grid-template-columns: none;
+  grid-auto-columns: calc((100% - (var(--tb-own-columns, 3) - 1) * var(--tb-own-gap, var(--tb-own-gap-l))) / var(--tb-own-columns, 3));
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 8px;
+ }
+ .tb-own__grid--carousel > .tb-own__item {
+  scroll-snap-align: start;
+ }
+ .tb-own__grid--carousel:focus-visible {
+  outline: 2px solid var(--site-accent);
+  outline-offset: 4px;
+ }
+
  /* Phones: rows and splits stack in order, grids go to one column (or two when the block says). */
  @media (max-width: 720px) {
   .tb-own__row:not(.tb-own__item) {
@@ -169,6 +286,110 @@
   }
   .tb-own__past-phone {
    display: none;
+  }
+  .tb-own__grid--carousel {
+   grid-template-columns: none;
+   grid-auto-columns: 82%;
+  }
+  .tb-own__split--behind {
+   grid-template-columns: minmax(0, 1fr);
+  }
+  /* What a box or an atom sets differently on Mobile (ownBoxLook, ownAtomLook). */
+  .tb-own--m-gap {
+   gap: var(--tb-own-m-gap);
+  }
+  .tb-own--m-pad {
+   padding: var(--tb-own-m-pad);
+  }
+  .tb-own__row.tb-own--m-row {
+   flex-direction: row;
+  }
+  .tb-own__stack.tb-own--m-align-start,
+  .tb-own__row.tb-own--m-align-start {
+   align-items: flex-start;
+  }
+  .tb-own__stack.tb-own--m-align-center,
+  .tb-own__row.tb-own--m-align-center {
+   align-items: center;
+  }
+  .tb-own__stack.tb-own--m-align-end,
+  .tb-own__row.tb-own--m-align-end {
+   align-items: flex-end;
+  }
+  .tb-own--m-align-start {
+   text-align: start;
+  }
+  .tb-own--m-align-center {
+   text-align: center;
+  }
+  .tb-own--m-align-end {
+   text-align: end;
+  }
+  .tb-own--m-justify-start {
+   justify-content: flex-start;
+  }
+  .tb-own--m-justify-center {
+   justify-content: center;
+  }
+  .tb-own--m-justify-end {
+   justify-content: flex-end;
+  }
+  .tb-own--m-justify-between {
+   justify-content: space-between;
+  }
+  .tb-own--m-hidden {
+   display: none !important;
+  }
+  .tb-own__heading.tb-own--m-size-s {
+   font-size: calc(20px * var(--site-heading-scale));
+  }
+  .tb-own__heading.tb-own--m-size-m {
+   font-size: calc(22px * var(--site-heading-scale));
+  }
+  .tb-own__heading.tb-own--m-size-l {
+   font-size: calc(26px * var(--site-heading-scale));
+  }
+  .tb-own__heading.tb-own--m-size-xl {
+   font-size: calc(34px * var(--site-heading-scale));
+  }
+  .tb-own__number.tb-own--m-size-s {
+   font-size: calc(18px * var(--site-heading-scale));
+  }
+  .tb-own__number.tb-own--m-size-m {
+   font-size: calc(24px * var(--site-heading-scale));
+  }
+  .tb-own__number.tb-own--m-size-l {
+   font-size: calc(26px * var(--site-heading-scale));
+  }
+  .tb-own__number.tb-own--m-size-xl {
+   font-size: calc(40px * var(--site-heading-scale));
+  }
+  .tb-own__quote.tb-own--m-size-s {
+   font-size: 17px;
+  }
+  .tb-own__quote.tb-own--m-size-m {
+   font-size: 20px;
+  }
+  .tb-own__quote.tb-own--m-size-l {
+   font-size: 24px;
+  }
+  :is(.tb-own__text, .tb-own__rich, .tb-own__when).tb-own--m-size-s {
+   font-size: 0.875em;
+  }
+  :is(.tb-own__text, .tb-own__rich, .tb-own__when).tb-own--m-size-m {
+   font-size: 1em;
+  }
+  .tb-own__icon.tb-own--m-size-s {
+   width: 18px;
+   height: 18px;
+  }
+  .tb-own__icon.tb-own--m-size-m {
+   width: 24px;
+   height: 24px;
+  }
+  .tb-own__icon.tb-own--m-size-l {
+   width: 36px;
+   height: 36px;
   }
  }
 
