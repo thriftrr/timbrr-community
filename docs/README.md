@@ -458,6 +458,27 @@ to some paid plans. What the layer does:
   live; `?as=visitor|member|<plan id>` on the page's address is passed to the
   draft read, which is the studio's Preview as.
 
+## Show windows
+
+A block can carry `show: { from?, until? }`: wall-clock times,
+`'YYYY-MM-DDTHH:mm'`, in the site's time zone (`site.details.timezone`, UTC
+without one), `until` the first minute it no longer shows. It's the
+studio's "Show from" and "Show until" (its docs/scheduling.md): holiday hours,
+a sale banner. `schema/show.js` reads them and is the same file, byte for
+byte, as the studio's `shared/utils/block-show.js`.
+
+- **Decided at each request.** `/__timbrr/page` sends a block on only while
+  it's inside its window, read now, so the minute-long edge copy of the
+  studio's answer never holds the decision. `TbBlocks` checks again as it
+  draws, so a preview or a page drawn some other way agrees.
+- **About a minute.** The studio leaves out a block whose window ended or
+  opens more than ten minutes ahead, so a copy kept from before that lacks
+  it until the copy is fetched again, and the browser keeps
+  `/__timbrr/page` for a minute. A window can open or close up to about a
+  minute late.
+- **The canvas** draws every block, with a chip, "Shows Dec 20 – Dec 26", and
+  dims one outside its window (`.tb-frame.is-outside`).
+
 ## Closed days and not-found reports
 
 Both come from the studio's Business details and the Worker's own 404s.
