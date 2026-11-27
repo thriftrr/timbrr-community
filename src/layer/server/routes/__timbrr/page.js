@@ -1,6 +1,7 @@
 import { defineEventHandler, getQuery, setResponseHeaders, setResponseStatus } from 'h3';
 import { fetchPublished, normalizePagePath } from '../../utils/studio.js';
 import { askMembers, giftToken, isMemberToken, memberToken, setGiftCookie } from '../../utils/members.js';
+import { shownNow } from '../../../schema/show.js';
 
 // /__timbrr/page?path=/about: this site's published page at that address,
 // exactly as the studio's public read API sends it, { site, page }
@@ -19,6 +20,12 @@ import { askMembers, giftToken, isMemberToken, memberToken, setGiftCookie } from
 // uncached members read, and that answer is never kept. `gift` (a gift
 // link's ?gift=) is spent once, then kept in a cookie for a day. `as` (Preview
 // as) passes through on a dev or staging address only.
+//
+// Show windows (the studio's docs/scheduling.md): a block with `show` is sent
+// on only while it's inside its window, read now against the site's time
+// zone (Site details), so it appears and goes with no publish. The edge keeps
+// the studio's answer a minute, never this decision, so a window opens or
+// closes on the next request after its time.
 export default defineEventHandler(async (event) => {
  const query = getQuery(event);
  const path = normalizePagePath(query.path);
@@ -57,7 +64,7 @@ export default defineEventHandler(async (event) => {
   'Cache-Control': status === 502 || preview || personal || gated ? 'private, no-store' : 'public, max-age=60',
   'X-Robots-Tag': 'noindex',
  });
- if (found) return answer.data;
+ if (found) return inWindow(answer.data);
  setResponseStatus(event, status);
  if (status === 401) return { statusCode: 401, message: 'Sign in to see this site.' };
  // An old address of an entry's: the page says where it lives now, and the site's page sends the visitor there.
@@ -65,3 +72,12 @@ export default defineEventHandler(async (event) => {
   ? { statusCode: 404, message: "That page doesn't exist.", ...(answer.redirect ? { data: { redirect: answer.redirect } } : {}) }
   : { statusCode: 502, message: "Couldn't get this page from the studio. Try again in a minute." };
 });
+
+// The answer with only the blocks visitors see now.
+function inWindow(data) {
+ const blocks = data.page?.blocks;
+ if (!Array.isArray(blocks) || !blocks.some((block) => block?.show)) return data;
+ const zone = data.site?.details?.timezone;
+ const now = Date.now();
+ return { ...data, page: { ...data.page, blocks: blocks.filter((block) => shownNow(block, zone, now)) } };
+}

@@ -821,6 +821,41 @@ html[data-timbrr-canvas]:not([data-timbrr-window]) {
  opacity: 0.45;
 }
 
+/* Outside its show window (schema/show.js): dimmed like a hidden block, and
+   its chip says when it shows. */
+.tb-frame.is-outside > :not(.tb-frame__tab, .tb-frame__show) {
+ opacity: 0.45;
+}
+
+.tb-frame__show {
+ position: absolute;
+ top: 6px;
+ right: 6px;
+ z-index: 5;
+ display: inline-flex;
+ align-items: center;
+ gap: 5px;
+ border-radius: 999px;
+ padding: 2px 9px;
+ background: #f7f5ec;
+ box-shadow: 0 0 0 1px rgb(37 72 50 / 0.18);
+ font: 600 11.5px/1.5 system-ui, sans-serif;
+ color: #254832;
+ pointer-events: none;
+}
+
+.tb-frame__show::before {
+ content: '';
+ width: 6px;
+ height: 6px;
+ border-radius: 50%;
+ background: #2f6b4f;
+}
+
+.tb-frame.is-outside > .tb-frame__show::before {
+ background: #b9a66b;
+}
+
 .tb-frame.is-dragging {
  opacity: 0.5;
 }

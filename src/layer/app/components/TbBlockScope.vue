@@ -27,6 +27,7 @@
  // design's own text at full strength under a tint and a dashed outline, and
  // a pill, "From the Program page design · Edit design", on its first block.
  import { blockData, componentName } from '#timbrr/manifest';
+ import { showLabel, showState } from '../../schema/show.js';
  import TbOwnBlock from './TbOwnBlock.vue';
 
  const props = defineProps({
@@ -78,6 +79,17 @@
  const tabbed = computed(() => !props.block.lock || props.block.lock.index === 0);
  // A reviewer's canvas: the block differs from the live copy (canvas.changed).
  const changed = computed(() => Boolean(canvas?.changed?.value && Object.hasOwn(canvas.changed.value, placement.value)) && tabbed.value);
+
+ // A show window (schema/show.js): in the canvas a small chip says when the
+ // block shows, and the block is dimmed while visitors don't see it, read
+ // against the site's time zone, checked again each minute.
+ const site = useTimbrrSite();
+ const showChip = computed(() => (canvas && props.block.show && tabbed.value ? showLabel(props.block.show) : ''));
+ const minute = ref(Date.now());
+ let ticking = null;
+ onMounted(() => canvas && props.block.show && (ticking = setInterval(() => (minute.value = Date.now()), 60_000)));
+ onBeforeUnmount(() => clearInterval(ticking));
+ const outside = computed(() => Boolean(canvas && props.block.show) && showState(props.block.show, site?.value?.details?.timezone, minute.value) !== 'on');
 
  // The pointer is over any block of a locked piece: its tab shows, however
  // far down the piece that is.
@@ -150,6 +162,7 @@
    'is-first': block.lock?.index === 0,
    'is-last': block.lock && block.lock.index === block.lock.count - 1,
    'is-changed': changed,
+   'is-outside': outside,
   }"
   :data-block-id="block.id"
   :data-block-type="block.type"
@@ -162,6 +175,7 @@
   <div v-else-if="block.type.startsWith('own_')" class="tb-frame__missing">This block isn't published yet, or was deleted. Publish it in the Library to show it here.</div>
   <div v-else class="tb-frame__missing">This site can't show “{{ block.type }}” blocks. Its code doesn't have them.</div>
   <span v-if="changed" class="tb-frame__changed">Changed</span>
+  <span v-if="showChip" class="tb-frame__show" :title="outside ? 'Visitors don\'t see it now' : 'Visitors see it now'">{{ showChip }}</span>
   <span
    v-if="tabbed"
    class="tb-frame__tab"
