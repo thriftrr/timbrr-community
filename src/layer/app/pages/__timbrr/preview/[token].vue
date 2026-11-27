@@ -204,7 +204,7 @@
    </span>
    <p class="tb-share__what">
     <strong>Preview of {{ preview.title || 'this page' }}</strong>
-    <span class="tb-share__dim"> · not live yet</span>
+    <span class="tb-share__dim"> · not live yet{{ site.brandNotLive ? ', new branding' : '' }}</span>
     <span v-if="preview.sharedBy" class="tb-share__dim"> · Shared by {{ preview.sharedBy }}{{ preview.siteName ? `, ${preview.siteName}` : '' }}</span>
    </p>
    <span class="tb-share__count">
