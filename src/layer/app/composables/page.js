@@ -60,6 +60,8 @@ export async function useTimbrrPage(path, { source = '', quiet = false } = {}) {
    frame: frame && typeof frame === 'object' ? frame : null,
    details: value.details && typeof value.details === 'object' ? value.details : null,
    brand: normalizeBrand(value.brand),
+   // On a dev or staging address: this branding isn't the live one yet.
+   brandNotLive: value.brandNotLive === true,
    language: LANGUAGE.test(value.language ?? '') ? value.language : 'en',
    // Site search's settings (utils/search.js): off unless the studio says on.
    search: searchSettings(value.search),
@@ -92,6 +94,9 @@ export async function useTimbrrPage(path, { source = '', quiet = false } = {}) {
  const LIVE_GIVE_UP = 15;
  onMounted(() => {
   const when = document.getElementById('timbrr-preview-when');
+  // The note says when the branding drawn here isn't live yet, and follows it.
+  const brandNote = document.getElementById('timbrr-preview-brand');
+  if (brandNote) watchEffect(() => (brandNote.textContent = site.value.brandNotLive ? ' · new branding' : ''));
   if (!when || source) return;
   let stamp = null;
   let misses = 0;

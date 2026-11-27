@@ -17,7 +17,11 @@ addresses"); this is what the layer does.
 - **`server/utils/studio.js`** reads drafts instead of published pages on these
   addresses, with the token, and never keeps a copy.
 - **`server/plugins/preview-banner.js`** adds the note saying it's a draft
-  ("Preview, not live").
+  ("Preview, not live"), and " · new branding" while the branding that address
+  draws isn't the live one (`brandNotLive` in the studio's answer; the
+  studio's docs/sites.md, "Branding by stage"). The dev address draws the
+  draft branding and the staging address Preview's; nothing here picks one,
+  the studio's answer carries it.
 - **Live.** On these addresses a page the studio serves follows its draft:
   `useTimbrrPage` asks `/__timbrr/stamp?path=` every two seconds while the tab
   is showing, less often while nothing changes (4, 8, then every 15 seconds;
