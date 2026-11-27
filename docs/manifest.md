@@ -589,8 +589,12 @@ mode; with no site to read, as on the starter's block shelf, the name is
 **The stage.** A Library header or footer is previewed, not edited on the
 canvas, so with `stage: true` the first block (a `site_header` or
 `site_footer`; anything else draws as usual) goes on a stand-in page instead
-of the blocks: a striped hero and placeholder rows, tall enough to scroll,
-with the frame drawn by `<TbFrameStage>` through the same component a page
+of the blocks. A header gets a striped hero and placeholder rows, tall
+enough to scroll; a footer gets only a short "end of a page" above it, so it
+is in view when the stage opens, and a footer taller than the frame starts
+scrolled to the bottom (the studio's FB-158: under the whole stand-in page it
+was a screen and a half down, and the stage looked empty). The frame is drawn
+by `<TbFrameStage>` through the same component a page
 uses. Its `site` is the one sent, with `frame: { [side]: <the block's data> }`. There are no block frames, no selection, no typing and no drops, and
 clicking never sends `timbrr:click`, so the studio's panel stays open. A
 click on a header sends `timbrr:part` instead, with the block's `id` and

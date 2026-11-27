@@ -9,6 +9,11 @@
  // live page. The studio gives the frame a fixed height. The header's own
  // controls work, by clicking them. Nothing here can be selected or typed
  // into, and the stand-in page is hidden from anything reading the frame.
+ //
+ // A footer gets only the end of a page above it, short, so it's in view the
+ // moment the stage opens. It used to sit under the whole stand-in page, a
+ // screen and a half down, and the stage looked empty (the studio's FB-158).
+ // A footer taller than the frame starts scrolled to the bottom.
  const props = defineProps({
   site: { type: Object, default: null },
   block: { type: Object, required: true },
@@ -17,6 +22,11 @@
  useHead({ htmlAttrs: { 'data-timbrr-stage': '' } });
 
  const side = computed(() => (props.block.type === 'site_footer' ? 'footer' : 'header'));
+ onMounted(() => {
+  if (side.value !== 'footer') return;
+  requestAnimationFrame(() => window.scrollTo(0, document.documentElement.scrollHeight));
+ });
+
  const framed = computed(() => ({
   ...props.site,
   name: props.site?.name || props.site?.domain || 'Your site',
@@ -27,7 +37,15 @@
 <template>
  <div class="tb-stage">
   <TbSiteHeader v-if="side === 'header'" :site="framed" />
-  <div class="tb-stage__page" aria-hidden="true">
+  <div v-if="side === 'footer'" class="tb-stage__page tb-stage__page--end" aria-hidden="true">
+   <div class="tb-wrap tb-stage__end">
+    <span class="tb-stage__hint">the end of a page · for context</span>
+    <span class="tb-stage__end-line">The last section of a page</span>
+    <span class="tb-stage__row tb-stage__row--line" />
+    <span class="tb-stage__end-button" />
+   </div>
+  </div>
+  <div v-else class="tb-stage__page" aria-hidden="true">
    <div class="tb-stage__hero">
     <div class="tb-wrap">
      <span class="tb-stage__hint">hero image</span>
@@ -80,6 +98,42 @@
   padding-block: 72px 56px;
   background: repeating-linear-gradient(135deg, var(--site-dark) 0 10px, color-mix(in srgb, var(--site-dark) 92%, var(--site-dark-ink)) 10px 20px);
   color: var(--site-dark-ink);
+ }
+
+ /* A footer's stage: the end of a page, then the footer at the bottom of the frame. */
+ .tb-stage__page--end {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+ }
+
+ .tb-stage__end {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  padding-block: 48px;
+  opacity: 0.55;
+ }
+
+ .tb-stage__end-line {
+  font-family: var(--site-font-display);
+  font-size: clamp(22px, 3vw, 30px);
+  font-weight: var(--site-heading-weight);
+  line-height: 1.15;
+  color: var(--site-ink);
+ }
+
+ .tb-stage__end .tb-stage__row--line {
+  width: min(420px, 60%);
+  height: 12px;
+ }
+
+ .tb-stage__end-button {
+  width: 132px;
+  height: 40px;
+  border-radius: var(--site-radius);
+  background: var(--site-accent, var(--site-dark));
  }
 
  .tb-stage__hint {

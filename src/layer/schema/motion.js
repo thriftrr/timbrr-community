@@ -29,7 +29,7 @@ export const MOTION_EASES = Object.freeze({
  spring: 'linear(0,.009,.035 2.1%,.141,.281 6.7%,.723 12.9%,.938 16.7%,1.017,1.077,1.121,1.149 24.3%,1.159,1.163,1.161,1.154 29.9%,1.129 32.8%,1.051 39.6%,1.017 43.1%,.991,.977 51%,.974 53.8%,.975 57.1%,.997 69.8%,1.003 76.9%,1)',
 });
 export const MOTION_INTENSITIES = Object.freeze([
- { key: 'off', label: 'Off', k: 0, note: 'Nothing moves. Motion set on blocks is kept for later.' },
+ { key: 'off', label: 'Off', k: 0, note: 'Blocks that follow the site stay still. A block given its own motion still moves.' },
  { key: 'subtle', label: 'Subtle', k: 0.6, note: 'Short moves. Most sites want this.' },
  { key: 'lively', label: 'Lively', k: 1.4, note: 'Longer moves, plus spring, deeper tilt and parallax.' },
 ]);
@@ -107,7 +107,8 @@ export function cleanMotion(input) {
  const stagger = isObject(input.stagger) ? input.stagger : {};
  const deg = (value) => (finite(value) ? round(clamp(value, -MOTION_LIMITS.deg, MOTION_LIMITS.deg), 1) : undefined);
  const out = kept({
-  trigger: some(kept({ at: finite(trigger.at) ? round(clamp(trigger.at, ...MOTION_LIMITS.at)) : undefined, plays: ['once', 'every'].includes(trigger.plays) ? trigger.plays : undefined })),
+  // `at` 0 is "When the page opens": it plays on load, wherever it sits on the page.
+  trigger: some(kept({ at: finite(trigger.at) ? (trigger.at <= 0 ? 0 : round(clamp(trigger.at, ...MOTION_LIMITS.at))) : undefined, plays: ['once', 'every'].includes(trigger.plays) ? trigger.plays : undefined })),
   from: some(
    kept({
     x: cleanDistance(from.x),
@@ -168,16 +169,21 @@ export function blockWords(data) {
 export const motionItems = (data) => Math.max(1, ...Object.values(isObject(data) ? data : {}).map((value) => (Array.isArray(value) ? value.length : 0)));
 
 // What one block does on a page, or null when it stays put. `first`: it's the
-// page's first block (default None). `brand`: the site's brand.
+// page's first block (default None). `brand`: the site's brand. A block with
+// its own preset always plays, even with the site's Intensity Off (at Subtle's
+// size then), and its own Parallax plays off Lively too. The site only gives
+// "Follow the site" blocks their default.
 export function blockMotion(block, { brand, first = false } = {}) {
  const site = cleanSiteMotion(brand?.motion);
  const intensity = site?.intensity ?? 'off';
- if (intensity === 'off' || !block || block.ref) return null;
+ if (!block || block.ref) return null;
  const own = cleanMotion(block.motion);
- let key = own && own.preset !== 'site' ? own.preset : first ? 'none' : (site.preset ?? 'none');
+ const mine = Boolean(own && own.preset !== 'site');
+ if (intensity === 'off' && !mine) return null;
+ let key = mine ? own.preset : first ? 'none' : (site?.preset ?? 'none');
  if (key === 'none') return null;
  const lively = intensity === 'lively';
- if (PRESET.get(key).scroll && !lively) return null;
+ if (PRESET.get(key).scroll && !lively && !mine) return null;
  const words = blockWords(block.data);
  const long = words > MOTION_LIMITS.words;
  if (long) key = 'fade';
@@ -194,7 +200,7 @@ export function blockMotion(block, { brand, first = false } = {}) {
   from,
   time: { ...time, ms: MOTION_TIMES[time.ms] ?? time.ms },
   at: own?.trigger?.at ?? 0.2,
-  plays: own?.trigger?.plays ?? site.plays ?? 'once',
+  plays: own?.trigger?.plays ?? site?.plays ?? 'once',
   stagger: preset.items ? { ms: 80, from: 'start', ...own?.stagger } : null,
   phone: own?.phone ?? 'simpler',
   depth: own?.depth ?? 1000,
@@ -273,25 +279,28 @@ export const MOTION_HEAD_SCRIPT = "if('IntersectionObserver'in window&&!matchMed
 
 // At the end of the body: marks each stagger's items (an own `--i`; a stagger
 // with none fades as one), shows blocks already scrolled past at once, and
-// adds m-in as each block comes on screen. One observer, and window.__tbMotion
+// adds m-in as each block comes on screen (a block set to play when the page
+// opens, data-m-at 0, on the observer's first call, after first paint, wherever
+// it is). One observer, and window.__tbMotion
 // sets up whatever blocks are new (m-ok marks the done ones: a class, so a
 // re-rendered element loses it with its m-in); the layer calls it after each
 // in-site navigation, which doesn't run this script again.
 export const MOTION_SCRIPT =
  "(()=>{const d=document,c=d.documentElement.classList;if(!c.contains('m-js'))return;" +
  "const o=window.__tbO||(window.__tbO=new IntersectionObserver(es=>es.forEach(e=>{const b=e.target,t=+(b.dataset.mAt||.2),every=b.dataset.mPlays==='every';" +
- "if(e.isIntersecting&&(e.intersectionRatio>=t||e.intersectionRect.height>=innerHeight*t)){b.classList.remove('m-now');b.classList.add('m-in');if(!every)o.unobserve(b)}" +
+ "if(!t||e.isIntersecting&&(e.intersectionRatio>=t||e.intersectionRect.height>=innerHeight*t)){b.classList.remove('m-now');b.classList.add('m-in');if(!every)o.unobserve(b)}" +
  "else if(every&&!e.isIntersecting&&e.boundingClientRect.top>0)b.classList.remove('m-in')}),{threshold:[0,.1,.2,.3,.4,.5,.6,.7,.8,.9]}));" +
  "(window.__tbMotion=()=>d.querySelectorAll('.m:not(.m-ok)').forEach(b=>{b.classList.add('m-ok');if(b.classList.contains('m-st')){const it=[...b.querySelectorAll('[data-motion-item]')],n=it.length,f=b.dataset.mFrom;" +
  "if(!n)b.classList.remove('m-st');it.forEach((e,i)=>{e.classList.add('m-i');e.style.setProperty('--i',f==='end'?n-1-i:f==='center'?Math.abs(i-(n-1)/2):i)})}" +
  "if(b.classList.contains('m-px'))return;if(b.getBoundingClientRect().bottom<0)b.classList.add('m-now','m-in');else o.observe(b)}))()})()";
 
-// The page's head for its motion: nothing at all with Intensity Off or no
-// block that moves. `canvas`: the studio's canvas, which never hides
-// anything (no m-js, no observer) but needs the CSS for Replay.
+// The page's head for its motion: nothing at all when no block moves. With
+// Intensity Off only blocks with their own motion move, at Subtle's size.
+// `canvas`: the studio's canvas, which never hides anything (no m-js, no
+// observer) but needs the CSS for Replay.
 export function motionHead(brand, { any = true, canvas = false } = {}) {
- const { k } = motionIntensity(brand);
- if (!k || !any) return null;
+ if (!any) return null;
+ const k = motionIntensity(brand).k || MOTION_INTENSITIES[1].k;
  return {
   css: `html{--m-k:${k}}\n${MOTION_CSS}`,
   head: canvas ? '' : MOTION_HEAD_SCRIPT,

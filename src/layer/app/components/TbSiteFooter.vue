@@ -111,11 +111,14 @@
  }
 
  // A page on this site through the router, anything else safe as a plain
- // link, and nowhere to go as just the label (TbSiteHeader's linkTo).
+ // link, and nowhere to go as just the label (TbSiteHeader's linkTo). A web
+ // address in the columns or the small print opens in a new tab, as the
+ // studio's link picker says it will.
  function linkTo(item) {
   const to = item.kind === 'none' ? undefined : safeHref(item.to);
   if (!to) return { is: 'span' };
-  return to.startsWith('/') ? { is: NuxtLink, to } : { is: 'a', href: to };
+  if (to.startsWith('/')) return { is: NuxtLink, to };
+  return /^https?:/i.test(to) ? { is: 'a', href: to, target: '_blank', rel: 'noopener' } : { is: 'a', href: to };
  }
 </script>
 
@@ -149,7 +152,7 @@
      <p v-if="column.heading && footer.layout !== 'slim'" class="tb-site-footer__heading">{{ column.heading }}</p>
      <ul class="tb-site-footer__links">
       <li v-for="(entry, at) in column.links" :key="at">
-       <component :is="entry.link.is" :to="entry.link.to" :href="entry.link.href" class="tb-site-footer__link">{{ entry.label }}</component>
+       <component :is="entry.link.is" :to="entry.link.to" :href="entry.link.href" :target="entry.link.target" :rel="entry.link.rel" class="tb-site-footer__link">{{ entry.label }}</component>
       </li>
      </ul>
     </div>
@@ -185,7 +188,7 @@
    <span>{{ legal }}</span>
    <ul v-if="legalLinks.length" class="tb-site-footer__legal-links">
     <li v-for="(entry, index) in legalLinks" :key="index">
-     <component :is="entry.link.is" :to="entry.link.to" :href="entry.link.href" class="tb-site-footer__link">{{ entry.label }}</component>
+     <component :is="entry.link.is" :to="entry.link.to" :href="entry.link.href" :target="entry.link.target" :rel="entry.link.rel" class="tb-site-footer__link">{{ entry.label }}</component>
     </li>
    </ul>
    <span class="tb-site-footer__built">Built on Timbrr · <NuxtLink :to="report" class="tb-site-footer__link" rel="nofollow">Report this site</NuxtLink></span>
