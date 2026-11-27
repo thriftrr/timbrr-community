@@ -23,7 +23,7 @@
  // checked against one origin: the configured studio, or localhost in
  // development.
  import { WYS_TOOLS } from '#timbrr/define';
- import { footerData, headerData, navItem, navList } from '../../../schema/frames.js';
+ import { SOCIAL_NETWORKS, footerData, headerData, navItem, navList } from '../../../schema/frames.js';
  import { motionHead } from '../../../schema/motion.js';
 import { createInsights } from '../../utils/insights-canvas.js';
  import { definitions } from '#timbrr/blocks';
@@ -131,7 +131,11 @@ import { createInsights } from '../../utils/insights-canvas.js';
   if (!value || typeof value !== 'object') return null;
   const strings = ['phone', 'email', 'street', 'city', 'region', 'postal', 'timezone', 'note'].map((key) => [key, text(value[key], 300)]);
   const hours = (Array.isArray(value.hours) ? value.hours : []).slice(0, 7).map((row) => ({ closed: row?.closed === true, open: text(row?.open, 5), close: text(row?.close, 5) }));
-  return { ...Object.fromEntries(strings), hours };
+  // The social links, so the header's and footer's icons show here as they
+  // do on the site (the studio's FB-156: they never did, since this dropped them).
+  const from = value.social && typeof value.social === 'object' ? value.social : {};
+  const social = Object.fromEntries(SOCIAL_NETWORKS.map((network) => [network, text(from[network], 300)]).filter(([, href]) => href));
+  return { ...Object.fromEntries(strings), hours, social };
  }
 
  function frameFrom(value, keep) {
