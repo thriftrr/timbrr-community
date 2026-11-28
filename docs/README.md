@@ -460,9 +460,11 @@ to some paid plans. What the layer does:
 
 ## Show windows
 
-A block can carry `show: { from?, until? }`: wall-clock times,
-`'YYYY-MM-DDTHH:mm'`, in the site's time zone (`site.details.timezone`, UTC
-without one), `until` the first minute it no longer shows. It's the
+A block can carry `show: { from?, until? }`: UTC instants, ISO strings to the
+minute (`'2026-12-20T06:00:00.000Z'`), `until` the first minute it no longer
+shows. No time zone is involved: the layer compares the instants with now, and
+`site.details.timezone` plays no part. Anything else, the old wall-clock form
+`'YYYY-MM-DDTHH:mm'` included, is no window (nothing used it in production). It's the
 studio's "Show from" and "Show until" (its docs/scheduling.md): holiday hours,
 a sale banner. `schema/show.js` reads them and is the same file, byte for
 byte, as the studio's `shared/utils/block-show.js`.
@@ -477,7 +479,9 @@ byte, as the studio's `shared/utils/block-show.js`.
   `/__timbrr/page` for a minute. A window can open or close up to about a
   minute late.
 - **The canvas** draws every block, with a chip, "Shows Dec 20 – Dec 26", and
-  dims one outside its window (`.tb-frame.is-outside`).
+  dims one outside its window (`.tb-frame.is-outside`). The chip is in the
+  viewer's own time zone, the browser's, set once mounted (the studio's
+  docs/times.md: store UTC, format in the viewer's zone on the client).
 
 ## Closed days and not-found reports
 

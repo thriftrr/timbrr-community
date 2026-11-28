@@ -1,10 +1,13 @@
 // Show windows (docs/scheduling.md, "Block show windows"): a block shown only
 // from one time, until another, or between the two, such as holiday hours or a
 // sale banner. A block keeps its own in `block.show`, beside its data, as
-// { from?, until? }: wall-clock times, 'YYYY-MM-DDTHH:mm', in the site's time
-// zone (Site details › Time zone, UTC when there's none). `until` is the first
-// minute it no longer shows. The site's layer decides at each request whether
-// the block is shown, so a window opens and closes without a publish.
+// { from?, until? }: UTC instants, ISO strings to the minute,
+// '2026-12-20T06:00:00.000Z'. No time zone is kept: whoever picks a time picks
+// it in their own browser's zone, which turns it into an instant, and anyone
+// reading it sees it in theirs. `until` is the first minute it no longer
+// shows. The site's layer decides at each request whether the block is shown,
+// by comparing the instants with now, so a window opens and closes without a
+// publish.
 //
 // This file has a twin in timbrr-community (src/layer/schema/show.js) and the
 // two must stay the same, byte for byte: scripts/check-scheduling.mjs diffs
@@ -12,83 +15,52 @@
 // script.
 //
 //  cleanBlockShow(input)         a block's window, cleaned, or null (always shown)
-//  zonedMs(local, zone)          a wall-clock time in a zone, as UTC milliseconds
-//  localAt(ms, zone)             the other way: 'YYYY-MM-DDTHH:mm' in the zone
-//  showState(show, zone, now)    'before' | 'on' | 'after'
-//  shownNow(block, zone, now)    whether a visitor sees it now
+//  showMs(at)                    one of its times as UTC ms (NaN when it isn't one)
+//  showState(show, now)          'before' | 'on' | 'after'
+//  shownNow(block, now)          whether a visitor sees it now
 //  joinShow(outer, inner)        a placed shared section's window over its own blocks'
-//  showLabel(show)               "Shows Dec 20 – Dec 26"
+//  showLabel(show, zone)         "Shows Dec 20 – Dec 26", in `zone` (the
+//                                runtime's own when left out: call it in a browser)
 //
-// Nothing here refuses: a time that isn't one is dropped, and an `until` that
-// isn't after `from` is dropped, so a save never fails over a window.
+// Nothing here refuses: a time that isn't one is dropped (the old wall-clock
+// form, 'YYYY-MM-DDTHH:mm', included), and an `until` that isn't after `from`
+// is dropped, so a save never fails over a window.
 
-export const SHOW_AT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
+export const SHOW_AT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?Z$/;
 
-export function usableZone(zone) {
- if (typeof zone !== 'string' || !zone) return 'UTC';
- try {
-  new Intl.DateTimeFormat('en-US', { timeZone: zone });
-  return zone;
- } catch {
-  return 'UTC';
- }
-}
-
+// An instant, rounded down to the minute, as toISOString writes it; or ''.
 function cleanAt(value) {
  if (typeof value !== 'string' || !SHOW_AT.test(value)) return '';
- const ms = Date.parse(`${value}:00Z`);
- return Number.isNaN(ms) || new Date(ms).toISOString().slice(0, 16) !== value ? '' : value;
+ const ms = Date.parse(value);
+ if (Number.isNaN(ms)) return '';
+ const iso = new Date(ms - (ms % 60_000)).toISOString();
+ return iso.slice(0, 16) === value.slice(0, 16) ? iso : '';
+}
+
+export function showMs(at) {
+ const clean = cleanAt(at);
+ return clean ? Date.parse(clean) : NaN;
 }
 
 export function cleanBlockShow(input) {
  if (!input || typeof input !== 'object') return null;
  const from = cleanAt(input.from);
  let until = cleanAt(input.until);
- if (from && until && until <= from) until = '';
+ if (from && until && Date.parse(until) <= Date.parse(from)) until = '';
  if (!from && !until) return null;
  return { ...(from ? { from } : {}), ...(until ? { until } : {}) };
 }
 
-// How far the zone is ahead of UTC at that instant, in ms.
-function offsetAt(ms, zone) {
- const parts = Object.fromEntries(
-  new Intl.DateTimeFormat('en-US', { timeZone: zone, hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' })
-   .formatToParts(new Date(ms))
-   .map((part) => [part.type, Number(part.value)]),
- );
- return Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second) - Math.floor(ms / 1000) * 1000;
-}
-
-// The wall-clock time `local` in `zone`, as UTC ms. A time that a clock change
-// skips (2:30 AM on a spring-forward night) lands an hour on; one it repeats
-// takes the first.
-export function zonedMs(local, zone) {
- const at = cleanAt(local);
- if (!at) return NaN;
- const tz = usableZone(zone);
- const guess = Date.parse(`${at}:00Z`);
- const first = guess - offsetAt(guess, tz);
- const shift = offsetAt(first, tz);
- const second = guess - shift;
- return offsetAt(second, tz) === shift ? second : first;
-}
-
-export function localAt(ms, zone) {
- const at = Number(ms);
- if (!Number.isFinite(at)) return '';
- return new Date(at + offsetAt(at, usableZone(zone))).toISOString().slice(0, 16);
-}
-
-export function showState(show, zone, now = Date.now()) {
+export function showState(show, now = Date.now()) {
  const clean = cleanBlockShow(show);
  if (!clean) return 'on';
- if (clean.from && now < zonedMs(clean.from, zone)) return 'before';
- if (clean.until && now >= zonedMs(clean.until, zone)) return 'after';
+ if (clean.from && now < Date.parse(clean.from)) return 'before';
+ if (clean.until && now >= Date.parse(clean.until)) return 'after';
  return 'on';
 }
 
-export function shownNow(block, zone, now = Date.now()) {
- return showState(block?.show, zone, now) === 'on';
+export function shownNow(block, now = Date.now()) {
+ return showState(block?.show, now) === 'on';
 }
 
 // Both windows at once: the later start and the earlier end. Null for none.
@@ -101,28 +73,39 @@ export function joinShow(outer, inner) {
  return { ...(from ? { from } : {}), ...(until ? { until } : {}) };
 }
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-function dayWords(at) {
- return `${MONTHS[Number(at.slice(5, 7)) - 1]} ${Number(at.slice(8, 10))}`;
+function words(ms, zone, options) {
+ return new Intl.DateTimeFormat('en-US', { ...(zone ? { timeZone: zone } : {}), ...options }).format(new Date(ms));
 }
-function timeWords(at) {
- const hour = Number(at.slice(11, 13));
- return `${hour % 12 || 12}:${at.slice(14, 16)} ${hour < 12 ? 'AM' : 'PM'}`;
+function atMidnight(ms, zone) {
+ return words(ms, zone, { hour: 'numeric', minute: '2-digit', hourCycle: 'h23' }) === '00:00';
+}
+function dayWords(ms, zone) {
+ return words(ms, zone, { month: 'short', day: 'numeric' });
+}
+function timeWords(ms, zone) {
+ return words(ms, zone, { hour: 'numeric', minute: '2-digit' });
 }
 // A start at midnight is that day; an end at midnight is the day before
 // (until Dec 27 12:00 AM shows through Dec 26). Other times are said.
-function startWords(at) {
- return at.endsWith('T00:00') ? dayWords(at) : `${dayWords(at)}, ${timeWords(at)}`;
+function startWords(ms, zone) {
+ return atMidnight(ms, zone) ? dayWords(ms, zone) : `${dayWords(ms, zone)}, ${timeWords(ms, zone)}`;
 }
-function endWords(at) {
- if (!at.endsWith('T00:00')) return `${dayWords(at)}, ${timeWords(at)}`;
- return dayWords(new Date(Date.parse(`${at}:00Z`) - 86_400_000).toISOString().slice(0, 16));
+function endWords(ms, zone) {
+ return atMidnight(ms, zone) ? dayWords(ms - 60_000, zone) : `${dayWords(ms, zone)}, ${timeWords(ms, zone)}`;
 }
 
-export function showLabel(show) {
+export function showLabel(show, zone) {
  const clean = cleanBlockShow(show);
  if (!clean) return '';
- if (clean.from && clean.until) return `Shows ${startWords(clean.from)} – ${endWords(clean.until)}`;
- if (clean.from) return `Shows from ${startWords(clean.from)}`;
- return `Shows until ${endWords(clean.until)}`;
+ let tz = typeof zone === 'string' && zone ? zone : undefined;
+ try {
+  if (tz) new Intl.DateTimeFormat('en-US', { timeZone: tz });
+ } catch {
+  tz = 'UTC';
+ }
+ const from = clean.from ? Date.parse(clean.from) : NaN;
+ const until = clean.until ? Date.parse(clean.until) : NaN;
+ if (clean.from && clean.until) return `Shows ${startWords(from, tz)} – ${endWords(until, tz)}`;
+ if (clean.from) return `Shows from ${startWords(from, tz)}`;
+ return `Shows until ${endWords(until, tz)}`;
 }

@@ -82,14 +82,19 @@
 
  // A show window (schema/show.js): in the canvas a small chip says when the
  // block shows, and the block is dimmed while visitors don't see it, read
- // against the site's time zone, checked again each minute.
- const site = useTimbrrSite();
- const showChip = computed(() => (canvas && props.block.show && tabbed.value ? showLabel(props.block.show) : ''));
+ // by its UTC instants against now, checked again each minute. The chip says
+ // the window in the viewer's own time zone (the browser's: the studio's
+ // docs/times.md), so only once mounted, never on a server.
+ const mounted = ref(false);
+ const showChip = computed(() => (mounted.value && canvas && props.block.show && tabbed.value ? showLabel(props.block.show) : ''));
  const minute = ref(Date.now());
  let ticking = null;
- onMounted(() => canvas && props.block.show && (ticking = setInterval(() => (minute.value = Date.now()), 60_000)));
+ onMounted(() => {
+  mounted.value = true;
+  if (canvas && props.block.show) ticking = setInterval(() => (minute.value = Date.now()), 60_000);
+ });
  onBeforeUnmount(() => clearInterval(ticking));
- const outside = computed(() => Boolean(canvas && props.block.show) && showState(props.block.show, site?.value?.details?.timezone, minute.value) !== 'on');
+ const outside = computed(() => Boolean(canvas && props.block.show) && showState(props.block.show, minute.value) !== 'on');
 
  // The pointer is over any block of a locked piece: its tab shows, however
  // far down the piece that is.

@@ -2,8 +2,9 @@
  // A page's blocks, in order, each drawn by its own component. The same
  // renderer runs on the live site and in the studio's canvas; in the
  // canvas, hidden blocks still show (faded) and unknown ones say so. A block
- // with a show window (schema/show.js) draws only inside it, read against the
- // site's time zone; the canvas draws it either way, dimmed outside it.
+ // with a show window (schema/show.js) draws only inside it: its UTC instants
+ // against now, no time zone needed; the canvas draws it either way, dimmed
+ // outside it.
  import { definitions } from '#timbrr/blocks';
  import { checkOwnBlock, ownBlockDef } from '../../schema/own-block.js';
  import { blockMotion, motionAttrs } from '../../schema/motion.js';
@@ -36,8 +37,7 @@
  // How each block arrives (docs/motion.md): only a page's own blocks, never
  // a column's or a repeat's; the first shown block defaults to None.
  const site = useTimbrrSite();
- const zone = computed(() => site?.value?.details?.timezone);
- const drawn = (block) => canvas || (!block.hidden && shownNow(block, zone.value));
+ const drawn = (block) => canvas || (!block.hidden && shownNow(block));
  const first = computed(() => props.blocks.find((block) => drawn(block))?.id);
  const motionOf = (block) => (nested ? null : motionAttrs(blockMotion(block, { brand: site?.value?.brand, first: block.id === first.value })));
 </script>

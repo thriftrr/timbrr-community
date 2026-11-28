@@ -22,8 +22,8 @@ import { shownNow } from '../../../schema/show.js';
 // as) passes through on a dev or staging address only.
 //
 // Show windows (the studio's docs/scheduling.md): a block with `show` is sent
-// on only while it's inside its window, read now against the site's time
-// zone (Site details), so it appears and goes with no publish. The edge keeps
+// on only while it's inside its window: its UTC instants against now, no time
+// zone needed, so it appears and goes with no publish. The edge keeps
 // the studio's answer a minute, never this decision, so a window opens or
 // closes on the next request after its time.
 export default defineEventHandler(async (event) => {
@@ -77,7 +77,6 @@ export default defineEventHandler(async (event) => {
 function inWindow(data) {
  const blocks = data.page?.blocks;
  if (!Array.isArray(blocks) || !blocks.some((block) => block?.show)) return data;
- const zone = data.site?.details?.timezone;
  const now = Date.now();
- return { ...data, page: { ...data.page, blocks: blocks.filter((block) => shownNow(block, zone, now)) } };
+ return { ...data, page: { ...data.page, blocks: blocks.filter((block) => shownNow(block, now)) } };
 }
